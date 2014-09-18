@@ -25,6 +25,9 @@ defmodule Joken.Mixfile do
   #
   # Type `mix help deps` for more examples and options
   defp deps do
-    [{:jsex, github: "talentdeficit/jsex"}]
+    [
+      {:jsex, github: "talentdeficit/jsex"},
+      {:dialyze, "~> 0.1.3"}
+    ]
   end
 end
