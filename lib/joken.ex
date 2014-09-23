@@ -1,4 +1,5 @@
 defmodule Joken do
+  use Jazz
   @moduledoc """
     Encodes and decodes JSON Web Tokens.
 
@@ -22,9 +23,9 @@ defmodule Joken do
   end
 
   defp do_encode(payload, key, alg, headers) do
-    {_, headerJSON} = Map.merge(%{ alg: to_string(alg), "typ": "JWT"}, headers) |> JSEX.encode
+    {_, headerJSON} = Map.merge(%{ alg: to_string(alg), "typ": "JWT"}, headers) |> JSON.encode
 
-    {status, payloadJSON} = JSEX.encode(payload)
+    {status, payloadJSON} = JSON.encode(payload)
 
     case status do
       :error ->
@@ -70,7 +71,7 @@ defmodule Joken do
         cond do
           acc < 2 ->
             data = base64url_decode(x)
-            {_ , map} = JSEX.decode(data, [{:labels, :atom}])
+            {_ , map} = JSON.decode(data, keys: :atoms)
             { map , acc + 1}  
           true ->
             {x, acc + 1}                
@@ -86,8 +87,8 @@ defmodule Joken do
     payload = Enum.fetch!(data, 1)
     jwt_signature = Enum.fetch!(data, 2)
 
-    header64 = header |> JSEX.encode! |> base64url_encode
-    payload64 = payload |> JSEX.encode! |> base64url_encode
+    header64 = header |> JSON.encode! |> base64url_encode
+    payload64 = payload |> JSON.encode! |> base64url_encode
 
     hash_alg = header.alg |> String.to_atom |> alg_to_hash_alg
     signature = :crypto.hmac(hash_alg, key, "#{header64}.#{payload64}")
