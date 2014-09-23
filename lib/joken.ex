@@ -10,18 +10,18 @@ defmodule Joken do
   """
 
   def encode(payload, key, :HS256, headers) do
-    do_encode(payload, key, :HS256, :sha256, headers)
+    do_encode(payload, key, :HS256, headers)
   end
 
   def encode(payload, key, :HS384, headers) do
-    do_encode(payload, key, :HS384, :sha384, headers)
+    do_encode(payload, key, :HS384, headers)
   end
 
   def encode(payload, key, :HS512, headers) do
-    do_encode(payload, key, :HS512, :sha512, headers)
+    do_encode(payload, key, :HS512, headers)
   end
 
-  defp do_encode(payload, key, alg, hash_alg, headers) do
+  defp do_encode(payload, key, alg, headers) do
     {_, headerJSON} = Map.merge(%{ alg: to_string(alg), "typ": "JWT"}, headers) |> JSEX.encode
 
     {status, payloadJSON} = JSEX.encode(payload)
@@ -32,21 +32,31 @@ defmodule Joken do
       :ok ->
         header64 = base64url_encode(headerJSON)
         payload64 = base64url_encode(payloadJSON)
+        hash_alg = alg_to_hash_alg(alg)
 
         signature = :crypto.hmac(hash_alg, key, "#{header64}.#{payload64}")
         signature64 = base64url_encode(signature)
+
         {:ok, "#{header64}.#{payload64}.#{signature64}"}
     end
   end
 
-  def decode(jwt) do
+  def decode(jwt, key) do
     {status, data} = get_data(jwt)
 
     case status do
       :error ->
         {status, data}
       :ok ->
-        {:ok, Enum.fetch!(data, 1)}
+        payload = Enum.fetch!(data, 1)
+        cond do
+          verify(data, key) == false ->
+            {:error, "Verification failed"}
+          is_expired(payload) == true ->
+            {:error, "Token is expired"}
+          true ->
+            {:ok, payload}
+        end
     end
 
   end
@@ -56,18 +66,53 @@ defmodule Joken do
     if Enum.count(values) != 3 do
       {:error, "Invalid JSON Web Token"}
     else
-      decoded_data = Enum.map_reduce(values, 0, fn(x, acc) ->
-        data = base64url_decode(x)
+      decoded_data = Enum.map_reduce(values, 0, fn(x, acc) ->                    
         cond do
           acc < 2 ->
+            data = base64url_decode(x)
             {_ , map} = JSEX.decode(data, [{:labels, :atom}])
             { map , acc + 1}  
           true ->
-            {data, acc + 1}                
+            {x, acc + 1}                
         end
       end)
       {decoded, _} = decoded_data
       {:ok, decoded}
+    end
+  end
+
+  defp verify(data, key) do
+    header = Enum.fetch!(data, 0)
+    payload = Enum.fetch!(data, 1)
+    jwt_signature = Enum.fetch!(data, 2)
+
+    header64 = header |> JSEX.encode! |> base64url_encode
+    payload64 = payload |> JSEX.encode! |> base64url_encode
+
+    hash_alg = header.alg |> String.to_atom |> alg_to_hash_alg
+    signature = :crypto.hmac(hash_alg, key, "#{header64}.#{payload64}")
+
+    base64url_encode(signature) == jwt_signature
+  end
+
+  defp is_expired(payload) do
+    if Map.has_key?(payload, :exp) do
+      payload.exp < get_current_time()
+    else
+      false
+    end
+  end
+
+  defp get_current_time() do
+    {mega, secs, _} = :os.timestamp()
+    mega * 1000000 + secs
+  end
+
+  defp alg_to_hash_alg(alg) do
+    case alg do
+      :HS256 -> :sha256
+      :HS384 -> :sha384
+      :HS512 -> :sha512
     end
   end
 
