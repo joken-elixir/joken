@@ -1,11 +1,6 @@
 defmodule JokenTest do
   use ExUnit.Case
 
-  defp get_current_time() do
-    {mega, secs, _} = :os.timestamp()
-    mega * 1000000 + secs
-  end
-
   test "encode and decode with HS256" do
     payload = %{ sub: 1234567890, name: "John Doe", admin: true }
     {:ok, token} = Joken.encode(payload, "secret", :HS256, %{})
@@ -34,14 +29,14 @@ defmodule JokenTest do
   end
 
   test "expiration" do
-    payload = %{ sub: 1234567890, name: "John Doe", admin: true, exp: get_current_time() + 300 }
+    payload = %{ sub: 1234567890, name: "John Doe", admin: true, exp: Joken.get_current_time() + 300 }
     {:ok, token} = Joken.encode(payload, "secret", :HS256, %{})
-    {status, decoded_payload} = Joken.decode(token, "secret")
+    {status, _} = Joken.decode(token, "secret")
     assert(status == :ok) 
 
-    payload = %{ sub: 1234567890, name: "John Doe", admin: true, exp: get_current_time() - 300 }
+    payload = %{ sub: 1234567890, name: "John Doe", admin: true, exp: Joken.get_current_time() - 300 }
     {:ok, token} = Joken.encode(payload, "secret", :HS256, %{})
-    {status, decoded_payload} = Joken.decode(token, "secret")
+    {status, _} = Joken.decode(token, "secret")
     assert(status == :error) 
   end
 

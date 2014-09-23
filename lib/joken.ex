@@ -103,7 +103,7 @@ defmodule Joken do
     end
   end
 
-  defp get_current_time() do
+  def get_current_time() do
     {mega, secs, _} = :os.timestamp()
     mega * 1000000 + secs
   end
