@@ -6,6 +6,7 @@ defmodule Joken.Mixfile do
      version: "0.1.0",
      elixir: "~> 1.0.0",
      description: description,
+     package: package,
      deps: deps]
   end
 
