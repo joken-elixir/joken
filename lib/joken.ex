@@ -1,70 +1,92 @@
 defmodule Joken do
   use Jazz
+
+  @supported_algs %{ HS256: :sha256 , HS384: :sha384, HS512: :sha512 }
   @moduledoc """
     Encodes and decodes JSON Web Tokens.
 
-    iex(1)> Joken.encode(%{username: "johndoe"}, "secret", :HS256, %{})
+    iex(1)> Joken.encode(%{username: "johndoe"}, "secret")
     {:ok,
      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImpvaG5kb2UifQ.OFY_3SbHl2YaM7Y4Lj24eVMtcDaGEZU7KRzYCV4cqog"}
-    iex(2)> Joken.decode("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImpvaG5kb2UifQ.OFY_3SbHl2YaM7Y4Lj24eVMtcDaGEZU7KRzYCV4cqog")
+    iex(2)> Joken.decode("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImpvaG5kb2UifQ.OFY_3SbHl2YaM7Y4Lj24eVMtcDaGEZU7KRzYCV4cqog", "secret")
     {:ok, %{username: "johndoe"}}
+
+    iex(3)> Joken.encode(%{username: "johndoe"}, "secret", :HS384, %{ iss: "self"})                                                                                                                  {:ok,
+     "eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZWxmIiwidXNlcm5hbWUiOiJqb2huZG9lIn0.wG_LAQ7Z3uRl7B0TEuxvfHdqikU3boPorm5ldS6dutJ9r076i-LRCuascaxoNDw1"}
+    iex(4)> Joken.decode("eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZWxmIiwidXNlcm5hbWUiOiJqb2huZG9lIn0.wG_LAQ7Z3uRl7B0TEuxvfHdqikU3boPorm5ldS6dutJ9r076i-LRCuascaxoNDw1", "secret", %{ iss: "not:self"})
+    {:error, "Invalid issuer"}
   """
 
-  def encode(payload, key, :HS256, headers) do
-    do_encode(payload, key, :HS256, headers)
-  end
+  @doc """
+    Encodes the payload into a JSON Web Token using the specified key and alg.
+    Adds the specified claims to the payload as well
 
-  def encode(payload, key, :HS384, headers) do
-    do_encode(payload, key, :HS384, headers)
-  end
+    alg must be either :HS256, :HS384, or :HS512
+    
+    default alg is :HS256
 
-  def encode(payload, key, :HS512, headers) do
-    do_encode(payload, key, :HS512, headers)
-  end
+    default claims is an empty map
 
-  defp do_encode(payload, key, alg, headers) do
-    {_, headerJSON} = Map.merge(%{ alg: to_string(alg), "typ": "JWT"}, headers) |> JSON.encode
+    returns {:ok, token} if ok, else: {:error, message}
+  """
+  def encode(payload, key, alg \\ :HS256, claims \\ %{}) when 
+    is_map(payload) and 
+    is_map(claims) and 
+    is_atom(alg) and 
+    is_nil(key) == false and 
+    byte_size(key) > 0 
+  do
+    cond do
+      !Map.has_key?(@supported_algs, alg) ->
+        {:error, "Unsupported algorithm"}
+      true ->
+        headerJSON = JSON.encode!(%{ alg: to_string(alg), "typ": "JWT"})
+        {status, payloadJSON} = Map.merge(payload, claims) |> JSON.encode
 
-    {status, payloadJSON} = JSON.encode(payload)
+        case status do
+          :error ->
+            {:error, "Error encoding Map to JSON"}
+          :ok ->
+            header64 = base64url_encode(headerJSON)
+            payload64 = base64url_encode(payloadJSON)
 
-    case status do
-      :error ->
-        {:error, "Error encoding map to JSON"}
-      :ok ->
-        header64 = base64url_encode(headerJSON)
-        payload64 = base64url_encode(payloadJSON)
-        hash_alg = alg_to_hash_alg(alg)
+            signature = :crypto.hmac(@supported_algs[alg], key, "#{header64}.#{payload64}")
+            signature64 = base64url_encode(signature)
 
-        signature = :crypto.hmac(hash_alg, key, "#{header64}.#{payload64}")
-        signature64 = base64url_encode(signature)
-
-        {:ok, "#{header64}.#{payload64}.#{signature64}"}
-    end
-  end
-
-  def decode(jwt, key) do
-    {status, data} = get_data(jwt)
-
-    case status do
-      :error ->
-        {status, data}
-      :ok ->
-        payload = Enum.fetch!(data, 1)
-        cond do
-          verify(data, key) == false ->
-            {:error, "Verification failed"}
-          is_expired(payload) == true ->
-            {:error, "Token is expired"}
-          true ->
-            {:ok, payload}
+            {:ok, "#{header64}.#{payload64}.#{signature64}"}
         end
     end
+  end
 
+  @doc """
+    Decodes the given jwt using the given key.
+    Also checks against aud, iss, and sub if given in the claims map.
+    claims defaults to an empty map.
+
+    returns {:ok, payload} if ok, else: {:error, message}
+  """
+  def decode(jwt, key, claims \\ %{}) when
+    is_nil(jwt) == false and 
+    byte_size(jwt) > 0 and
+    is_nil(key) == false and 
+    byte_size(key) > 0 and
+    is_map(claims)
+  do
+    jwt
+    |> get_data
+    |> check_signature(key)
+    |> check_exp
+    |> check_nbf
+    |> check_aud(Map.get(claims, :aud, nil))
+    |> check_iss(Map.get(claims, :iss, nil))
+    |> check_sub(Map.get(claims, :sub, nil))
   end
 
   defp get_data(jwt) do
     values = String.split(jwt, ".")
-    if Enum.count(values) != 3 do
+    split_count = Enum.count(values)
+
+    if split_count != 2 and split_count != 3 do
       {:error, "Invalid JSON Web Token"}
     else
       decoded_data = Enum.map_reduce(values, 0, fn(x, acc) ->                    
@@ -82,7 +104,11 @@ defmodule Joken do
     end
   end
 
-  defp verify(data, key) do
+  defp check_signature({:ok, data}, _key) when length(data) == 2 do
+    {:ok, Enum.fetch!(data, 1)}
+  end
+
+  defp check_signature({:ok, data}, key) when length(data) == 3 do
     header = Enum.fetch!(data, 0)
     payload = Enum.fetch!(data, 1)
     jwt_signature = Enum.fetch!(data, 2)
@@ -90,17 +116,52 @@ defmodule Joken do
     header64 = header |> JSON.encode! |> base64url_encode
     payload64 = payload |> JSON.encode! |> base64url_encode
 
-    hash_alg = header.alg |> String.to_atom |> alg_to_hash_alg
-    signature = :crypto.hmac(hash_alg, key, "#{header64}.#{payload64}")
+    alg = header.alg |> String.to_atom
 
-    base64url_encode(signature) == jwt_signature
+    signature = :crypto.hmac(@supported_algs[alg], key, "#{header64}.#{payload64}")
+
+    case base64url_encode(signature) == jwt_signature do
+      true ->
+        {:ok, payload}
+      false ->
+        {:error, "Invalid signature"}
+    end
   end
 
-  defp is_expired(payload) do
-    if Map.has_key?(payload, :exp) do
-      payload.exp < get_current_time()
-    else
-      false
+  defp check_signature({:ok, _data}, _key) do
+    {:error, "Invalid JSON Web Token"}
+  end
+
+  defp check_signature(error, _key) do
+    error
+  end
+
+  defp check_exp({:ok, payload}) do
+    check_time_claim({:ok, payload}, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+  end
+
+  defp check_exp(error) do
+    error
+  end
+
+  defp check_nbf({:ok, payload}) do
+    check_time_claim({:ok, payload}, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+  end
+
+  defp check_nbf(error) do
+    error
+  end
+
+  defp check_time_claim({:ok, payload}, key, error_msg, validate_time_fun) do
+    key_found? = Map.has_key?(payload, key)
+    current_time = get_current_time()
+    cond do
+      key_found? and validate_time_fun.(payload[key], current_time) ->
+        {:ok, payload}
+      key_found? and !validate_time_fun.(payload[key], current_time) ->
+        {:error, error_msg}
+      true ->
+        {:ok, payload}        
     end
   end
 
@@ -109,11 +170,43 @@ defmodule Joken do
     mega * 1000000 + secs
   end
 
-  defp alg_to_hash_alg(alg) do
-    case alg do
-      :HS256 -> :sha256
-      :HS384 -> :sha384
-      :HS512 -> :sha512
+  defp check_aud({:ok, payload}, aud) do
+    check_claim({:ok, payload}, :aud, aud, "audience")
+  end
+
+  defp check_aud(error, _) do
+    error
+  end
+
+  defp check_iss({:ok, payload}, iss) do
+    check_claim({:ok, payload}, :iss, iss, "issuer")
+  end
+
+  defp check_iss(error, _) do
+    error
+  end
+
+  defp check_sub({:ok, payload}, sub) do
+    check_claim({:ok, payload}, :sub, sub, "subject")
+  end
+
+  defp check_sub(error, _) do
+    error
+  end
+
+  defp check_claim({:ok, payload}, key_to_check, value, full_name) do
+    key_found? = Map.has_key?(payload, key_to_check)
+    cond do
+      value == nil ->
+        {:ok, payload}        
+      key_found? and payload[key_to_check] == value ->
+        {:ok, payload}
+      key_found? and payload[key_to_check] != value ->
+        {:error, "Invalid #{full_name}"}
+      !key_found? ->
+        {:error, "Missing #{full_name}"}
+      true ->
+        {:ok, payload}        
     end
   end
 
