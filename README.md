@@ -5,18 +5,18 @@ Encodes and decodes JSON Web Tokens.
 
 Currently supports the following algorithms:
 
-HS256
-HS384
-HS512
+* HS256
+* HS384
+* HS512
 
 Currently validates the following:
 
-Signature
-Expiration (exp)
-Not Before (nbf)
-Audience (aud)
-Issuer (iss)
-Subject (sub)
+* Signature
+* Expiration (exp)
+* Not Before (nbf)
+* Audience (aud)
+* Issuer (iss)
+* Subject (sub)
 
 ```
     iex(1)> Joken.encode(%{username: "johndoe"}, "secret")
