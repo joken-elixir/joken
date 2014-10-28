@@ -3,6 +3,8 @@ defmodule JokenTest do
 
   @secret "test"
   @payload %{ name: "John Doe" }
+  # generated at jwt.io with header {"typ": "JWT", "alg": "HS256"}, claim {"name": "John Doe"}, secret "test"
+  @unsorted_header_token "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.B3tqUk6UdT8K5AQUGdYFXPj7R7_JznRi5PRrv_N7d1I"
 
   test "unsupported algorithm" do
     {status, mesg} = Joken.encode(@payload, @secret, :Nope)
@@ -31,6 +33,11 @@ defmodule JokenTest do
     assert(token == "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.zi1zohSNwRdHftnWKE16vE3VmbGFtG27LxbYDXAodVlX7T3ATgmJJPjluwf2SPKJND2-O7alOq8NWv6EAnWWyg")
 
     {:ok, decoded_payload} = Joken.decode(token, @secret, %{}) 
+    assert(@payload == decoded_payload) 
+  end
+
+  test "decode token generated with un-sorted keys" do
+    {:ok, decoded_payload} = Joken.decode(@unsorted_header_token, @secret, %{})
     assert(@payload == decoded_payload) 
   end
 
