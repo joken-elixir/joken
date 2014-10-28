@@ -16,7 +16,7 @@ defmodule Joken.Mixfile do
 
   defp deps do
     [
-      {:jazz, "~> 0.2.1"}
+      {:jsx, github: "talentdeficit/jsx", tag: "v2.1.1"}
     ]
   end
 
