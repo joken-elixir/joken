@@ -1,5 +1,5 @@
 defmodule Joken do
-  use Jazz
+  alias :jsx, as: JSON
 
   @supported_algs %{ HS256: :sha256 , HS384: :sha384, HS512: :sha512 }
   @moduledoc """
@@ -40,8 +40,8 @@ defmodule Joken do
       !Map.has_key?(@supported_algs, alg) ->
         {:error, "Unsupported algorithm"}
       true ->
-        headerJSON = JSON.encode!(%{ alg: to_string(alg), "typ": "JWT"})
-        {status, payloadJSON} = Map.merge(payload, claims) |> JSON.encode
+        headerJSON = JSON.encode(%{ alg: to_string(alg), "typ": "JWT"})
+        {status, payloadJSON} = try do {:ok, Map.merge(payload, claims) |> JSON.encode} rescue _ -> {:error, nil} end
 
         case status do
           :error ->
@@ -80,7 +80,11 @@ defmodule Joken do
     |> check_aud(Map.get(claims, :aud, nil))
     |> check_iss(Map.get(claims, :iss, nil))
     |> check_sub(Map.get(claims, :sub, nil))
+    |> to_map
   end
+
+  defp to_map({:ok, keywords}), do: {:ok, keywords |> Enum.into(%{})}
+  defp to_map(error), do: error
 
   defp get_data(jwt) do
     values = String.split(jwt, ".")
@@ -93,7 +97,7 @@ defmodule Joken do
         cond do
           acc < 2 ->
             data = base64url_decode(x)
-            {_ , map} = JSON.decode(data, keys: :atoms)
+            map = JSON.decode(data) |> Enum.map(fn({k, v}) -> {String.to_atom(k), v} end)
             { map , acc + 1}  
           true ->
             {x, acc + 1}                
@@ -113,10 +117,10 @@ defmodule Joken do
     payload = Enum.fetch!(data, 1)
     jwt_signature = Enum.fetch!(data, 2)
 
-    header64 = header |> JSON.encode! |> base64url_encode
-    payload64 = payload |> JSON.encode! |> base64url_encode
+    header64 = header |> JSON.encode |> base64url_encode
+    payload64 = payload |> JSON.encode |> base64url_encode
 
-    alg = header.alg |> String.to_atom
+    alg = header[:alg] |> String.to_atom
 
     signature = :crypto.hmac(@supported_algs[alg], key, "#{header64}.#{payload64}")
 
@@ -153,7 +157,7 @@ defmodule Joken do
   end
 
   defp check_time_claim({:ok, payload}, key, error_msg, validate_time_fun) do
-    key_found? = Map.has_key?(payload, key)
+    key_found? = Keyword.has_key?(payload, key)
     current_time = get_current_time()
     cond do
       key_found? and validate_time_fun.(payload[key], current_time) ->
@@ -195,7 +199,7 @@ defmodule Joken do
   end
 
   defp check_claim({:ok, payload}, key_to_check, value, full_name) do
-    key_found? = Map.has_key?(payload, key_to_check)
+    key_found? = Keyword.has_key?(payload, key_to_check)
     cond do
       value == nil ->
         {:ok, payload}        
