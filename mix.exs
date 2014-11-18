@@ -11,7 +11,7 @@ defmodule Joken.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :crypto]]
+    [applications: [:jsx, :logger, :crypto]]
   end
 
   defp deps do
