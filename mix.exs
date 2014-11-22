@@ -3,7 +3,7 @@ defmodule Joken.Mixfile do
 
   def project do
     [app: :joken,
-     version: "0.6.1",
+     version: "0.6.2",
      elixir: "~> 1.0.0",
      description: description,
      package: package,
@@ -16,7 +16,7 @@ defmodule Joken.Mixfile do
 
   defp deps do
     [
-      {:jsx, github: "talentdeficit/jsx", tag: "v2.1.1"}
+      {:jsx, "~> 2.1.1"}
     ]
   end
 
