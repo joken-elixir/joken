@@ -52,22 +52,22 @@ defmodule JokenTest do
   end
 
   test "expiration (exp)" do
-    {:ok, token} = Joken.encode(@payload, @secret, :HS256, %{ exp: Joken.get_current_time() + 300 })
+    {:ok, token} = Joken.encode(@payload, @secret, :HS256, %{ exp: Timex.Time.now(:secs) + 300 })
     {status, _} = Joken.decode(token, @secret, %{})
     assert(status == :ok) 
 
-    {:ok, token} = Joken.encode(@payload, @secret, :HS256, %{ exp: Joken.get_current_time() - 300 })
+    {:ok, token} = Joken.encode(@payload, @secret, :HS256, %{ exp: Timex.Time.now(:secs) - 300 })
     {status, mesg} = Joken.decode(token, @secret, %{})
     assert(status == :error) 
     assert(mesg == "Token expired") 
   end
 
   test "not before (nbf)" do
-    {:ok, token} = Joken.encode(@payload, @secret, :HS256, %{ nbf: Joken.get_current_time() - 300 })
+    {:ok, token} = Joken.encode(@payload, @secret, :HS256, %{ nbf: Timex.Time.now(:secs) - 300 })
     {status, _} = Joken.decode(token, @secret, %{})
     assert(status == :ok) 
 
-    {:ok, token} = Joken.encode(@payload, @secret, :HS256, %{ nbf: Joken.get_current_time() + 300 })
+    {:ok, token} = Joken.encode(@payload, @secret, :HS256, %{ nbf: Timex.Time.now(:secs) + 300 })
     {status, mesg} = Joken.decode(token, @secret, %{})
     assert(status == :error)
     assert(mesg == "Token not valid yet")  

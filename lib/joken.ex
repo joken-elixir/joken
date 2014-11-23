@@ -158,7 +158,7 @@ defmodule Joken do
 
   defp check_time_claim({:ok, payload}, key, error_msg, validate_time_fun) do
     key_found? = Keyword.has_key?(payload, key)
-    current_time = get_current_time()
+    current_time = Timex.Time.now(:secs)
     cond do
       key_found? and validate_time_fun.(payload[key], current_time) ->
         {:ok, payload}
@@ -167,11 +167,6 @@ defmodule Joken do
       true ->
         {:ok, payload}        
     end
-  end
-
-  def get_current_time() do
-    {mega, secs, _} = :os.timestamp()
-    mega * 1000000 + secs
   end
 
   defp check_aud({:ok, payload}, aud) do
