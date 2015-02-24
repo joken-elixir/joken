@@ -137,4 +137,9 @@ defmodule JokenTest do
     assert(mesg == "Missing issuer")  
   end
 
+  test "malformed token" do
+    {status, _} = Joken.decode("foobar", @secret, %{ sub: "test", iss: "self", aud: "self:me" })
+    assert(status == :error)
+  end
+  
 end
