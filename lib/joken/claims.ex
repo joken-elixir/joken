@@ -25,11 +25,11 @@ defmodule Joken.Claims do
 
   end
 
-  def check_signature({_status, _data}, _key) do
+  def check_signature({_status, _data}, _supported_algs, _key) do
     {:error, "Invalid JSON Web Token"}
   end
 
-  def check_signature(error, _key) do
+  def check_signature(error, _supported_algs, _key) do
     error
   end
 
