@@ -1,11 +1,10 @@
 defmodule Joken.Utils do
-  alias Joken.Json, as: JSON
   @moduledoc false
 
   def to_map({:ok, keywords}), do: {:ok, keywords |> Enum.into(%{})}
   def to_map(error), do: error
 
-  def get_data(jwt) do
+  def get_data(jwt, json_module) do
     values = String.split(jwt, ".")
     split_count = Enum.count(values)
 
@@ -15,7 +14,7 @@ defmodule Joken.Utils do
       decoded_data = Enum.map_reduce(values, 0, fn(x, acc) ->
         if acc < 2 do
             data = base64url_decode(x)
-            map = JSON.decode(data)
+            map = json_module.decode(data)
 
             { map , acc + 1}  
         else
@@ -28,22 +27,16 @@ defmodule Joken.Utils do
   end
 
   def base64url_encode(data) do
-    data
-    |> :base64.encode_to_string
-    |> to_string
-    |> String.replace(~r/[\n\=]/, "")
-    |> String.replace(~r/\+/, "-")
-    |> String.replace(~r/\//, "_")
+    data |> Base.url_encode64 |> String.rstrip(?=)
   end
 
   def base64url_decode(data) do
-    base64_bin = String.replace(data, "-", "+") |> String.replace("_", "/")
-    base64_bin = base64_bin <> case rem(byte_size(base64_bin),4) do
+    info = data <> case rem(byte_size(data),4) do
       2 -> "=="
       3 -> "="
       _ -> ""
     end
 
-    :base64.decode_to_string(base64_bin) |> to_string
+    Base.url_decode64!(info)
   end
 end

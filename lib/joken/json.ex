@@ -1,19 +1,6 @@
 defmodule Joken.Json do
-  alias Poison, as: JSON
-  
-  def encode(map) do
-    JSON.encode!(map)
-  end
+  use Behaviour
 
-  def encode!(map) do
-    JSON.encode!(map)
-  end
-
-  def decode(binary) do
-    JSON.decode!(binary, keys: :atoms!)
-  end
-
-  def decode!(binary) do
-    JSON.decode!(binary, keys: :atoms!)
-  end
+  defcallback encode(Map.t) :: String.t
+  defcallback decode(String.t) :: Map.t
 end

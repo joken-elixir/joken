@@ -1,17 +1,16 @@
 defmodule Joken.Claims do
-  alias Joken.Json, as: JSON
   alias Joken.Utils
   @moduledoc false
 
-  def check_signature({:ok, data}, _supported_algs, _key) when length(data) == 2 do
+  def check_signature({:ok, data}, _supported_algs, _key, _json_module) when length(data) == 2 do
     {:ok, Enum.fetch!(data, 1)}
   end
 
-  def check_signature({:ok, data}, supported_algs, key) when length(data) == 3 do
+  def check_signature({:ok, data}, supported_algs, key, json_module) when length(data) == 3 do
     [ header, payload, jwt_signature ] = data
 
-    header64 = header |> JSON.encode |> Utils.base64url_encode
-    payload64 = payload |> JSON.encode |> Utils.base64url_encode
+    header64 = header |> json_module.encode |> Utils.base64url_encode
+    payload64 = payload |> json_module.encode |> Utils.base64url_encode
 
     alg = header[:alg] |> String.to_atom
 
@@ -25,11 +24,11 @@ defmodule Joken.Claims do
 
   end
 
-  def check_signature({_status, _data}, _supported_algs, _key) do
+  def check_signature({_status, _data}, _supported_algs, _key, _json_module) do
     {:error, "Invalid JSON Web Token"}
   end
 
-  def check_signature(error, _supported_algs, _key) do
+  def check_signature(error, _supported_algs, _key, _json_module) do
     error
   end
 

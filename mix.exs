@@ -11,13 +11,14 @@ defmodule Joken.Mixfile do
   end
 
   def application do
-    [applications: [:poison, :logger, :crypto, :timex]]
+    [applications: [:logger, :crypto, :timex]]
   end
 
   defp deps do
     [
-      {:poison, "~> 1.3"},
-      {:timex, "~> 0.13.1"}
+      {:timex, "~> 0.13.1"},
+      {:poison, "~> 1.3", only: :test},
+      {:jsx, "~> 2.1.1",  only: :test}
     ]
   end
 
