@@ -4,7 +4,7 @@ defmodule Joken.Poison.Test do
 
   @secret "test"
   @payload %{ name: "John Doe" }
-  
+
   # generated at jwt.io with header {"typ": "JWT", "alg": "HS256"}, claim {"name": "John Doe"}, secret "test"
   @unsorted_header_token "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.B3tqUk6UdT8K5AQUGdYFXPj7R7_JznRi5PRrv_N7d1I"
 
@@ -23,6 +23,25 @@ defmodule Joken.Poison.Test do
   end
 
   @config %{secret_key: @secret, algorithm: :HS256, json_module: TestPoison}
+
+  test "creation of Joken passing config name" do
+    {status, joken} = Joken.start_link(:my_otp_app)
+    assert status == :ok
+    assert Joken.config(joken).algorithm == :HS256
+  end
+
+  test "creation of Joken passing config" do
+    {status, joken} = Joken.start_link(@config)
+    assert status == :ok
+    assert Joken.config(joken).algorithm == :HS256
+  end
+
+
+  test "creation of Joken passing all parameters" do
+    {status, joken} = Joken.start_link(@secret, :HS384, TestPoison)
+    assert status == :ok
+    assert Joken.config(joken).algorithm == :HS384
+  end
 
   test "encode and decode with HS256" do
     {:ok, joken} = Joken.start_link(@config)

@@ -7,24 +7,17 @@ defmodule Joken do
   @type status :: :ok | :error
   @supported_algorithms %{ HS256: :sha256 , HS384: :sha384, HS512: :sha512 }
 
-  @spec start_link() :: { status, pid }
-  def start_link() do
-    secret_key =  Application.get_env(:joken, :secret_key)
-    algorithm =   Application.get_env(:joken, :algorithm)
-    json_module = Application.get_env(:joken, :json_module)
+  @spec start_link(atom) :: { status, pid }
+  def start_link(otp_app) when is_atom(otp_app) do
+    secret_key =  Application.get_env(otp_app, :secret_key)
+    algorithm =   Application.get_env(otp_app, :algorithm)
+    json_module = Application.get_env(otp_app, :json_module)
     
     start_link(secret_key, algorithm, json_module)
   end
 
-  @spec start_link(binary, atom, module) :: { status, pid }
-  def start_link(secret_key, algorithm, json_module) do
-    config = %{secret_key: secret_key, algorithm: algorithm, json_module: json_module}
-    
-    start_link(config)
-  end
-
   @spec start_link(map) :: { status, pid }
-  def start_link(config) do
+  def start_link(config) when is_map(config) do
     case Map.has_key?(@supported_algorithms, config.algorithm) do
       true ->
         GenServer.start_link(__MODULE__, config)
@@ -33,6 +26,13 @@ defmodule Joken do
     end
 
     GenServer.start_link(__MODULE__, config)
+  end
+
+  @spec start_link(binary, atom, module) :: { status, pid }
+  def start_link(secret_key, algorithm, json_module) do
+    config = %{secret_key: secret_key, algorithm: algorithm, json_module: json_module}
+
+    start_link(config)
   end
 
   def encode(pid, payload, claims \\ %{}) do
