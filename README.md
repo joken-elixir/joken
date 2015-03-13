@@ -45,5 +45,3 @@ then to encode and decode
 
 {:ok, token} = Joken.decode(joken, jwt)
 ```
-
-status is either `:ok` or `:error`
