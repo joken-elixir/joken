@@ -43,5 +43,5 @@ then to encode and decode
 ```elixir
 {:ok, token} = Joken.encode(joken, %{username: "johndoe"})
 
-{:ok, token} = Joken.decode(joken, jwt)
+{:ok, decoded_payload} = Joken.decode(joken, jwt)
 ```
