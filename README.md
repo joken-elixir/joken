@@ -24,6 +24,21 @@ Usage:
 Looks for a config with `secret_key`, `algorithm`, and `json_module`. Json module being a module that implements the `Joken.Json` Behaviour
 
 ```elixir
+  defmodule My.Json.Module do
+    alias Poison, as: JSON
+    @behaviour Joken.Json
+
+    def encode(map) do
+      JSON.encode!(map)
+    end
+
+    def decode(binary) do
+      JSON.decode!(binary, keys: :atoms!)
+    end
+  end
+```
+
+```elixir
      config :my_otp_app
        secret_key: "test",
        algorithem: :HS256,
