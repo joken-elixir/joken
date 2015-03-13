@@ -1,5 +1,5 @@
 defmodule Joken.Claims do
-  alias :jsx, as: JSON
+  alias Joken.Json, as: JSON
   alias Joken.Utils
   @moduledoc false
 
@@ -50,7 +50,7 @@ defmodule Joken.Claims do
   end
 
   def check_time_claim({:ok, payload}, key, error_msg, validate_time_fun) do
-    key_found? = Keyword.has_key?(payload, key)
+    key_found? = Map.has_key?(payload, key)
     current_time = Timex.Time.now(:secs)
 
     cond do
@@ -88,7 +88,7 @@ defmodule Joken.Claims do
   end
 
   def check_claim({:ok, payload}, key_to_check, value, full_name) do
-    key_found? = Keyword.has_key?(payload, key_to_check)
+    key_found? = Map.has_key?(payload, key_to_check)
 
     cond do
       value == nil ->

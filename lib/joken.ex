@@ -1,5 +1,5 @@
 defmodule Joken do
-  alias :jsx, as: JSON
+  alias Joken.Json, as: JSON
   alias Joken.Utils
   alias Joken.Claims
 
@@ -39,7 +39,7 @@ defmodule Joken do
       !Map.has_key?(@supported_algs, alg) ->
         {:error, "Unsupported algorithm"}
       true ->
-        headerJSON = JSON.encode(%{ alg: to_string(alg), "typ": "JWT"})
+        headerJSON = JSON.encode(%{ alg: to_string(alg), typ: :JWT })
         {status, payloadJSON} = try do {:ok, Map.merge(payload, claims) |> JSON.encode} rescue _ -> {:error, nil} end
 
         case status do

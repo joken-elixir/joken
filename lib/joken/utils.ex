@@ -1,5 +1,5 @@
 defmodule Joken.Utils do
-  alias :jsx, as: JSON
+  alias Joken.Json, as: JSON
   @moduledoc false
 
   def to_map({:ok, keywords}), do: {:ok, keywords |> Enum.into(%{})}
@@ -15,7 +15,8 @@ defmodule Joken.Utils do
       decoded_data = Enum.map_reduce(values, 0, fn(x, acc) ->
         if acc < 2 do
             data = base64url_decode(x)
-            map = JSON.decode(data) |> Enum.map(fn({k, v}) -> {String.to_atom(k), v} end)
+            map = JSON.decode(data)
+
             { map , acc + 1}  
         else
             {x, acc + 1}
