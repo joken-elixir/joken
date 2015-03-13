@@ -27,22 +27,15 @@ defmodule Joken.Utils do
   end
 
   def base64url_encode(data) do
-    data
-    |> :base64.encode_to_string
-    |> to_string
-    |> String.replace(~r/[\n\=]/, "")
-    |> String.replace(~r/\+/, "-")
-    |> String.replace(~r/\//, "_")
+    data |> Base.url_encode64 |> String.rstrip(?=)
   end
 
   def base64url_decode(data) do
-    base64_bin = String.replace(data, "-", "+") |> String.replace("_", "/")
-    base64_bin = base64_bin <> case rem(byte_size(base64_bin),4) do
+    info = data <> case rem(byte_size(data),4) do
       2 -> "=="
       3 -> "="
       _ -> ""
     end
-
-    :base64.decode_to_string(base64_bin) |> to_string
+    Base.url_decode64!(info)
   end
 end
