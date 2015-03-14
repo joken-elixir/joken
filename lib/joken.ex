@@ -15,7 +15,7 @@ defmodule Joken do
 
       Joken.start_link(:my_otp_app)
 
-      #alternatively
+      #or
 
       config = %{secret_key: "test", algorithm: :HS256, json_module: TestJsx}
       Joken.start_link(config)   
