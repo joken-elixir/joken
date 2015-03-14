@@ -3,7 +3,7 @@ defmodule Joken.Mixfile do
 
   def project do
     [app: :joken,
-     version: "0.8.1",
+     version: "0.10.0",
      elixir: "~> 1.0.0",
      description: description,
      package: package,
@@ -11,12 +11,11 @@ defmodule Joken.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :crypto, :timex]]
+    [applications: [:logger, :crypto]]
   end
 
   defp deps do
     [
-      {:timex, "~> 0.13.1"},
       {:poison, "~> 1.3", only: :test},
       {:jsx, "~> 2.1.1",  only: :test}
     ]
@@ -31,7 +30,7 @@ defmodule Joken.Mixfile do
 
   defp package do
     [
-     files: ["lib", "priv", "mix.exs", "README*", "readme*", "LICENSE*", "license*"],
+     files: ["lib", "priv", "mix.exs", "README*", "readme*", "LICENSE*", "license*", "CHANGELOG*"],
      contributors: ["Bryan Joseph"],
      licenses: ["Apache 2.0"],
      links: %{"GitHub" => "https://github.com/bryanjos/joken",

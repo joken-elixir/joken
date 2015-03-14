@@ -1,6 +1,5 @@
 defmodule Joken.Poison.Test do
   use ExUnit.Case
-  alias Joken.Json
 
   @secret "test"
   @payload %{ name: "John Doe" }
@@ -11,7 +10,7 @@ defmodule Joken.Poison.Test do
 
   defmodule TestPoison do
     alias Poison, as: JSON
-    @behaviour Json
+    @behaviour Joken.Codec
 
     def encode(map) do
       JSON.encode!(map)
@@ -35,7 +34,6 @@ defmodule Joken.Poison.Test do
     assert status == :ok
     assert Joken.config(joken).algorithm == :HS256
   end
-
 
   test "creation of Joken passing all parameters" do
     {status, joken} = Joken.start_link(@secret, :HS384, TestPoison)
@@ -89,11 +87,11 @@ defmodule Joken.Poison.Test do
 
   test "expiration (exp)" do
     {:ok, joken} = Joken.start_link(@config)
-    {:ok, token} = Joken.encode(joken, @payload, %{ exp: Timex.Time.now(:secs) + 300 })
+    {:ok, token} = Joken.encode(joken, @payload, %{ exp: Joken.Utils.get_current_time() + 300 })
     {status, _} = Joken.decode(joken, token, %{})
     assert(status == :ok) 
 
-    {:ok, token} = Joken.encode(joken, @payload, %{ exp: Timex.Time.now(:secs) - 300 })
+    {:ok, token} = Joken.encode(joken, @payload, %{ exp: Joken.Utils.get_current_time() - 300 })
     {status, mesg} = Joken.decode(joken, token, %{})
     assert(status == :error) 
     assert(mesg == "Token expired") 
@@ -101,14 +99,88 @@ defmodule Joken.Poison.Test do
 
   test "not before (nbf)" do
     {:ok, joken} = Joken.start_link(@config)
-    {:ok, token} = Joken.encode(joken, @payload, %{ nbf: Timex.Time.now(:secs) - 300 })
+    {:ok, token} = Joken.encode(joken, @payload, %{ nbf: Joken.Utils.get_current_time() - 300 })
     {status, _} = Joken.decode(joken, token, %{})
     assert(status == :ok) 
 
-    {:ok, token} = Joken.encode(joken, @payload, %{ nbf: Timex.Time.now(:secs) + 300 })
+    {:ok, token} = Joken.encode(joken, @payload, %{ nbf: Joken.Utils.get_current_time() + 300 })
     {status, mesg} = Joken.decode(joken, token, %{})
     assert(status == :error) 
     assert(mesg == "Token not valid yet") 
   end
+
+  test "audience (aud)" do
+    {:ok, joken} = Joken.start_link(@config)
+    {:ok, token} = Joken.encode(joken, @payload, %{ aud: "self" })
+    {status, _} = Joken.decode(joken, token, %{aud: "self"})
+    assert(status == :ok) 
+
+    {:ok, token} = Joken.encode(joken, @payload, %{ aud: "not:self" })
+    {status, mesg} = Joken.decode(joken, token, %{ aud: "self" })
+    assert(status == :error)
+    assert(mesg == "Invalid audience") 
+
+    {:ok, token} = Joken.encode(joken, @payload)
+    {status, mesg} = Joken.decode(joken, token, %{ aud: "self" })
+    assert(status == :error)
+    assert(mesg == "Missing audience")  
+  end
+
+  test "issuer (iss)" do
+    {:ok, joken} = Joken.start_link(@config)
+    {:ok, token} = Joken.encode(joken, @payload, %{ iss: "self" })
+    {status, _} = Joken.decode(joken, token, %{iss: "self"})
+    assert(status == :ok) 
+
+    {:ok, token} = Joken.encode(joken, @payload, %{ iss: "not:self" })
+    {status, mesg} = Joken.decode(joken, token, %{ iss: "self" })
+    assert(status == :error)
+    assert(mesg == "Invalid issuer") 
+
+    {:ok, token} = Joken.encode(joken, @payload)
+    {status, mesg} = Joken.decode(joken, token, %{ iss: "self" })
+    assert(status == :error)
+    assert(mesg == "Missing issuer")  
+  end
+
+  test "subject (sub)" do
+    {:ok, joken} = Joken.start_link(@config)
+    {:ok, token} = Joken.encode(joken, @payload, %{ sub: "self" })
+    {status, _} = Joken.decode(joken, token, %{sub: "self"})
+    assert(status == :ok) 
+
+    {:ok, token} = Joken.encode(joken, @payload, %{ sub: "not:self" })
+    {status, mesg} = Joken.decode(joken, token, %{ sub: "self" })
+    assert(status == :error)
+    assert(mesg == "Invalid subject") 
+
+    {:ok, token} = Joken.encode(joken, @payload)
+    {status, mesg} = Joken.decode(joken, token, %{ sub: "self" })
+    assert(status == :error)
+    assert(mesg == "Missing subject")  
+  end
+
+  test "check mulitple claims" do
+    {:ok, joken} = Joken.start_link(@config)
+    {:ok, token} = Joken.encode(joken, @payload, %{ sub: "test", iss: "self", aud: "self:me" })
+    {status, _} = Joken.decode(joken, token, %{ sub: "test", iss: "self", aud: "self:me" })
+    assert(status == :ok) 
+
+    {:ok, token} = Joken.encode(joken, @payload, %{ sub: "test", iss: "not:self", aud: "self:me" })
+    {status, mesg} = Joken.decode(joken, token, %{ sub: "test", iss: "self", aud: "self:me" })
+    assert(status == :error)
+    assert(mesg == "Invalid issuer") 
+
+    {:ok, token} = Joken.encode(joken, @payload, %{ sub: "test", aud: "self:me" })
+    {status, mesg} = Joken.decode(joken, token, %{ sub: "test", iss: "self", aud: "self:me" })
+    assert(status == :error)
+    assert(mesg == "Missing issuer")  
+  end
+
+  test "malformed token" do
+    {:ok, joken} = Joken.start_link(@config)
+    {status, _} = Joken.decode(joken, "foobar", %{ sub: "test", iss: "self", aud: "self:me" })
+    assert(status == :error)
+  end 
   
 end

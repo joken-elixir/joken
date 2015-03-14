@@ -2,11 +2,11 @@ defmodule Joken.Claims do
   alias Joken.Utils
   @moduledoc false
 
-  def check_signature({:ok, data}, _supported_algs, _key, _json_module) when length(data) == 2 do
+  def check_signature({:ok, data},  _key, _json_module) when length(data) == 2 do
     {:ok, Enum.fetch!(data, 1)}
   end
 
-  def check_signature({:ok, data}, supported_algs, key, json_module) when length(data) == 3 do
+  def check_signature({:ok, data}, key, json_module) when length(data) == 3 do
     [ header, payload, jwt_signature ] = data
 
     header64 = header |> json_module.encode |> Utils.base64url_encode
@@ -14,7 +14,7 @@ defmodule Joken.Claims do
 
     alg = header[:alg] |> String.to_atom
 
-    signature = :crypto.hmac(supported_algs[alg], key, "#{header64}.#{payload64}")
+    signature = :crypto.hmac(Utils.supported_algorithms[alg], key, "#{header64}.#{payload64}")
 
     if Utils.base64url_encode(signature) == jwt_signature do
         {:ok, payload}
@@ -24,11 +24,11 @@ defmodule Joken.Claims do
 
   end
 
-  def check_signature({_status, _data}, _supported_algs, _key, _json_module) do
+  def check_signature({_status, _data}, _key, _json_module) do
     {:error, "Invalid JSON Web Token"}
   end
 
-  def check_signature(error, _supported_algs, _key, _json_module) do
+  def check_signature(error, _key, _json_module) do
     error
   end
 
@@ -49,8 +49,14 @@ defmodule Joken.Claims do
   end
 
   def check_time_claim({:ok, payload}, key, error_msg, validate_time_fun) do
-    key_found? = Map.has_key?(payload, key)
-    current_time = Timex.Time.now(:secs)
+    key_found? = case payload do
+      p when is_map(p) ->
+        Map.has_key?(payload, key)
+      _ ->
+        Keyword.has_key?(payload, key)
+    end
+
+    current_time = Utils.get_current_time()
 
     cond do
       key_found? and validate_time_fun.(payload[key], current_time) ->
@@ -87,7 +93,12 @@ defmodule Joken.Claims do
   end
 
   def check_claim({:ok, payload}, key_to_check, value, full_name) do
-    key_found? = Map.has_key?(payload, key_to_check)
+    key_found? = case payload do
+      p when is_map(p) ->
+        Map.has_key?(payload, key_to_check)
+      _ ->
+        Keyword.has_key?(payload, key_to_check)
+    end
 
     cond do
       value == nil ->
