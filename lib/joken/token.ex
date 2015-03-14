@@ -2,6 +2,12 @@ defmodule Joken.Token do
   alias Joken.Claims
   alias Joken.Utils
 
+  @moduledoc """
+  Module that handles encoding and decoding of tokens. For most cases, it's recommended to use the Joken module, but
+  if you need to use this module directly, you can.
+  """
+
+  @spec encode(String.t, Joken.algorithm, module, Joken.payload, Joken.payload) :: {Joken.status, binary}
   def encode(secret_key, algorithm, json_module, payload, claims) do
     headerJSON = json_module.encode(%{ alg: to_string(algorithm), typ: :JWT })
 
@@ -36,6 +42,7 @@ defmodule Joken.Token do
     end
   end
 
+  @spec decode(String.t, module, String.t, Joken.payload) :: {Joken.status, map | String.t}
   def decode(secret_key, json_module, token, claims) do
     token
     |> get_data(json_module)
