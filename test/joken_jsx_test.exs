@@ -7,22 +7,9 @@ defmodule Joken.Jsx.Test do
   # generated at jwt.io with header {"typ": "JWT", "alg": "HS256"}, claim {"name": "John Doe"}, secret "test"
   @unsorted_header_token "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.B3tqUk6UdT8K5AQUGdYFXPj7R7_JznRi5PRrv_N7d1I"
 
+  @json_module Joken.TestJsx
 
-  defmodule TestJsx do
-    alias :jsx, as: JSON
-    @behaviour Joken.Codec
-
-    def encode(map) do
-      JSON.encode(map)
-    end
-
-    def decode(binary) do
-      JSON.decode(binary)
-      |> Enum.map(fn({key, value})-> {String.to_atom(key), value} end)
-    end
-  end
-
-  @config %{secret_key: @secret, algorithm: :HS256, json_module: TestJsx}
+  @config %{secret_key: @secret, algorithm: :HS256, json_module: @json_module}
 
   test "encode and decode with HS256" do
     {:ok, joken} = Joken.start_link(@config)
@@ -34,7 +21,7 @@ defmodule Joken.Jsx.Test do
   end
 
   test "encode and decode with HS384" do
-    {:ok, joken} = Joken.start_link(@secret, :HS384, TestJsx)
+    {:ok, joken} = Joken.start_link(@secret, :HS384, @json_module)
     {:ok, token} = Joken.encode(joken, @payload)
     assert(token == "eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.YOH6U5Ggk5_o5B7Dg3pacaKcPkrbFEX-30-trLV6C6wjTHJ_975PXLSEzebOSP8k")
 
@@ -43,7 +30,7 @@ defmodule Joken.Jsx.Test do
   end
 
   test "encode and decode with HS512" do
-    {:ok, joken} = Joken.start_link(@secret, :HS512, TestJsx)
+    {:ok, joken} = Joken.start_link(@secret, :HS512, @json_module)
     {:ok, token} = Joken.encode(joken, @payload)
     assert(token == "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.zi1zohSNwRdHftnWKE16vE3VmbGFtG27LxbYDXAodVlX7T3ATgmJJPjluwf2SPKJND2-O7alOq8NWv6EAnWWyg")
 
@@ -52,7 +39,7 @@ defmodule Joken.Jsx.Test do
   end
 
   test "decode token generated with un-sorted keys" do
-    {:ok, joken} = Joken.start_link(@secret, :HS512, TestJsx)
+    {:ok, joken} = Joken.start_link(@secret, :HS512, @json_module)
     {:ok, decoded_payload} = Joken.decode(joken, @unsorted_header_token)
     assert(@payload == decoded_payload) 
   end

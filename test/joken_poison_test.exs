@@ -7,39 +7,9 @@ defmodule Joken.Poison.Test do
   # generated at jwt.io with header {"typ": "JWT", "alg": "HS256"}, claim {"name": "John Doe"}, secret "test"
   @unsorted_header_token "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.B3tqUk6UdT8K5AQUGdYFXPj7R7_JznRi5PRrv_N7d1I"
 
+  @json_module Joken.TestPoison
 
-  defmodule TestPoison do
-    alias Poison, as: JSON
-    @behaviour Joken.Codec
-
-    def encode(map) do
-      JSON.encode!(map)
-    end
-
-    def decode(binary) do
-      JSON.decode!(binary, keys: :atoms!)
-    end
-  end
-
-  @config %{secret_key: @secret, algorithm: :HS256, json_module: TestPoison}
-
-  test "creation of Joken passing config name" do
-    {status, joken} = Joken.start_link(:my_otp_app)
-    assert status == :ok
-    assert Joken.config(joken).algorithm == :HS256
-  end
-
-  test "creation of Joken passing config" do
-    {status, joken} = Joken.start_link(@config)
-    assert status == :ok
-    assert Joken.config(joken).algorithm == :HS256
-  end
-
-  test "creation of Joken passing all parameters" do
-    {status, joken} = Joken.start_link(@secret, :HS384, TestPoison)
-    assert status == :ok
-    assert Joken.config(joken).algorithm == :HS384
-  end
+  @config %{secret_key: @secret, algorithm: :HS256, json_module: @json_module}
 
   test "encode and decode with HS256" do
     {:ok, joken} = Joken.start_link(@config)
@@ -51,7 +21,7 @@ defmodule Joken.Poison.Test do
   end
 
   test "encode and decode with HS384" do
-    {:ok, joken} = Joken.start_link(@secret, :HS384, TestPoison)
+    {:ok, joken} = Joken.start_link(@secret, :HS384, @json_module)
     {:ok, token} = Joken.encode(joken, @payload)
     assert(token == "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzM4NCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.zDrtMUaPYXpFdESkmnjzMgDZsHC6LObDfrEdryAzZ981r77Td2BZ61rx09tsJFvP")
 
@@ -60,7 +30,7 @@ defmodule Joken.Poison.Test do
   end
 
   test "encode and decode with HS512" do
-    {:ok, joken} = Joken.start_link(@secret, :HS512, TestPoison)
+    {:ok, joken} = Joken.start_link(@secret, :HS512, @json_module)
     {:ok, token} = Joken.encode(joken, @payload)
     assert(token == "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.olXW3I_OpLs9bfthg49kVIgUFHTjLCoCEGthWICMd2DZyGyIn0eAcjF3KuMA29Yb6W9kyAYf1dKn7sPwEajcmA")
 
@@ -69,7 +39,7 @@ defmodule Joken.Poison.Test do
   end
 
   test "decode token generated with un-sorted keys" do
-    {:ok, joken} = Joken.start_link(@secret, :HS512, TestPoison)
+    {:ok, joken} = Joken.start_link(@secret, :HS512, @json_module)
     {:ok, decoded_payload} = Joken.decode(joken, @unsorted_header_token)
     assert(@payload == decoded_payload) 
   end
