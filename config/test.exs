@@ -4,5 +4,9 @@ use Mix.Config
 
 config :my_otp_app,
  secret_key: "test",
- algorithm: :HS256,
+ algorithm: :HS384,
+ json_module: TestPoison
+
+config :my_other_otp_app,
+ secret_key: "test",
  json_module: TestPoison

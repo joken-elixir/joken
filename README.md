@@ -41,8 +41,8 @@ Looks for a config with `secret_key`, `algorithm`, and `json_module`. Json modul
 ```elixir
      config :my_otp_app
        secret_key: "test",
-       algorithem: :HS256,
-       json_module: My.Json.Module
+       json_module: My.Json.Module,
+       algorithem: :HS256, #Optional. defaults to :HS256
 
 {:ok, joken} = Joken.start_link(:my_otp_app)
 ```
@@ -50,7 +50,7 @@ Looks for a config with `secret_key`, `algorithm`, and `json_module`. Json modul
 alternatively, you can pass in the variables as well
 
 ```elixir
-{:ok, joken} = Joken.start_link("test", :HS256, My.Json.Module) 
+{:ok, joken} = Joken.start_link("test", My.Json.Module) 
 ```
 
 then to encode and decode

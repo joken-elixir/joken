@@ -10,21 +10,33 @@ defmodule Joken.Test do
   @json_module Joken.TestPoison
 
   test "creation of Joken passing config name" do
-    {status, joken} = Joken.start_link(:my_otp_app)
-    assert status == :ok
+    {:ok, joken} = Joken.start_link(:my_otp_app)
+    assert Joken.config(joken).algorithm == :HS384
+  end
+
+  test "creation of Joken passing config name without algorithm" do
+    {:ok, joken} = Joken.start_link(:my_other_otp_app)
     assert Joken.config(joken).algorithm == :HS256
   end
 
   test "creation of Joken passing config" do
-    {status, joken} = Joken.start_link(%{secret_key: @secret, algorithm: :HS256, json_module: @json_module})
-    assert status == :ok
+    {:ok, joken} = Joken.start_link(%{secret_key: @secret, algorithm: :HS256, json_module: @json_module})
     assert Joken.config(joken).algorithm == :HS256
   end
 
   test "creation of Joken passing all parameters" do
-    {status, joken} = Joken.start_link(@secret, :HS384, @json_module)
-    assert status == :ok
+    {:ok, joken} = Joken.start_link(@secret, @json_module, :HS384)
     assert Joken.config(joken).algorithm == :HS384
+  end
+
+  test "Using default algorithm" do
+    {:ok, joken} = Joken.start_link(@secret, @json_module)
+    assert Joken.config(joken).algorithm == :HS256
+  end
+
+  test "Passing in invalid algorithm" do
+    {:error, message} = Joken.start_link(@secret, @json_module, :HS1024)
+    assert message == "Unsupported algorithm"
   end
   
 end

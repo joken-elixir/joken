@@ -7,23 +7,28 @@ defmodule Joken.Token do
   if you need to use this module directly, you can.
   """
 
-  @spec encode(String.t, Joken.algorithm, module, Joken.payload, Joken.payload) :: {Joken.status, binary}
-  def encode(secret_key, algorithm, json_module, payload, claims) do
+  @spec encode(String.t, module, Joken.payload, Joken.algorithm, Joken.payload) :: {Joken.status, binary}
+  def encode(secret_key, json_module, payload, algorithm \\ :HS256, claims \\ %{}) do
     headerJSON = json_module.encode(%{ alg: to_string(algorithm), typ: :JWT })
 
     {status, payloadJSON} = get_payload_json(payload, claims, json_module)
 
-    case status do
-      :error ->
-        {:error, "Error encoding to JSON"}
-      :ok ->
-        header64 = Utils.base64url_encode(headerJSON)
-        payload64 = Utils.base64url_encode(payloadJSON)
+    case Map.has_key?(Utils.supported_algorithms, algorithm) do
+      false ->
+        {:error, "Unsupported algorithm"} 
+      _ ->
+        case status do
+          :error ->
+            {:error, "Error encoding to JSON"}
+          :ok ->
+            header64 = Utils.base64url_encode(headerJSON)
+            payload64 = Utils.base64url_encode(payloadJSON)
 
-        signature = :crypto.hmac(Utils.supported_algorithms[algorithm], secret_key, "#{header64}.#{payload64}")
-        signature64 = Utils.base64url_encode(signature)
+            signature = :crypto.hmac(Utils.supported_algorithms[algorithm], secret_key, "#{header64}.#{payload64}")
+            signature64 = Utils.base64url_encode(signature)
 
-        {:ok, "#{header64}.#{payload64}.#{signature64}"}
+            {:ok, "#{header64}.#{payload64}.#{signature64}"}
+        end              
     end
   end
 
@@ -43,7 +48,7 @@ defmodule Joken.Token do
   end
 
   @spec decode(String.t, module, String.t, Joken.payload) :: {Joken.status, map | String.t}
-  def decode(secret_key, json_module, token, claims) do
+  def decode(secret_key, json_module, token, claims \\ %{}) do
     token
     |> get_data(json_module)
     |> Claims.check_signature(secret_key, json_module)
