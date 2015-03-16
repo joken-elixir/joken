@@ -1,29 +1,8 @@
 defmodule Joken.Utils do
-  alias :jsx, as: JSON
   @moduledoc false
 
-  def to_map({:ok, keywords}), do: {:ok, keywords |> Enum.into(%{})}
-  def to_map(error), do: error
-
-  def get_data(jwt) do
-    values = String.split(jwt, ".")
-    split_count = Enum.count(values)
-
-    if split_count < 2 or split_count > 3 do
-      {:error, "Invalid JSON Web Token"}
-    else
-      decoded_data = Enum.map_reduce(values, 0, fn(x, acc) ->
-        if acc < 2 do
-            data = base64url_decode(x)
-            map = JSON.decode(data) |> Enum.map(fn({k, v}) -> {String.to_atom(k), v} end)
-            { map , acc + 1}  
-        else
-            {x, acc + 1}
-        end                  
-      end)
-      {decoded, _} = decoded_data
-      {:ok, decoded}
-    end
+  def supported_algorithms() do
+    %{ HS256: :sha256 , HS384: :sha384, HS512: :sha512 }
   end
 
   def base64url_encode(data) do
@@ -36,6 +15,13 @@ defmodule Joken.Utils do
       3 -> "="
       _ -> ""
     end
+
     Base.url_decode64!(info)
   end
+
+  def get_current_time() do
+    {mega, secs, _} = :os.timestamp()
+    mega * 1000000 + secs
+  end
+
 end

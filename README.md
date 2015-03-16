@@ -18,15 +18,45 @@ Currently validates the following:
 * Issuer (iss)
 * Subject (sub)
 
-```
-    iex(1)> Joken.encode(%{username: "johndoe"}, "secret")
-    {:ok,
-     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImpvaG5kb2UifQ.OFY_3SbHl2YaM7Y4Lj24eVMtcDaGEZU7KRzYCV4cqog"}
-    iex(2)> Joken.decode("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImpvaG5kb2UifQ.OFY_3SbHl2YaM7Y4Lj24eVMtcDaGEZU7KRzYCV4cqog", "secret")
-    {:ok, %{username: "johndoe"}}
 
-    iex(3)> Joken.encode(%{username: "johndoe"}, "secret", :HS384, %{ iss: "self"})                                                                                                                  {:ok,
-     "eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZWxmIiwidXNlcm5hbWUiOiJqb2huZG9lIn0.wG_LAQ7Z3uRl7B0TEuxvfHdqikU3boPorm5ldS6dutJ9r076i-LRCuascaxoNDw1"}
-    iex(4)> Joken.decode("eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZWxmIiwidXNlcm5hbWUiOiJqb2huZG9lIn0.wG_LAQ7Z3uRl7B0TEuxvfHdqikU3boPorm5ldS6dutJ9r076i-LRCuascaxoNDw1", "secret", %{ iss: "not:self"})
-    {:error, "Invalid issuer"}
+Usage:
+
+Looks for a config with `secret_key`, `algorithm`, and `json_module`. Json module being a module that implements the `Joken.Codec` Behaviour
+
+```elixir
+  defmodule My.Json.Module do
+    alias Poison, as: JSON
+    @behaviour Joken.Json
+
+    def encode(map) do
+      JSON.encode!(map)
+    end
+
+    def decode(binary) do
+      JSON.decode!(binary, keys: :atoms!)
+    end
+  end
+```
+
+```elixir
+     config :my_otp_app
+       secret_key: "test",
+       json_module: My.Json.Module,
+       algorithem: :HS256, #Optional. defaults to :HS256
+
+{:ok, joken} = Joken.start_link(:my_otp_app)
+```
+
+alternatively, you can pass in the variables as well
+
+```elixir
+{:ok, joken} = Joken.start_link("test", My.Json.Module) 
+```
+
+then to encode and decode
+
+```elixir
+{:ok, token} = Joken.encode(joken, %{username: "johndoe"})
+
+{:ok, decoded_payload} = Joken.decode(joken, jwt)
 ```
