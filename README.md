@@ -42,7 +42,7 @@ Looks for a config with `secret_key`, `algorithm`, and `json_module`. Json modul
      config :my_otp_app
        secret_key: "test",
        json_module: My.Json.Module,
-       algorithem: :HS256, #Optional. defaults to :HS256
+       algorithm: :HS256, #Optional. defaults to :HS256
 
 {:ok, joken} = Joken.start_link(:my_otp_app)
 ```
