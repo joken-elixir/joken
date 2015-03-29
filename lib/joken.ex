@@ -1,5 +1,4 @@
 defmodule Joken do
-  use GenServer
   alias Joken.Token
   alias Joken.Utils
 
@@ -37,7 +36,7 @@ defmodule Joken do
 
     case Map.has_key?(Utils.supported_algorithms, config.algorithm) do
       true ->
-        GenServer.start_link(__MODULE__, config)
+        Agent.start_link(fn -> config end)
       _ ->
         {:error, "Unsupported algorithm"}       
     end
@@ -81,22 +80,16 @@ defmodule Joken do
   @spec decode(pid, String.t, payload) :: { status, map | String.t }
   def decode(pid, jwt, claims \\ %{}) do
     config = config(pid)
-    Token.decode(config.secret_key, config.json_module, jwt, claims)
+    secret_key = config.secret_key
+    json_module = config.json_module
+
+    Token.decode(secret_key, json_module, jwt, claims)
   end
 
   @doc false
   @spec config(pid) :: map
   def config(pid) do
-    GenServer.call(pid, :get_configuration)
-  end
-
-  def init(config) do
-    {:ok, config}
-  end
-
-  @doc false
-  def handle_call(:get_configuration, _from, config) do
-    {:reply, config, config}
+    Agent.get(pid, fn state -> state end)
   end
   
 end

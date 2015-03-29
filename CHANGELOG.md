@@ -1,3 +1,10 @@
+# v0.10.1
+
+* Enhancements
+  * Fixed documentation typos
+  * Joken now uses an Agent instead of implementing GenServer
+
+
 # v0.10.0
 
 * Enhancements
