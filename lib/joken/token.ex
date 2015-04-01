@@ -47,11 +47,11 @@ defmodule Joken.Token do
     end
   end
 
-  @spec decode(String.t, module, String.t, Joken.payload) :: {Joken.status, map | String.t}
-  def decode(secret_key, json_module, token, claims \\ %{}) do
+  @spec decode(String.t, module, String.t, Joken.algorithm, Joken.payload) :: {Joken.status, map | String.t}
+  def decode(secret_key, json_module, token, algorithm \\ :HS256, claims \\ %{}) do
     token
     |> get_data(json_module)
-    |> Claims.check_signature(secret_key, json_module)
+    |> Claims.check_signature(secret_key, json_module, algorithm)
     |> Claims.check_exp
     |> Claims.check_nbf
     |> Claims.check_aud(Map.get(claims, :aud, nil))
