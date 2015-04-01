@@ -26,7 +26,7 @@ defmodule Joken.Token.Test do
     {:ok, token} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS384)
     assert(token == "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzM4NCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.zDrtMUaPYXpFdESkmnjzMgDZsHC6LObDfrEdryAzZ981r77Td2BZ61rx09tsJFvP")
 
-    {:ok, decoded_payload} = Joken.Token.decode(@secret, @poison_json_module, token) 
+    {:ok, decoded_payload} = Joken.Token.decode(@secret, @poison_json_module, token, :HS384) 
     assert(@payload == decoded_payload) 
   end
 
@@ -34,12 +34,12 @@ defmodule Joken.Token.Test do
     {:ok, token} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS512)
     assert(token == "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.olXW3I_OpLs9bfthg49kVIgUFHTjLCoCEGthWICMd2DZyGyIn0eAcjF3KuMA29Yb6W9kyAYf1dKn7sPwEajcmA")
 
-    {:ok, decoded_payload} = Joken.Token.decode(@secret, @poison_json_module, token) 
+    {:ok, decoded_payload} = Joken.Token.decode(@secret, @poison_json_module, token, :HS512) 
     assert(@payload == decoded_payload) 
   end
 
   test "decode token generated with un-sorted keys (Poison)" do
-    {:ok, _} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS512)
+    {:ok, _} = Joken.Token.encode(@secret, @poison_json_module, @payload)
     {:ok, decoded_payload} = Joken.Token.decode(@secret, @poison_json_module, @unsorted_header_token) 
     assert(@payload == decoded_payload) 
   end
@@ -56,11 +56,11 @@ defmodule Joken.Token.Test do
 
   test "expiration (exp)" do
     {:ok, token} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS256, %{ exp: Joken.Utils.get_current_time() + 300 })
-    {status, _} = Joken.Token.decode(@secret, @poison_json_module, token)
+    {status, _} = Joken.Token.decode(@secret, @poison_json_module, token, :HS256)
     assert(status == :ok) 
 
     {:ok, token} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS256, %{ exp: Joken.Utils.get_current_time() - 300 })
-    {status, mesg} = Joken.Token.decode(@secret, @poison_json_module, token)
+    {status, mesg} = Joken.Token.decode(@secret, @poison_json_module, token, :HS256)
     assert(status == :error) 
     assert(mesg == "Token expired") 
   end
@@ -82,7 +82,7 @@ defmodule Joken.Token.Test do
     {:ok, token} = Joken.Token.encode(@secret, @jsx_json_module, @payload, :HS384)
     assert(token == "eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.YOH6U5Ggk5_o5B7Dg3pacaKcPkrbFEX-30-trLV6C6wjTHJ_975PXLSEzebOSP8k")
 
-    {:ok, decoded_payload} = Joken.Token.decode(@secret, @jsx_json_module, token) 
+    {:ok, decoded_payload} = Joken.Token.decode(@secret, @jsx_json_module, token, :HS384) 
     assert(@payload == decoded_payload) 
   end
 
@@ -90,12 +90,12 @@ defmodule Joken.Token.Test do
     {:ok, token} = Joken.Token.encode(@secret, @jsx_json_module, @payload, :HS512)
     assert(token == "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.zi1zohSNwRdHftnWKE16vE3VmbGFtG27LxbYDXAodVlX7T3ATgmJJPjluwf2SPKJND2-O7alOq8NWv6EAnWWyg")
 
-    {:ok, decoded_payload} = Joken.Token.decode(@secret, @jsx_json_module, token) 
+    {:ok, decoded_payload} = Joken.Token.decode(@secret, @jsx_json_module, token, :HS512) 
     assert(@payload == decoded_payload) 
   end
 
   test "decode token generated with un-sorted keys (JSX)" do
-    {:ok, _} = Joken.Token.encode(@secret, @jsx_json_module, @payload, :HS512)
+    {:ok, _} = Joken.Token.encode(@secret, @jsx_json_module, @payload)
     {:ok, decoded_payload} = Joken.Token.decode(@secret, @jsx_json_module, @unsorted_header_token) 
     assert(@payload == decoded_payload) 
   end

@@ -31,8 +31,9 @@ defmodule Joken do
   def decode(jwt, claims \\ %{}) do
     secret_key =  Application.get_env(:joken, :secret_key)
     json_module = Application.get_env(:joken, :json_module)
+    algorithm =   Application.get_env(:joken, :algorithm, :HS256)
 
-    Token.decode(secret_key, json_module, jwt, claims)
+    Token.decode(secret_key, json_module, jwt, algorithm, claims)
   end
   
 end

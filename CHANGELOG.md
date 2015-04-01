@@ -2,6 +2,8 @@
 
 * Enhancements
   * `Joken` module now looks more like old API from 0.8 with the exception that it reads configuration from a :joken config block.
+  * For security reasons, now using the configured algorithm for checking signature instead of the one specified in the header.
+  * Added algorithm paramter to `Joken.Token.decode` to be used when verifying signatures
 
 # v0.10.1
 
