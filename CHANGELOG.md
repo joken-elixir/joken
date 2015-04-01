@@ -1,3 +1,8 @@
+# v0.11.0
+
+* Enhancements
+  * `Joken` module now looks more like old API from 0.8 with the exception that it reads configuration from a :joken config block.
+
 # v0.10.1
 
 * Enhancements
