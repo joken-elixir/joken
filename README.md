@@ -21,7 +21,7 @@ Currently validates the following:
 
 Usage:
 
-Looks for a config with `secret_key`, `algorithm`, and `json_module`. Json module being a module that implements the `Joken.Codec` Behaviour
+Looks for a joken config with `secret_key`, `algorithm`, and `json_module`. Json module being a module that implements the `Joken.Codec` Behaviour
 
 ```elixir
   defmodule My.Json.Module do
