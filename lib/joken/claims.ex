@@ -12,7 +12,7 @@ defmodule Joken.Claims do
     header64 = header |> json_module.encode |> Utils.base64url_encode
     payload64 = payload |> json_module.encode |> Utils.base64url_encode
 
-    signature = :crypto.hmac(Utils.supported_algorithms[algorithm], key, "#{header64}.#{payload64}")
+    signature = :crypto.hmac(Utils.get_algorithm(algorithm), key, "#{header64}.#{payload64}")
 
     if Utils.base64url_encode(signature) == jwt_signature do
         {:ok, payload}

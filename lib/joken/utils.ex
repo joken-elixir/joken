@@ -1,8 +1,16 @@
 defmodule Joken.Utils do
   @moduledoc false
 
-  def supported_algorithms() do
-    %{ HS256: :sha256 , HS384: :sha384, HS512: :sha512 }
+  def get_algorithm(_algorithm) when _algorithm == :HS384 do
+    :sha384
+  end
+
+  def get_algorithm(_algorithm) when _algorithm == :HS512 do
+    :sha512
+  end
+
+  def get_algorithm(_algorithm) do
+    :sha256
   end
 
   def base64url_encode(data) do
