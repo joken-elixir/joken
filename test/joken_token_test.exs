@@ -11,6 +11,15 @@ defmodule Joken.Token.Test do
   # generated at jwt.io with header {"typ": "JWT", "alg": "HS256"}, claim {"name": "John Doe"}, secret "test"
   @unsorted_header_token "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.B3tqUk6UdT8K5AQUGdYFXPj7R7_JznRi5PRrv_N7d1I"
 
+  @unsorted_payload %{
+    iss: "https://example.com/",
+    sub: "example|123456",
+    aud: "abc123",
+    iat: 1428371188
+  }
+  # generated at jwt.io with header {"typ": "JWT", "alg": "HS256"}, claim @unsorted_payload, secret "test"
+  @unsorted_payload_token "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tLyIsInN1YiI6ImV4YW1wbGV8MTIzNDU2IiwiYXVkIjoiYWJjMTIzIiwiaWF0IjoxNDI4MzcxMTg4fQ.w9Elb3Ogomd1hm0bAvjbrOPIDhZhgOxckG_ztDJVhJs"
+
   @poison_json_module Joken.TestPoison
   @jsx_json_module Joken.TestJsx
 
@@ -52,6 +61,10 @@ defmodule Joken.Token.Test do
     new_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.3fazvmF342WiHp5uhY-wkWArn-YJxq1IO7Msrtfk-OD"
     {:error, mesg} = Joken.Token.decode(@secret, @poison_json_module, new_token) 
     assert(mesg == "Invalid signature") 
+  end
+
+  test "signature validation unsorted payload (Poison)" do
+    assert {:ok, mesg} = Joken.Token.decode(@secret, @poison_json_module, @unsorted_payload_token)
   end
 
   test "expiration (exp)" do
