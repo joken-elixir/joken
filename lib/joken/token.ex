@@ -51,7 +51,7 @@ defmodule Joken.Token do
   def decode(secret_key, json_module, token, algorithm \\ :HS256, claims \\ %{}) do
     token
     |> get_data(json_module)
-    |> Claims.check_signature(secret_key, json_module, algorithm, token)
+    |> Claims.check_signature(secret_key, algorithm, token)
     |> Claims.check_exp
     |> Claims.check_nbf
     |> Claims.check_aud(Map.get(claims, :aud, nil))

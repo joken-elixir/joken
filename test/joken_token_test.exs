@@ -64,7 +64,7 @@ defmodule Joken.Token.Test do
   end
 
   test "signature validation unsorted payload (Poison)" do
-    assert {:ok, mesg} = Joken.Token.decode(@secret, @poison_json_module, @unsorted_payload_token)
+    assert {:ok, _} = Joken.Token.decode(@secret, @poison_json_module, @unsorted_payload_token)
   end
 
   test "expiration (exp)" do
