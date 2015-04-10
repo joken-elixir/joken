@@ -1,3 +1,9 @@
+# v0.12.0
+
+* Enhancements
+  * Signature is now verified just from the header and payload strings.
+  * Added `decode_secret_key?` parameter
+
 # v0.11.0
 
 * Enhancements
