@@ -44,6 +44,14 @@ defmodule Joken.Claims do
     error
   end
 
+  def check_iat({:ok, payload}) do
+    check_time_claim({:ok, payload}, :iat, "Token not valid yet", fn(not_before, now) -> not_before < now end)
+  end
+
+  def check_iat(error) do
+    error
+  end
+
   def check_time_claim({:ok, payload}, key, error_msg, validate_time_fun) do
     key_found? = case payload do
       p when is_map(p) ->
