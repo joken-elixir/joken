@@ -1,3 +1,8 @@
+# v0.13.0-dev
+
+* Enhancements
+  * Validating iat claim
+
 # v0.12.0
 
 * Enhancements

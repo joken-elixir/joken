@@ -17,6 +17,7 @@ Currently validates the following:
 * Audience (aud)
 * Issuer (iss)
 * Subject (sub)
+* Issued At (iat)
 
 
 Usage:
