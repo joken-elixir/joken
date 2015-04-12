@@ -1,4 +1,4 @@
-# v0.13.0-dev
+# v0.13.0
 
 * Enhancements
   * Validating iat claim
