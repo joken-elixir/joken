@@ -74,7 +74,7 @@ defmodule Joken.Token do
             {:error, "Invalid signature"}
         end
       _ ->
-        {:error, "Invalid signature"}        
+        {:error, "Invalid JSON Web Token"}        
     end
 
   end
