@@ -2,32 +2,6 @@ defmodule Joken.Claims do
   alias Joken.Utils
   @moduledoc false
 
-  def check_signature({:ok, data},  _key, _algorithm, _token) when length(data) == 2 do
-    {:ok, Enum.fetch!(data, 1)}
-  end
-
-  def check_signature({:ok, data}, key, algorithm, token) when length(data) == 3 do
-    [ _, payload, jwt_signature ] = data
-    [ header64, payload64, _ ] = String.split(token, ".")
-
-    signature = :crypto.hmac(Utils.supported_algorithms[algorithm], key, "#{header64}.#{payload64}")
-
-    if Utils.base64url_encode(signature) == jwt_signature do
-        {:ok, payload}
-    else
-        {:error, "Invalid signature"}
-    end
-
-  end
-
-  def check_signature({_status, _data}, _key, _algorithm, _token) do
-    {:error, "Invalid JSON Web Token"}
-  end
-
-  def check_signature(error, _key, _algorithm, _token) do
-    error
-  end
-
   def check_exp({:ok, payload}) do
     check_time_claim({:ok, payload}, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
   end

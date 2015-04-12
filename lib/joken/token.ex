@@ -50,8 +50,8 @@ defmodule Joken.Token do
   @spec decode(String.t, module, String.t, Joken.algorithm, Joken.payload) :: {Joken.status, map | String.t}
   def decode(secret_key, json_module, token, algorithm \\ :HS256, claims \\ %{}) do
     token
+    |> verify_signature(secret_key, algorithm)
     |> get_data(json_module)
-    |> Claims.check_signature(secret_key, algorithm, token)
     |> Claims.check_exp
     |> Claims.check_nbf
     |> Claims.check_iat
@@ -61,29 +61,36 @@ defmodule Joken.Token do
     |> to_map
   end
 
-  defp get_data(jwt, json_module) do
-    values = String.split(jwt, ".")
-    split_count = Enum.count(values)
+  defp verify_signature(token, key, algorithm) do
+    case String.split(token, ".") do
+      [ _header64, _payload64 ] ->
+        { :ok, token }
+      [ header64, payload64, jwt_signature ] ->
+        signature = :crypto.hmac(Utils.supported_algorithms[algorithm], key, "#{header64}.#{payload64}")
 
-    if split_count < 2 or split_count > 3 do
-      {:error, "Invalid JSON Web Token"}
-    else
-      decoded_data = Enum.map_reduce(values, 0, fn(x, acc) ->
-        if acc < 2 do
-            data = Utils.base64url_decode(x)
-            map = json_module.decode(data)
-
-            { map , acc + 1}  
+        if Utils.base64url_encode(signature) == jwt_signature do
+            { :ok, token }
         else
-            {x, acc + 1}
-        end                  
-      end)
-      {decoded, _} = decoded_data
-      {:ok, decoded}
+            {:error, "Invalid signature"}
+        end
+      _ ->
+        {:error, "Invalid signature"}        
     end
+
   end
 
-  defp to_map({:ok, keywords}), do: {:ok, keywords |> Enum.into(%{})}
+  defp get_data({ :ok, jwt }, json_module) do
+    [_, payload64 | _tail] = String.split(jwt, ".")
+
+    data = Utils.base64url_decode(payload64)
+    {:ok, json_module.decode(data) }
+  end
+
+  defp get_data(error, _json_module) do
+    error
+  end
+
+  defp to_map({ :ok, keywords }), do: {:ok, keywords |> Enum.into(%{})}
   defp to_map(error), do: error
 
 end

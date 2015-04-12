@@ -2,6 +2,7 @@
 
 * Enhancements
   * Validating iat claim
+  * Verifying signature before getting the data
 
 # v0.12.0
 
