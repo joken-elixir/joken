@@ -78,6 +78,14 @@ defmodule Joken.Token.Test do
     assert(mesg == "Token expired") 
   end
 
+  test "valid iat claim" do
+    {:ok, token} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS256, %{ iat: Joken.Utils.get_current_time() - 300 })
+    assert {:ok, _} = Joken.Token.decode(@secret, @poison_json_module, token, :HS256)
+
+    {:ok, token} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS256, %{ iat: Joken.Utils.get_current_time() + 300 })
+    assert {:error, "Token not valid yet"} = Joken.Token.decode(@secret, @poison_json_module, token, :HS256)
+  end
+
   test "error with invalid algorithm" do
     {:error, message} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS1024)
     assert message == "Unsupported algorithm"

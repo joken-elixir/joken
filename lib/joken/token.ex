@@ -54,6 +54,7 @@ defmodule Joken.Token do
     |> Claims.check_signature(secret_key, algorithm, token)
     |> Claims.check_exp
     |> Claims.check_nbf
+    |> Claims.check_iat
     |> Claims.check_aud(Map.get(claims, :aud, nil))
     |> Claims.check_iss(Map.get(claims, :iss, nil))
     |> Claims.check_sub(Map.get(claims, :sub, nil))
