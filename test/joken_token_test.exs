@@ -82,6 +82,10 @@ defmodule Joken.Token.Test do
     {:ok, token} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS256, %{ iat: Joken.Utils.get_current_time() - 300 })
     assert {:ok, _} = Joken.Token.decode(@secret, @poison_json_module, token, :HS256)
 
+    # up to 60 seconds clock skew okay
+    {:ok, token} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS256, %{ iat: Joken.Utils.get_current_time() + 55 })
+    assert {:ok, _} = Joken.Token.decode(@secret, @poison_json_module, token, :HS256)
+
     {:ok, token} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS256, %{ iat: Joken.Utils.get_current_time() + 300 })
     assert {:error, "Token not valid yet"} = Joken.Token.decode(@secret, @poison_json_module, token, :HS256)
   end
