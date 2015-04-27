@@ -2,6 +2,8 @@ defmodule Joken.Claims do
   alias Joken.Utils
   @moduledoc false
 
+  @clock_skew 60 #seconds
+
   def check_exp({:ok, payload}) do
     check_time_claim({:ok, payload}, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
   end
@@ -11,7 +13,7 @@ defmodule Joken.Claims do
   end
 
   def check_nbf({:ok, payload}) do
-    check_time_claim({:ok, payload}, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+    check_time_claim({:ok, payload}, :nbf, "Token not valid yet", fn(not_before, now) -> not_before - @clock_skew < now end) 
   end
 
   def check_nbf(error) do
@@ -19,7 +21,7 @@ defmodule Joken.Claims do
   end
 
   def check_iat({:ok, payload}) do
-    check_time_claim({:ok, payload}, :iat, "Token not valid yet", fn(not_before, now) -> not_before < now end)
+    check_time_claim({:ok, payload}, :iat, "Token not valid yet", fn(not_before, now) -> not_before - @clock_skew < now end)
   end
 
   def check_iat(error) do
