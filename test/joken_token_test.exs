@@ -119,6 +119,20 @@ defmodule Joken.Token.Test do
     assert(@payload == decoded_payload) 
   end
 
+  test "missing signature" do
+    {:ok, token} = Joken.Token.encode(@secret, @jsx_json_module, @payload, :HS512)
+    assert(token == "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.zi1zohSNwRdHftnWKE16vE3VmbGFtG27LxbYDXAodVlX7T3ATgmJJPjluwf2SPKJND2-O7alOq8NWv6EAnWWyg")
+
+    {:error, message} = Joken.Token.decode(@secret, @jsx_json_module, "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ", :HS512) 
+    assert("Missing signature" == message) 
+  end
+
+  test "unsecure token" do
+    {status, decoded_payload} = Joken.Token.decode(@secret, @jsx_json_module, "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ", :none) 
+    assert(status == :ok) 
+    assert(decoded_payload == @payload)
+  end
+
   test "decode token generated with un-sorted keys (JSX)" do
     {:ok, _} = Joken.Token.encode(@secret, @jsx_json_module, @payload)
     {:ok, decoded_payload} = Joken.Token.decode(@secret, @jsx_json_module, @unsorted_header_token) 
