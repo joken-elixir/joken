@@ -16,7 +16,7 @@ defmodule Joken do
 
       defmodule My.Json.Module do
         alias Poison, as: JSON
-        @behaviour Joken.Json
+        @behaviour Joken.Codec
 
         def encode(map) do
           JSON.encode!(map)
@@ -27,7 +27,7 @@ defmodule Joken do
         end
       end
 
-       config :joken
+       config :joken,
          secret_key: "test",
          json_module: My.Json.Module,
          algorithm: :HS256, #Optional. defaults to :HS256

@@ -27,7 +27,7 @@ Looks for a joken config with `secret_key`, `algorithm`, `json_module`. Json mod
 ```elixir
   defmodule My.Json.Module do
     alias Poison, as: JSON
-    @behaviour Joken.Json
+    @behaviour Joken.Codec
 
     def encode(map) do
       JSON.encode!(map)
@@ -40,7 +40,7 @@ Looks for a joken config with `secret_key`, `algorithm`, `json_module`. Json mod
 ```
 
 ```elixir
-     config :joken
+     config :joken,
        secret_key: "test",
        json_module: My.Json.Module,
        algorithm: :HS256, #Optional. defaults to :HS256
