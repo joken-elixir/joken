@@ -63,6 +63,16 @@ defmodule Joken.Token.Test do
     assert(mesg == "Invalid signature") 
   end
 
+	test "signature is mandatory if algorithm is not :none or nil (Poison)" do
+
+		payload_without_signature = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiSm9obiBEb2UifQ"
+		assert {:error, "Missing signature"} = Joken.Token.decode(@secret, @poison_json_module, payload_without_signature)
+
+		assert {:error, "Missing signature"} = Joken.Token.decode(@secret, @poison_json_module, payload_without_signature, :HS256)
+
+		assert {:error, "Missing signature"} = Joken.Token.decode(@secret, @poison_json_module, payload_without_signature, :HS384)
+	end
+
   test "signature validation unsorted payload (Poison)" do
     assert {:ok, _} = Joken.Token.decode(@secret, @poison_json_module, @unsorted_payload_token)
   end
