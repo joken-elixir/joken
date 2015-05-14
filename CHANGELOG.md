@@ -1,3 +1,7 @@
+# v0.13.1
+  * Enhancements
+    * Checking to make sure signature is on token unless `:none` is passed as the algorithm
+
 # v0.13.0
 
 * Enhancements
