@@ -18,6 +18,7 @@ Currently validates the following:
 * Issuer (iss)
 * Subject (sub)
 * Issued At (iat)
+* JSON Token ID (jti)
 
 
 Usage:

@@ -1,3 +1,12 @@
+# v0.14.0-dev
+
+* Enhancements
+  * Can now control how claims are added as well as validated
+  * Add `skip` parameter to `Joken.Token.decode`
+
+* Breaking
+  * `Joken.Codec` is replaced by `Joken.Claims`. 
+
 # v0.13.0
 
 * Enhancements

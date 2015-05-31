@@ -67,25 +67,6 @@ defmodule Joken.Token.Test do
     assert {:ok, _} = Joken.Token.decode(@secret, @poison_json_module, @unsorted_payload_token)
   end
 
-  test "expiration (exp)" do
-    {:ok, token} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS256, %{ exp: Joken.Utils.get_current_time() + 300 })
-    {status, _} = Joken.Token.decode(@secret, @poison_json_module, token, :HS256)
-    assert(status == :ok) 
-
-    {:ok, token} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS256, %{ exp: Joken.Utils.get_current_time() - 300 })
-    {status, mesg} = Joken.Token.decode(@secret, @poison_json_module, token, :HS256)
-    assert(status == :error) 
-    assert(mesg == "Token expired") 
-  end
-
-  test "valid iat claim" do
-    {:ok, token} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS256, %{ iat: Joken.Utils.get_current_time() - 300 })
-    assert {:ok, _} = Joken.Token.decode(@secret, @poison_json_module, token, :HS256)
-
-    {:ok, token} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS256, %{ iat: Joken.Utils.get_current_time() + 300 })
-    assert {:error, "Token not valid yet"} = Joken.Token.decode(@secret, @poison_json_module, token, :HS256)
-  end
-
   test "error with invalid algorithm" do
     {:error, message} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS1024)
     assert message == "Unsupported algorithm"
@@ -129,5 +110,92 @@ defmodule Joken.Token.Test do
     new_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.3fazvmF342WiHp5uhY-wkWArn-YJxq1IO7Msrtfk-OD"
     {:error, mesg} = Joken.Token.decode(@secret, @jsx_json_module, new_token) 
     assert(mesg == "Invalid signature") 
+  end
+
+  test "expiration (exp)" do
+    defmodule ExpSuccessTest do
+      alias Poison, as: JSON
+      use Joken.Claims
+
+      def encode(map) do
+        JSON.encode!(map)
+      end
+
+      def decode(binary) do
+        JSON.decode!(binary, keys: :atoms!)
+      end
+
+      def exp(_payload) do
+        Joken.Utils.get_current_time() + 300
+      end
+    end
+
+    defmodule ExpFailureTest do
+      alias Poison, as: JSON
+      use Joken.Claims
+
+      def encode(map) do
+        JSON.encode!(map)
+      end
+
+      def decode(binary) do
+        JSON.decode!(binary, keys: :atoms!)
+      end
+
+      def exp(_payload) do
+        Joken.Utils.get_current_time() - 300
+      end
+    end 
+
+    {:ok, token} = Joken.Token.encode(@secret, ExpSuccessTest, @payload, :HS256)
+    {status, _} = Joken.Token.decode(@secret, ExpSuccessTest, token, :HS256)
+    assert(status == :ok)
+
+    {:ok, token} = Joken.Token.encode(@secret, ExpFailureTest, @payload, :HS256)
+    {status, mesg} = Joken.Token.decode(@secret, ExpFailureTest, token, :HS256)
+    assert(status == :error) 
+    assert(mesg == "Token expired") 
+  end
+
+  test "valid iat claim" do
+    defmodule IatSuccessTest do
+      alias Poison, as: JSON
+      use Joken.Claims
+
+      def encode(map) do
+        JSON.encode!(map)
+      end
+
+      def decode(binary) do
+        JSON.decode!(binary, keys: :atoms!)
+      end
+
+      def iat(_payload) do
+        Joken.Utils.get_current_time() - 300
+      end
+    end
+
+    defmodule IatFailureTest do
+      alias Poison, as: JSON
+      use Joken.Claims
+
+      def encode(map) do
+        JSON.encode!(map)
+      end
+
+      def decode(binary) do
+        JSON.decode!(binary, keys: :atoms!)
+      end
+
+      def iat(_payload) do
+        Joken.Utils.get_current_time() + 300
+      end
+    end 
+
+    {:ok, token} = Joken.Token.encode(@secret, IatSuccessTest, @payload, :HS256)
+    assert {:ok, _} = Joken.Token.decode(@secret, IatSuccessTest, token, :HS256)
+
+    {:ok, token} = Joken.Token.encode(@secret, IatFailureTest, @payload, :HS256)
+    assert {:error, "Token not valid yet"} == Joken.Token.decode(@secret, IatFailureTest, token, :HS256)
   end
 end
