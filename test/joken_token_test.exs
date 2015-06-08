@@ -128,9 +128,9 @@ defmodule Joken.Token.Test do
   end
 
   test "unsecure token" do
-    {status, decoded_payload} = Joken.Token.decode(@secret, @jsx_json_module, "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ", :none) 
-    assert(status == :ok) 
-    assert(decoded_payload == @payload)
+    {status, message} = Joken.Token.decode(@secret, @jsx_json_module, "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ", :none)
+    assert(status == :error)
+    assert(message == "Missing signature")
   end
 
   test "decode token generated with un-sorted keys (JSX)" do
