@@ -1,9 +1,9 @@
-defmodule Joken.Claims do
+defmodule Joken.Parameters do
   use Behaviour
 
   defmacro __using__(_opts) do
     quote do
-      @behaviour Joken.Claims
+      @behaviour Joken.Parameters
 
       def exp(payload) do
         nil

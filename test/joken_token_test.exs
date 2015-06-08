@@ -115,7 +115,7 @@ defmodule Joken.Token.Test do
   test "expiration (exp)" do
     defmodule ExpSuccessTest do
       alias Poison, as: JSON
-      use Joken.Claims
+      use Joken.Parameters
 
       def encode(map) do
         JSON.encode!(map)
@@ -132,7 +132,7 @@ defmodule Joken.Token.Test do
 
     defmodule ExpFailureTest do
       alias Poison, as: JSON
-      use Joken.Claims
+      use Joken.Parameters
 
       def encode(map) do
         JSON.encode!(map)
@@ -160,7 +160,7 @@ defmodule Joken.Token.Test do
   test "valid iat claim" do
     defmodule IatSuccessTest do
       alias Poison, as: JSON
-      use Joken.Claims
+      use Joken.Parameters
 
       def encode(map) do
         JSON.encode!(map)
@@ -177,7 +177,7 @@ defmodule Joken.Token.Test do
 
     defmodule IatFailureTest do
       alias Poison, as: JSON
-      use Joken.Claims
+      use Joken.Parameters
 
       def encode(map) do
         JSON.encode!(map)

@@ -12,11 +12,11 @@ defmodule Joken do
 
     Usage:
 
-    Looks for a joken config block with `secret_key`, `algorithm`, and `json_module`. Json module being a module that implements the `Joken.Codec` Behaviour
+    Looks for a joken config block with `secret_key`, `algorithm`, and `parameters_module`. Parameters module being a module that implements the `Joken.Parameters` Behaviour
 
-      defmodule My.Json.Module do
+      defmodule My.Parameters.Module do
         alias Poison, as: JSON
-        @behaviour Joken.Json
+        @behaviour Joken.Parameters
 
         def encode(map) do
           JSON.encode!(map)
@@ -29,7 +29,7 @@ defmodule Joken do
 
        config :joken
          secret_key: "test",
-         json_module: My.Json.Module,
+         parameters_module: My.Parameters.Module,
          algorithm: :HS256, #Optional. defaults to :HS256
 
     then to encode and decode
@@ -48,7 +48,7 @@ defmodule Joken do
 
   @spec encode(payload) :: { status, String.t }
   def encode(payload) do
-    Token.encode(secret_key, json_module, payload, algorithm)
+    Token.encode(secret_key, parameters_module, payload, algorithm)
   end
 
   @doc """
@@ -59,7 +59,7 @@ defmodule Joken do
 
   @spec decode(String.t) :: { status, map | String.t }
   def decode(jwt) do
-    Token.decode(secret_key, json_module, jwt, algorithm)
+    Token.decode(secret_key, parameters_module, jwt, algorithm)
   end
 
   defp secret_key() do
@@ -72,8 +72,8 @@ defmodule Joken do
     end
   end
 
-  defp json_module() do
-    Application.get_env(:joken, :json_module)
+  defp parameters_module() do
+    Application.get_env(:joken, :parameters_module)
   end
 
   defp algorithm() do
