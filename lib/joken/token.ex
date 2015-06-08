@@ -111,8 +111,7 @@ defmodule Joken.Token do
 
   defp verify_signature(token, key, algorithm) do
     case String.split(token, ".") do
-      [ _header64, _payload64 ] ->
-        { :ok, token }
+      [ _header64, _payload64 ] -> { :error, "Missing signature" }
       [ header64, payload64, jwt_signature ] ->
         signature = :crypto.hmac(Utils.supported_algorithms[algorithm], key, "#{header64}.#{payload64}")
 
