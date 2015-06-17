@@ -1,6 +1,8 @@
 Joken
 =====
 
+[Documentation](http://hexdocs.pm/joken/)
+
 Encodes and decodes JSON Web Tokens.
 
 Currently supports the following algorithms:
