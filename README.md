@@ -30,11 +30,7 @@ Looks for a joken config with `secret_key`, `algorithm`, `parameters`. Parameter
 ```elixir
   defmodule My.Parameters.Module do
     alias Poison, as: JSON
-<<<<<<< HEAD
     @behaviour Joken.Parameters
-=======
-    @behaviour Joken.Codec
->>>>>>> master
 
     def encode(map) do
       JSON.encode!(map)
