@@ -12,11 +12,15 @@ defmodule Joken do
 
     Usage:
 
-    Looks for a joken config block with `secret_key`, `algorithm`, and `json_module`. Json module being a module that implements the `Joken.Codec` Behaviour
+    Looks for a joken config block with `secret_key`, `algorithm`, and `parameters_module`. Parameters module being a module that implements the `Joken.Parameters` Behaviour
 
-      defmodule My.Json.Module do
+      defmodule My.Parameters.Module do
         alias Poison, as: JSON
+<<<<<<< HEAD
+        @behaviour Joken.Parameters
+=======
         @behaviour Joken.Codec
+>>>>>>> master
 
         def encode(map) do
           JSON.encode!(map)
@@ -29,7 +33,7 @@ defmodule Joken do
 
        config :joken,
          secret_key: "test",
-         json_module: My.Json.Module,
+         parameters_module: My.Parameters.Module,
          algorithm: :HS256, #Optional. defaults to :HS256
 
     then to encode and decode
@@ -43,33 +47,26 @@ defmodule Joken do
   @doc """
   Encodes the given payload and optional claims into a JSON Web Token
 
-      Joken.encode(%{ name: "John Doe" }, %{ iss: "self"})
+      Joken.encode(%{ name: "John Doe" })
   """
 
-  @spec encode(payload, payload) :: { status, String.t }
-  def encode(payload, claims \\ %{}) do
-    json_module = Application.get_env(:joken, :json_module)
-    algorithm =   Application.get_env(:joken, :algorithm, :HS256)
-
-    Token.encode(secret_key, json_module, payload, algorithm, claims)
+  @spec encode(payload) :: { status, String.t }
+  def encode(payload) do
+    Token.encode(secret_key, parameters_module, payload, algorithm)
   end
 
   @doc """
-  Decodes the given JSON Web Token and gets the payload. Optionally checks against
-  the given claims for validity
+  Decodes the given JSON Web Token and gets the payload
 
-      Joken.decode(token, %{ aud: "self" })
+      Joken.decode(token)
   """
 
-  @spec decode(String.t, payload) :: { status, map | String.t }
-  def decode(jwt, claims \\ %{}) do
-    json_module = Application.get_env(:joken, :json_module)
-    algorithm =   Application.get_env(:joken, :algorithm, :HS256)
-
-    Token.decode(secret_key, json_module, jwt, algorithm, claims)
+  @spec decode(String.t) :: { status, map | String.t }
+  def decode(jwt) do
+    Token.decode(secret_key, parameters_module, jwt, algorithm)
   end
 
-  defp secret_key do
+  defp secret_key() do
     secret_key = Application.get_env(:joken, :secret_key)
 
     if Application.get_env(:joken, :decode_secret_key?, false) do
@@ -77,5 +74,13 @@ defmodule Joken do
     else
       secret_key
     end
+  end
+
+  defp parameters_module() do
+    Application.get_env(:joken, :parameters_module)
+  end
+
+  defp algorithm() do
+    Application.get_env(:joken, :algorithm, :HS256)    
   end
 end

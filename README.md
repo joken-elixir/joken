@@ -20,16 +20,21 @@ Currently validates the following:
 * Issuer (iss)
 * Subject (sub)
 * Issued At (iat)
+* JSON Token ID (jti)
 
 
 Usage:
 
-Looks for a joken config with `secret_key`, `algorithm`, `json_module`. Json module being a module that implements the `Joken.Codec` Behaviour
+Looks for a joken config with `secret_key`, `algorithm`, `parameters`. Parameters module being a module that implements the `Joken.Parameters` Behaviour
 
 ```elixir
-  defmodule My.Json.Module do
+  defmodule My.Parameters.Module do
     alias Poison, as: JSON
+<<<<<<< HEAD
+    @behaviour Joken.Parameters
+=======
     @behaviour Joken.Codec
+>>>>>>> master
 
     def encode(map) do
       JSON.encode!(map)
@@ -44,7 +49,7 @@ Looks for a joken config with `secret_key`, `algorithm`, `json_module`. Json mod
 ```elixir
      config :joken,
        secret_key: "test",
-       json_module: My.Json.Module,
+       parameters_module: My.Parameters.Module,
        algorithm: :HS256, #Optional. defaults to :HS256
 ```
 

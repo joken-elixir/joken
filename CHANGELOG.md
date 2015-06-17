@@ -1,6 +1,18 @@
+<<<<<<< HEAD
+# v0.14.0-dev
+
+* Enhancements
+  * Can now control how claims are added as well as validated by overriding functions in `Joken.Parameters`
+  * Add `skip` parameter to `Joken.Token.decode`
+
+* Breaking
+  * `Joken.Codec` is replaced by `Joken.Parameters`. 
+  * `json_module` in config is replaced by `parameters_module`. 
+=======
 # v0.13.1
   * Enhancements
     * Checking to make sure signature is on token unless `:none` is passed as the algorithm
+>>>>>>> master
 
 # v0.13.0
 

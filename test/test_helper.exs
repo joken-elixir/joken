@@ -2,7 +2,7 @@ ExUnit.start()
 
 defmodule Joken.TestPoison do
   alias Poison, as: JSON
-  @behaviour Joken.Codec
+  use Joken.Parameters
 
   def encode(map) do
     JSON.encode!(map)
@@ -15,7 +15,7 @@ end
 
 defmodule Joken.TestJsx do
   alias :jsx, as: JSON
-  @behaviour Joken.Codec
+  use Joken.Parameters
 
   def encode(map) do
     JSON.encode(map)
