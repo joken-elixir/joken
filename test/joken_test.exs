@@ -372,9 +372,16 @@ defmodule Joken.Test do
     assert(mesg == "Missing subject")  
   end
 
-  test "malformed token"do
+  test "malformed token" do
     {status, _} = Joken.decode("foobar")
     assert(status == :error)
-  end 
+  end
+
+  test "claim skipping" do
+    expiration = Joken.Utils.get_current_time() - 100000
+    {:ok, expired_token} = Joken.encode(Map.put(@payload, :exp, expiration))
+    {status, _} = Joken.decode expired_token, skip: [:exp]
+    assert(status == :ok)
+  end
   
 end
