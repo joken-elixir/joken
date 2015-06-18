@@ -56,11 +56,17 @@ defmodule Joken do
   Decodes the given JSON Web Token and gets the payload
 
       Joken.decode(token)
+
+  You can also pass a skip list of atoms in order to skip some validations.
+  Be advised that this is NOT intended to customize claim validation. It is
+  is only intended to be used when you want to refresh a token and need to
+  validate an expired token.
   """
 
-  @spec decode(String.t) :: { status, map | String.t }
-  def decode(jwt) do
-    Token.decode(secret_key, parameters_module, jwt, algorithm)
+  @spec decode(String.t, Keyword.t) :: { status, map | String.t }
+  def decode(jwt, options \\ []) do
+    skip_options = Keyword.get options, :skip, []
+    Token.decode(secret_key, parameters_module, jwt, algorithm, skip_options)
   end
 
   defp secret_key() do
