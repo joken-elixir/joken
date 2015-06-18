@@ -16,11 +16,8 @@ defmodule Joken do
 
       defmodule My.Parameters.Module do
         alias Poison, as: JSON
-<<<<<<< HEAD
+
         @behaviour Joken.Parameters
-=======
-        @behaviour Joken.Codec
->>>>>>> master
 
         def encode(map) do
           JSON.encode!(map)

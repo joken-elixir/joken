@@ -92,10 +92,10 @@ defmodule Joken.Token do
         results = Enum.reduce(skip, validations, fn(key, current_validations) ->
           Keyword.delete(current_validations, key)
         end)
-        |> Enum.map(fn({key, func}) ->
+        |> Enum.map(fn({_key, func}) ->
           func.(data)
         end)
-        |> Enum.filter(fn({key, value}) -> 
+        |> Enum.filter(fn({key, _value}) -> 
           key == :error
         end)
         |> Enum.map(fn(x) -> elem(x, 1) end)
