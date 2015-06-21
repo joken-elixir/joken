@@ -1,28 +1,82 @@
 ExUnit.start()
 
 defmodule Joken.TestPoison do
-  alias Poison, as: JSON
-  use Joken.Parameters
+  @behaviour Joken.Config
+
+  def secret_key() do
+    "test"
+  end
+
+  def algorithm() do
+    :HS256
+  end
 
   def encode(map) do
-    JSON.encode!(map)
+    Poison.encode!(map)
   end
 
   def decode(binary) do
-    JSON.decode!(binary, keys: :atoms!)
+    Poison.decode!(binary, keys: :atoms!)
+  end
+
+  def claim(_, _) do
+    nil
+  end
+
+  def validate_claim(:exp, payload) do
+    Joken.Config.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+  end
+
+  def validate_claim(:nbf, payload) do
+    Joken.Config.validate_time_claim(payload, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+  end
+
+  def validate_claim(:iat, payload) do
+    Joken.Config.validate_time_claim(payload, :iat, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+  end
+
+  def validate_claim(_, _) do
+    :ok
   end
 end
 
 defmodule Joken.TestJsx do
-  alias :jsx, as: JSON
-  use Joken.Parameters
+  @behaviour Joken.Config
+
+  def secret_key() do
+    "test"
+  end
+
+  def algorithm() do
+    :HS256
+  end
 
   def encode(map) do
-    JSON.encode(map)
+    :jsx.encode(map)
   end
 
   def decode(binary) do
-    JSON.decode(binary)
+    :jsx.decode(binary)
     |> Enum.map(fn({key, value})-> {String.to_atom(key), value} end)
+  end
+
+  def claim(_, _) do
+    nil
+  end
+
+  def validate_claim(:exp, payload) do
+    Joken.Config.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+  end
+
+  def validate_claim(:nbf, payload) do
+    Joken.Config.validate_time_claim(payload, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+  end
+
+  def validate_claim(:iat, payload) do
+    Joken.Config.validate_time_claim(payload, :iat, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+  end
+
+  def validate_claim(_, _) do
+    :ok
   end
 end

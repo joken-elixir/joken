@@ -1,39 +1,33 @@
 defmodule Joken.Token do
   alias Joken.Utils
 
+  @claims [:exp, :nbf, :iat, :aud, :iss, :sub, :jti]
+  @supported_algorithms %{ HS256: :sha256 , HS384: :sha384, HS512: :sha512 }
+
   @moduledoc """
   Module that handles encoding and decoding of tokens. For most cases, it's recommended to use the Joken module, but
   if you need to use this module directly, you can.
   """
 
-  @spec encode(String.t, module, Joken.payload, Joken.algorithm) :: {Joken.status, binary}
-  def encode(secret_key, claims_behaviour, payload, algorithm \\ :HS256) do
-    headerJSON = claims_behaviour.encode(%{ alg: to_string(algorithm), typ: :JWT })
+  @spec encode(module, Joken.payload) :: {Joken.status, binary}
+  def encode(joken_config, payload) do
+    headerJSON = joken_config.encode(%{ alg: to_string(joken_config.algorithm), typ: :JWT })
 
-    claims_fun = [
-      exp: &claims_behaviour.exp/1, 
-      nbf: &claims_behaviour.nbf/1, 
-      iat: &claims_behaviour.iat/1,
-      aud: &claims_behaviour.aud/1,
-      iss: &claims_behaviour.iss/1,
-      sub: &claims_behaviour.sub/1,
-      jti: &claims_behaviour.jti/1,
-    ]
 
-    claims = Enum.reduce(claims_fun, %{}, fn({key, func}, current_claims) ->
-      result = func.(payload)
+    claims = Enum.reduce(@claims, %{}, fn(claim, current_claims) ->
+      result = joken_config.claim(claim, payload)
 
       if result != nil do
-        Map.put(current_claims, key, result)
+        Map.put(current_claims, claim, result)
       else
         current_claims
       end
     end)
 
 
-    {status, payloadJSON} = get_payload_json(payload, claims, claims_behaviour)
+    {status, payloadJSON} = get_payload_json(payload, claims, joken_config)
 
-    case Map.has_key?(Utils.supported_algorithms, algorithm) do
+    case Map.has_key?(@supported_algorithms, joken_config.algorithm) do
       false ->
         {:error, "Unsupported algorithm"} 
       _ ->
@@ -44,7 +38,7 @@ defmodule Joken.Token do
             header64 = Utils.base64url_encode(headerJSON)
             payload64 = Utils.base64url_encode(payloadJSON)
 
-            signature = :crypto.hmac(Utils.supported_algorithms[algorithm], secret_key, "#{header64}.#{payload64}")
+            signature = :crypto.hmac(@supported_algorithms[joken_config.algorithm], joken_config.secret_key, "#{header64}.#{payload64}")
             signature64 = Utils.base64url_encode(signature)
 
             {:ok, "#{header64}.#{payload64}.#{signature64}"}
@@ -67,36 +61,31 @@ defmodule Joken.Token do
     end
   end
 
-  @spec decode(String.t, module, String.t, Joken.algorithm, Joken.payload) :: {Joken.status, map | String.t}
-  def decode(secret_key, claims_behaviour, token, algorithm \\ :HS256, skip \\ []) do
+  @spec decode(module, String.t, [Keyword.t]) :: {Joken.status, map | String.t}
+  def decode(joken_config, token, options \\ []) do
+    skip_options = Keyword.get options, :skip, []
 
-    validations = [
-      exp: &claims_behaviour.validate_exp/1, 
-      nbf: &claims_behaviour.validate_nbf/1, 
-      iat: &claims_behaviour.validate_iat/1,
-      aud: &claims_behaviour.validate_aud/1,
-      iss: &claims_behaviour.validate_iss/1,
-      sub: &claims_behaviour.validate_sub/1,
-      jti: &claims_behaviour.validate_jti/1,
-    ]
+    claims = @claims -- skip_options
 
 
-    {status, result} = verify_signature(token, secret_key, algorithm)
+    {status, result} = verify_signature(token, joken_config.secret_key, joken_config.algorithm)
 
     case status do
       :error ->
         { status, result }
       _ ->
-        {:ok, data} = get_data(token, claims_behaviour)
+        {:ok, data} = get_data(token, joken_config)
 
-        results = Enum.reduce(skip, validations, fn(key, current_validations) ->
-          Keyword.delete(current_validations, key)
+        results = Enum.map(claims, fn(claim) ->
+          joken_config.validate_claim(claim, data)
         end)
-        |> Enum.map(fn({_key, func}) ->
-          func.(data)
-        end)
-        |> Enum.filter(fn({key, _value}) -> 
-          key == :error
+        |> Enum.filter(fn(result) -> 
+          case result do
+            {:error, _message} ->
+              true
+            _ ->
+              false
+          end
         end)
         |> Enum.map(fn(x) -> elem(x, 1) end)
 
@@ -113,7 +102,7 @@ defmodule Joken.Token do
     case String.split(token, ".") do
       [ _header64, _payload64 ] -> { :error, "Missing signature" }
       [ header64, payload64, jwt_signature ] ->
-        signature = :crypto.hmac(Utils.supported_algorithms[algorithm], key, "#{header64}.#{payload64}")
+        signature = :crypto.hmac(@supported_algorithms[algorithm], key, "#{header64}.#{payload64}")
 
         if Utils.base64url_encode(signature) == jwt_signature do
             { :ok, token }
@@ -126,11 +115,11 @@ defmodule Joken.Token do
 
   end
 
-  defp get_data(jwt, claims_behaviour) do
+  defp get_data(jwt, joken_config) do
     [_, payload64 | _tail] = String.split(jwt, ".")
 
     data = Utils.base64url_decode(payload64)
-    {:ok, claims_behaviour.decode(data) }
+    {:ok, joken_config.decode(data) }
   end
 
   defp to_map(keywords) do

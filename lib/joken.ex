@@ -1,39 +1,90 @@
 defmodule Joken do
   alias Joken.Token
-  alias Joken.Utils
 
   @type algorithm :: :HS256 | :HS384 | :HS512
   @type status :: :ok | :error
   @type payload :: map | Keyword.t
 
   @moduledoc """
-    Encodes and decodes JSON Web Tokens.
+  Encodes and decodes JSON Web Tokens.
+
+  Supports the following algorithms:
+
+  * HS256
+  * HS384
+  * HS512
+
+  Supports the following claims:
+
+  * Expiration (exp)
+  * Not Before (nbf)
+  * Audience (aud)
+  * Issuer (iss)
+  * Subject (sub)
+  * Issued At (iat)
+  * JSON Token ID (jti)
 
 
-    Usage:
+  Usage:
 
-    Looks for a joken config block with `secret_key`, `algorithm`, and `parameters_module`. Parameters module being a module that implements the `Joken.Parameters` Behaviour
+  First, create a module that implements the `Joken.Config` Behaviour. 
+  This Behaviour is responsible for the following:
+
+    * encoding and decoding tokens
+    * adding and validating claims
+    * secret key used for encoding and decoding
+    * the algorithm used
+
+  If a claim function returns `nil` then that claim will not be added to the token. 
+  Here is a full example of a module that would add and validate the `exp` claim 
+  and not add or validate the others:
+
 
       defmodule My.Parameters.Module do
-        alias Poison, as: JSON
-
         @behaviour Joken.Parameters
 
+        def secret_key() do
+          Application.get_env(:app, :secret_key)
+        end
+
+        def algorithm() do
+          :H256
+        end
+
         def encode(map) do
-          JSON.encode!(map)
+          Poison.encode!(map)
         end
 
         def decode(binary) do
-          JSON.decode!(binary, keys: :atoms!)
+          Poison.decode!(binary, keys: :atoms!)
+        end
+
+        def claim(:exp, payload) do
+          12345678
+        end
+
+        def claim(_, _) do
+          nil
+        end
+
+        def validate_claim(:exp, payload) do
+          Joken.Parameters.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+        end
+
+        def validate_claim(_, _) do
+          :ok
         end
       end
+
+
+  Joken looks for a `joken` config with `secret_key`, `algorithm`, `parameters`. `parameters` module being a module that implements the `Joken.Parameters` Behaviour.
 
        config :joken,
          secret_key: "test",
          parameters_module: My.Parameters.Module,
          algorithm: :HS256, #Optional. defaults to :HS256
 
-    then to encode and decode
+  then to encode and decode
 
       {:ok, token} = Joken.encode(%{username: "johndoe"})
 
@@ -49,7 +100,7 @@ defmodule Joken do
 
   @spec encode(payload) :: { status, String.t }
   def encode(payload) do
-    Token.encode(secret_key, parameters_module, payload, algorithm)
+    Token.encode(config_module, payload)
   end
 
   @doc """
@@ -65,25 +116,10 @@ defmodule Joken do
 
   @spec decode(String.t, Keyword.t) :: { status, map | String.t }
   def decode(jwt, options \\ []) do
-    skip_options = Keyword.get options, :skip, []
-    Token.decode(secret_key, parameters_module, jwt, algorithm, skip_options)
+    Token.decode(config_module, jwt, options)
   end
 
-  defp secret_key() do
-    secret_key = Application.get_env(:joken, :secret_key)
-
-    if Application.get_env(:joken, :decode_secret_key?, false) do
-      Utils.base64url_decode(secret_key)
-    else
-      secret_key
-    end
-  end
-
-  defp parameters_module() do
-    Application.get_env(:joken, :parameters_module)
-  end
-
-  defp algorithm() do
-    Application.get_env(:joken, :algorithm, :HS256)    
+  defp config_module() do
+    Application.get_env(:joken, :config_module)
   end
 end

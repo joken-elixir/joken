@@ -24,193 +24,469 @@ defmodule Joken.Token.Test do
   @jsx_json_module Joken.TestJsx
 
   test "encode and decode with HS256 (Poison)" do
-    {:ok, token} = Joken.Token.encode(@secret, @poison_json_module, @payload)
+    {:ok, token} = Joken.Token.encode(@poison_json_module, @payload)
     assert(token == "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.B3tqUk6UdT8K5AQUGdYFXPj7R7_JznRi5PRrv_N7d1I")
 
-    {:ok, decoded_payload} = Joken.Token.decode(@secret, @poison_json_module, token) 
+    {:ok, decoded_payload} = Joken.Token.decode(@poison_json_module, token) 
     assert(@payload == decoded_payload) 
   end
 
   test "encode and decode with HS384 (Poison)" do
-    {:ok, token} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS384)
+    defmodule Decode384 do
+      @behaviour Joken.Config
+
+      def secret_key() do
+        "test"
+      end
+
+      def algorithm() do
+        :HS384
+      end
+
+      def encode(map) do
+        Poison.encode!(map)
+      end
+
+      def decode(binary) do
+        Poison.decode!(binary, keys: :atoms!)
+      end
+
+      def claim(_, _) do
+        nil
+      end
+
+      def validate_claim(_, _) do
+        :ok
+      end
+    end
+
+    {:ok, token} = Joken.Token.encode(Decode384, @payload)
     assert(token == "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzM4NCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.zDrtMUaPYXpFdESkmnjzMgDZsHC6LObDfrEdryAzZ981r77Td2BZ61rx09tsJFvP")
 
-    {:ok, decoded_payload} = Joken.Token.decode(@secret, @poison_json_module, token, :HS384) 
+    {:ok, decoded_payload} = Joken.Token.decode(Decode384, token) 
     assert(@payload == decoded_payload) 
   end
 
   test "encode and decode with HS512 (Poison)" do
-    {:ok, token} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS512)
+    defmodule Decode512 do
+      @behaviour Joken.Config
+
+      def secret_key() do
+        "test"
+      end
+
+      def algorithm() do
+        :HS512
+      end
+
+      def encode(map) do
+        Poison.encode!(map)
+      end
+
+      def decode(binary) do
+        Poison.decode!(binary, keys: :atoms!)
+      end
+
+      def claim(_, _) do
+        nil
+      end
+
+      def validate_claim(_, _) do
+        :ok
+      end
+    end
+
+    {:ok, token} = Joken.Token.encode(Decode512, @payload)
     assert(token == "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.olXW3I_OpLs9bfthg49kVIgUFHTjLCoCEGthWICMd2DZyGyIn0eAcjF3KuMA29Yb6W9kyAYf1dKn7sPwEajcmA")
 
-    {:ok, decoded_payload} = Joken.Token.decode(@secret, @poison_json_module, token, :HS512) 
+    {:ok, decoded_payload} = Joken.Token.decode(Decode512, token) 
     assert(@payload == decoded_payload) 
   end
 
   test "decode token generated with un-sorted keys (Poison)" do
-    {:ok, _} = Joken.Token.encode(@secret, @poison_json_module, @payload)
-    {:ok, decoded_payload} = Joken.Token.decode(@secret, @poison_json_module, @unsorted_header_token) 
+    {:ok, _} = Joken.Token.encode(@poison_json_module, @payload)
+    {:ok, decoded_payload} = Joken.Token.decode(@poison_json_module, @unsorted_header_token) 
     assert(@payload == decoded_payload) 
   end
 
   test "signature validation (Poison)" do
-    {:ok, token} = Joken.Token.encode(@secret, @poison_json_module, @payload)
+    {:ok, token} = Joken.Token.encode(@poison_json_module, @payload)
     assert(token == "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.B3tqUk6UdT8K5AQUGdYFXPj7R7_JznRi5PRrv_N7d1I")
-    {:ok, _} = Joken.Token.decode(@secret, @poison_json_module, token) 
+    {:ok, _} = Joken.Token.decode(@poison_json_module, token) 
 
     new_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.3fazvmF342WiHp5uhY-wkWArn-YJxq1IO7Msrtfk-OD"
-    {:error, mesg} = Joken.Token.decode(@secret, @poison_json_module, new_token) 
+    {:error, mesg} = Joken.Token.decode(@poison_json_module, new_token) 
     assert(mesg == "Invalid signature") 
   end
 
   test "signature validation unsorted payload (Poison)" do
-    assert {:ok, _} = Joken.Token.decode(@secret, @poison_json_module, @unsorted_payload_token)
+    assert {:ok, _} = Joken.Token.decode(@poison_json_module, @unsorted_payload_token)
   end
 
 
   test "error with invalid algorithm" do
-    {:error, message} = Joken.Token.encode(@secret, @poison_json_module, @payload, :HS1024)
+    defmodule Decode1024 do
+      @behaviour Joken.Config
+
+      def secret_key() do
+        "test"
+      end
+
+      def algorithm() do
+        :HS1024
+      end
+
+      def encode(map) do
+        Poison.encode!(map)
+      end
+
+      def decode(binary) do
+        Poison.decode!(binary, keys: :atoms!)
+      end
+
+      def claim(_, _) do
+        nil
+      end
+
+      def validate_claim(_, _) do
+        :ok
+      end
+    end
+
+    {:error, message} = Joken.Token.encode(Decode1024, @payload)
     assert message == "Unsupported algorithm"
   end
   
   test "encode and decode with HS256 (JSX)" do
-    {:ok, token} = Joken.Token.encode(@secret, @jsx_json_module, @payload)
+    {:ok, token} = Joken.Token.encode(@jsx_json_module, @payload)
     assert(token == "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.3fazvmF342WiHp5uhY-wkWArn-YJxq1IO7Msrtfk-OQ")
 
-    {:ok, decoded_payload} = Joken.Token.decode(@secret, @jsx_json_module, token) 
+    {:ok, decoded_payload} = Joken.Token.decode(@jsx_json_module, token) 
     assert(@payload == decoded_payload) 
   end
 
   test "encode and decode with HS384 (JSX)" do
-    {:ok, token} = Joken.Token.encode(@secret, @jsx_json_module, @payload, :HS384)
+    defmodule TestJsx384 do
+      @behaviour Joken.Config
+
+      def secret_key() do
+        "test"
+      end
+
+      def algorithm() do
+        :HS384
+      end
+
+      def encode(map) do
+        :jsx.encode(map)
+      end
+
+      def decode(binary) do
+        :jsx.decode(binary)
+        |> Enum.map(fn({key, value})-> {String.to_atom(key), value} end)
+      end
+
+      def claim(_, _) do
+        nil
+      end
+
+      def validate_claim(_, _) do
+        :ok
+      end
+    end
+
+    {:ok, token} = Joken.Token.encode(TestJsx384, @payload)
     assert(token == "eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.YOH6U5Ggk5_o5B7Dg3pacaKcPkrbFEX-30-trLV6C6wjTHJ_975PXLSEzebOSP8k")
 
-    {:ok, decoded_payload} = Joken.Token.decode(@secret, @jsx_json_module, token, :HS384) 
+    {:ok, decoded_payload} = Joken.Token.decode(TestJsx384, token) 
     assert(@payload == decoded_payload) 
   end
 
   test "encode and decode with HS512 (JSX)" do
-    {:ok, token} = Joken.Token.encode(@secret, @jsx_json_module, @payload, :HS512)
+    defmodule TestJsx512 do
+      @behaviour Joken.Config
+
+      def secret_key() do
+        "test"
+      end
+
+      def algorithm() do
+        :HS512
+      end
+
+      def encode(map) do
+        :jsx.encode(map)
+      end
+
+      def decode(binary) do
+        :jsx.decode(binary)
+        |> Enum.map(fn({key, value})-> {String.to_atom(key), value} end)
+      end
+
+      def claim(_, _) do
+        nil
+      end
+
+      def validate_claim(_, _) do
+        :ok
+      end
+    end
+
+    {:ok, token} = Joken.Token.encode(TestJsx512, @payload)
     assert(token == "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.zi1zohSNwRdHftnWKE16vE3VmbGFtG27LxbYDXAodVlX7T3ATgmJJPjluwf2SPKJND2-O7alOq8NWv6EAnWWyg")
 
-    {:ok, decoded_payload} = Joken.Token.decode(@secret, @jsx_json_module, token, :HS512) 
+    {:ok, decoded_payload} = Joken.Token.decode(TestJsx512, token) 
     assert(@payload == decoded_payload) 
   end
 
   test "missing signature" do
-    {:ok, token} = Joken.Token.encode(@secret, @jsx_json_module, @payload, :HS512)
+    defmodule TestJsx512Missing do
+      @behaviour Joken.Config
+
+      def secret_key() do
+        "test"
+      end
+
+      def algorithm() do
+        :HS512
+      end
+
+      def encode(map) do
+        :jsx.encode(map)
+      end
+
+      def decode(binary) do
+        :jsx.decode(binary)
+        |> Enum.map(fn({key, value})-> {String.to_atom(key), value} end)
+      end
+
+      def claim(_, _) do
+        nil
+      end
+
+      def validate_claim(_, _) do
+        :ok
+      end
+    end
+
+    {:ok, token} = Joken.Token.encode(TestJsx512Missing, @payload)
     assert(token == "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.zi1zohSNwRdHftnWKE16vE3VmbGFtG27LxbYDXAodVlX7T3ATgmJJPjluwf2SPKJND2-O7alOq8NWv6EAnWWyg")
 
-    {:error, message} = Joken.Token.decode(@secret, @jsx_json_module, "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ", :HS512) 
+    {:error, message} = Joken.Token.decode(TestJsx512Missing, "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ") 
     assert("Missing signature" == message) 
   end
 
   test "unsecure token" do
-    {status, message} = Joken.Token.decode(@secret, @jsx_json_module, "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ", :none)
+    defmodule TestJsxNone do
+      @behaviour Joken.Config
+
+      def secret_key() do
+        "test"
+      end
+
+      def algorithm() do
+        :none
+      end
+
+      def encode(map) do
+        :jsx.encode(map)
+      end
+
+      def decode(binary) do
+        :jsx.decode(binary)
+        |> Enum.map(fn({key, value})-> {String.to_atom(key), value} end)
+      end
+
+      def claim(_, _) do
+        nil
+      end
+
+      def validate_claim(_, _) do
+        :ok
+      end
+    end
+
+    {status, message} = Joken.Token.decode(TestJsxNone, "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ")
     assert(status == :error)
     assert(message == "Missing signature")
   end
 
   test "decode token generated with un-sorted keys (JSX)" do
-    {:ok, _} = Joken.Token.encode(@secret, @jsx_json_module, @payload)
-    {:ok, decoded_payload} = Joken.Token.decode(@secret, @jsx_json_module, @unsorted_header_token) 
+    {:ok, _} = Joken.Token.encode(@jsx_json_module, @payload)
+    {:ok, decoded_payload} = Joken.Token.decode(@jsx_json_module, @unsorted_header_token) 
     assert(@payload == decoded_payload) 
   end
 
   test "signature validation (JSX)" do
-    {:ok, token} = Joken.Token.encode(@secret, @jsx_json_module, @payload)
+    {:ok, token} = Joken.Token.encode(@jsx_json_module, @payload)
     assert(token == "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.3fazvmF342WiHp5uhY-wkWArn-YJxq1IO7Msrtfk-OQ")
-    {:ok, _} = Joken.Token.decode(@secret, @jsx_json_module, token) 
+    {:ok, _} = Joken.Token.decode(@jsx_json_module, token) 
 
     new_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.3fazvmF342WiHp5uhY-wkWArn-YJxq1IO7Msrtfk-OD"
-    {:error, mesg} = Joken.Token.decode(@secret, @jsx_json_module, new_token) 
+    {:error, mesg} = Joken.Token.decode(@jsx_json_module, new_token) 
     assert(mesg == "Invalid signature") 
   end
 
   test "expiration (exp)" do
     defmodule ExpSuccessTest do
-      alias Poison, as: JSON
-      use Joken.Parameters
+      @behaviour Joken.Config
+
+      def secret_key() do
+        "test"
+      end
+
+      def algorithm() do
+        :HS256
+      end
 
       def encode(map) do
-        JSON.encode!(map)
+        Poison.encode!(map)
       end
 
       def decode(binary) do
-        JSON.decode!(binary, keys: :atoms!)
+        Poison.decode!(binary, keys: :atoms!)
       end
 
-      def exp(_payload) do
-        Joken.Utils.get_current_time() + 300
+      def claim(:exp, _payload) do
+        Joken.Config.get_current_time() + 300
+      end
+
+      def claim(_, _) do
+        nil
+      end
+
+      def validate_claim(:exp, payload) do
+        Joken.Config.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+      end
+
+      def validate_claim(_, _) do
+        :ok
       end
     end
 
     defmodule ExpFailureTest do
-      alias Poison, as: JSON
-      use Joken.Parameters
+      @behaviour Joken.Config
+
+      def secret_key() do
+        "test"
+      end
+
+      def algorithm() do
+        :HS256
+      end
 
       def encode(map) do
-        JSON.encode!(map)
+        Poison.encode!(map)
       end
 
       def decode(binary) do
-        JSON.decode!(binary, keys: :atoms!)
+        Poison.decode!(binary, keys: :atoms!)
       end
 
-      def exp(_payload) do
-        Joken.Utils.get_current_time() - 300
+      def claim(:exp, _payload) do
+        Joken.Config.get_current_time() - 300
+      end
+
+      def claim(_, _) do
+        nil
+      end
+
+      def validate_claim(:exp, payload) do
+        Joken.Config.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+      end
+
+      def validate_claim(_, _) do
+        :ok
       end
     end 
 
-    {:ok, token} = Joken.Token.encode(@secret, ExpSuccessTest, @payload, :HS256)
-    {status, _} = Joken.Token.decode(@secret, ExpSuccessTest, token, :HS256)
+    {:ok, token} = Joken.Token.encode(ExpSuccessTest, @payload)
+    {status, _} = Joken.Token.decode(ExpSuccessTest, token)
     assert(status == :ok)
 
-    {:ok, token} = Joken.Token.encode(@secret, ExpFailureTest, @payload, :HS256)
-    {status, mesg} = Joken.Token.decode(@secret, ExpFailureTest, token, :HS256)
+    {:ok, token} = Joken.Token.encode(ExpFailureTest, @payload)
+    {status, mesg} = Joken.Token.decode(ExpFailureTest, token)
     assert(status == :error) 
     assert(mesg == "Token expired") 
   end
 
   test "valid iat claim" do
     defmodule IatSuccessTest do
-      alias Poison, as: JSON
-      use Joken.Parameters
+      @behaviour Joken.Config
+
+      def secret_key() do
+        "test"
+      end
+
+      def algorithm() do
+        :HS256
+      end
 
       def encode(map) do
-        JSON.encode!(map)
+        Poison.encode!(map)
       end
 
       def decode(binary) do
-        JSON.decode!(binary, keys: :atoms!)
+        Poison.decode!(binary, keys: :atoms!)
       end
 
-      def iat(_payload) do
-        Joken.Utils.get_current_time() - 300
+      def claim(:iat, _payload) do
+        Joken.Config.get_current_time() - 300
+      end
+
+      def claim(_, _) do
+        nil
+      end
+
+      def validate_claim(:iat, payload) do
+        Joken.Config.validate_time_claim(payload, :iat, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+      end
+
+      def validate_claim(_, _) do
+        :ok
       end
     end
 
     defmodule IatFailureTest do
-      alias Poison, as: JSON
-      use Joken.Parameters
+      @behaviour Joken.Config
+
+      def secret_key() do
+        "test"
+      end
+
+      def algorithm() do
+        :HS256
+      end
 
       def encode(map) do
-        JSON.encode!(map)
+        Poison.encode!(map)
       end
 
       def decode(binary) do
-        JSON.decode!(binary, keys: :atoms!)
+        Poison.decode!(binary, keys: :atoms!)
       end
 
-      def iat(_payload) do
-        Joken.Utils.get_current_time() + 300
+      def claim(:iat, _payload) do
+        Joken.Config.get_current_time() + 300
+      end
+
+      def claim(_, _) do
+        nil
+      end
+
+      def validate_claim(:iat, payload) do
+        Joken.Config.validate_time_claim(payload, :iat, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+      end
+
+      def validate_claim(_, _) do
+        :ok
       end
     end 
 
-    {:ok, token} = Joken.Token.encode(@secret, IatSuccessTest, @payload, :HS256)
-    assert {:ok, _} = Joken.Token.decode(@secret, IatSuccessTest, token, :HS256)
+    {:ok, token} = Joken.Token.encode(IatSuccessTest, @payload)
+    assert {:ok, _} = Joken.Token.decode(IatSuccessTest, token)
 
-    {:ok, token} = Joken.Token.encode(@secret, IatFailureTest, @payload, :HS256)
-    assert {:error, "Token not valid yet"} == Joken.Token.decode(@secret, IatFailureTest, token, :HS256)
+    {:ok, token} = Joken.Token.encode(IatFailureTest, @payload)
+    assert {:error, "Token not valid yet"} == Joken.Token.decode(IatFailureTest, token)
   end
 end

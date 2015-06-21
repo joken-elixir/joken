@@ -3,5 +3,4 @@
 use Mix.Config
 
 config :joken,
- secret_key: "test",
- parameters_module: Joken.TestPoison
+ config_module: Joken.TestPoison
