@@ -7,7 +7,7 @@ defmodule Joken.Config do
    * secret key used for encoding and decoding
    * the algorithm used
 
-  The supported claims are `[:exp, :nbf, :iat, :aud, :iss, :sub, :jti]`
+  The supported claims are defined in the type, Joken.claim
 
   The following example would use Poison for encoding and decoding
   and add and validate the `exp` claim. All other claims would not be added
@@ -35,7 +35,7 @@ defmodule Joken.Config do
         end
 
         def claim(:exp, payload) do
-          12345678
+          Joken.Config.get_current_time() + 300
         end
 
         def claim(_, _) do
@@ -70,7 +70,7 @@ defmodule Joken.Config do
   If nil is returned, then the claim will not be added to the
   payload. Otherwise, the value returned will be added to the payload
   """
-  defcallback claim(Atom.t, Joken.payload) :: nil | any
+  defcallback claim(Joken.claim, Joken.payload) :: nil | any
 
   @doc """
   Validates the claim on the payload.
@@ -78,7 +78,7 @@ defmodule Joken.Config do
   Returns `:ok` if the claim is validated correctly or
   `{:error, message} if it does not
   """
-  defcallback validate_claim(Atom.t, Joken.payload) :: :ok | {:error, String.t}
+  defcallback validate_claim(Joken.claim, Joken.payload) :: :ok | {:error, String.t}
 
   @doc """
   encode can take either a map or a keyword list or both and return a string.   

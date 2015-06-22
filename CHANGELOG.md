@@ -1,14 +1,15 @@
-# v0.14.0-dev
+# v0.14.0
 
 * Enhancements
   * The `Joken.Config` behaviour handles the configuration of the secret_key, algorithm, encode and decode functions, as well as functions for adding and validating claims 
-  * Add `skip` parameter to `Joken.Token.decode`
-  * Add `skip` parameter to `Joken.decode`
+  * Add `options` parameter to `Joken.Token.decode`
+  * Add `options` parameter to `Joken.decode`
+  * Removed `:none` algorithm completely
 
 * Breaking
   * `Joken.Codec` is replaced by `Joken.Config`. 
   * `json_module` in config is replaced by `config_module`. 
-  * `algorithm` and `secret_key` in config is replaced by implementing the `algorithm` and `secret_key` functions on `Joken.Config` `config_module`. 
+  * `algorithm` and `secret_key` in config is replaced by implementing the `algorithm` and `secret_key` functions on `Joken.Config`. 
   * `Joken.Token.encode` now has a signature of `(joken_config, payload)` since the algorithm and secret key are defined inside of the passed in `joken_config` module.
   * `Joken.Token.decode` now has a signature of `(joken_config, jwt, options \\ [])` since the algorithm and secret key are defined inside of the passed in `joken_config` module.
 

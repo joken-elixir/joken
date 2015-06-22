@@ -2,6 +2,7 @@ defmodule Joken do
   alias Joken.Token
 
   @type algorithm :: :HS256 | :HS384 | :HS512
+  @type claim :: :exp | :nbf | :iat | :aud | :iss | :sub | :jti
   @type status :: :ok | :error
   @type payload :: map | Keyword.t
 
@@ -60,7 +61,7 @@ defmodule Joken do
         end
 
         def claim(:exp, payload) do
-          12345678
+          Joken.Config.get_current_time() + 300
         end
 
         def claim(_, _) do
