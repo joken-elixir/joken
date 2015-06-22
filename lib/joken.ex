@@ -41,8 +41,8 @@ defmodule Joken do
   and not add or validate the others:
 
 
-      defmodule My.Parameters.Module do
-        @behaviour Joken.Parameters
+      defmodule My.Config.Module do
+        @behaviour Joken.Config
 
         def secret_key() do
           Application.get_env(:app, :secret_key)
@@ -69,7 +69,7 @@ defmodule Joken do
         end
 
         def validate_claim(:exp, payload) do
-          Joken.Parameters.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+          Joken.Config.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
         end
 
         def validate_claim(_, _) do
@@ -78,12 +78,10 @@ defmodule Joken do
       end
 
 
-  Joken looks for a `joken` config with `secret_key`, `algorithm`, `parameters`. `parameters` module being a module that implements the `Joken.Parameters` Behaviour.
+  Joken looks for a `joken` config with `config_module`. `config_module` module being a module that implements the `Joken.Config` Behaviour.
 
        config :joken,
-         secret_key: "test",
-         parameters_module: My.Parameters.Module,
-         algorithm: :HS256, #Optional. defaults to :HS256
+         config_module: My.Config.Module
 
   then to encode and decode
 

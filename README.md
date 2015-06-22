@@ -79,7 +79,7 @@ Joken looks for a `joken` config with `config_module`. `config_module` module be
 
 ```elixir
      config :joken,
-       parameters_module: My.Config.Module,
+       config_module: My.Config.Module
 ```
 
 then to encode and decode
