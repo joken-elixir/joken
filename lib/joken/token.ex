@@ -27,9 +27,9 @@ defmodule Joken.Token do
 
     {status, payloadJSON} = get_payload_json(payload, claims, joken_config)
 
-    case Map.has_key?(@supported_algorithms, joken_config.algorithm) do
+    case Dict.has_key?(@supported_algorithms, joken_config.algorithm) do
       false ->
-        {:error, "Unsupported algorithm"} 
+        {:error, "Unsupported algorithm"}
       _ ->
         case status do
           :error ->
@@ -42,28 +42,22 @@ defmodule Joken.Token do
             signature64 = Utils.base64url_encode(signature)
 
             {:ok, "#{header64}.#{payload64}.#{signature64}"}
-        end              
+        end
     end
   end
 
   defp get_payload_json(payload, claims, json_module) do
-    try do 
-      case payload do
-        p when is_map(payload) ->
-          {:ok, Map.merge(payload, claims) |> json_module.encode}
-        _ ->
-          claims = if is_map(claims), do: Map.to_list(claims), else: claims
-          {:ok, Keyword.merge(payload, claims) |> json_module.encode}
-      end          
-    rescue 
-      _ -> 
-        {:error, nil} 
+    try do
+      { :ok, Dict.merge(payload, claims) |> json_module.encode }
+    rescue
+      _ ->
+        {:error, nil}
     end
   end
 
   @spec decode(module, String.t, [Keyword.t]) :: {Joken.status, map | String.t}
   def decode(joken_config, token, options \\ []) do
-    skip_options = Keyword.get options, :skip, []
+    skip_options = Dict.get options || [], :skip, []
 
     claims = @claims -- skip_options
 
@@ -76,10 +70,10 @@ defmodule Joken.Token do
       _ ->
         {:ok, data} = get_data(token, joken_config)
 
-        results = Enum.map(claims, fn(claim) ->
+        results = Enum.into(claims, []) |> Enum.map(fn(claim) ->
           joken_config.validate_claim(claim, data)
         end)
-        |> Enum.filter(fn(result) -> 
+        |> Enum.filter(fn(result) ->
           case result do
             {:error, _message} ->
               true
@@ -110,7 +104,7 @@ defmodule Joken.Token do
             {:error, "Invalid signature"}
         end
       _ ->
-        {:error, "Invalid JSON Web Token"}        
+        {:error, "Invalid JSON Web Token"}
     end
 
   end
