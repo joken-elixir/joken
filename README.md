@@ -44,7 +44,7 @@ Usage:
     end
 
     def algorithm() do
-      :H256
+      :HS256
     end
 
     def encode(map) do
