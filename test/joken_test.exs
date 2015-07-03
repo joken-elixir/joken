@@ -37,7 +37,7 @@ defmodule Joken.Test do
       end
 
       def claim(:exp, _payload) do
-        Joken.Config.get_current_time() + 300
+        Joken.Helpers.get_current_time() + 300
       end
 
       def claim(_, _payload) do
@@ -45,7 +45,7 @@ defmodule Joken.Test do
       end
 
       def validate_claim(:exp, payload, _) do
-        Joken.Config.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+        Joken.Helpers.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
       end
 
       def validate_claim(_, _payload, _) do
@@ -82,7 +82,7 @@ defmodule Joken.Test do
       end
 
       def claim(:exp, _payload) do
-        Joken.Config.get_current_time() - 300
+        Joken.Helpers.get_current_time() - 300
       end
 
       def claim(_, _payload) do
@@ -90,7 +90,7 @@ defmodule Joken.Test do
       end
 
       def validate_claim(:exp, payload, _) do
-        Joken.Config.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+        Joken.Helpers.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
       end
 
       def validate_claim(_, _payload, _) do
@@ -128,7 +128,7 @@ defmodule Joken.Test do
       end
 
       def claim(:nbf, _payload) do
-        Joken.Config.get_current_time() - 300
+        Joken.Helpers.get_current_time() - 300
       end
 
       def claim(_, _payload) do
@@ -136,7 +136,7 @@ defmodule Joken.Test do
       end
 
       def validate_claim(:nbf, payload, _) do
-        Joken.Config.validate_time_claim(payload, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+        Joken.Helpers.validate_time_claim(payload, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
       end
 
       def validate_claim(_, _payload, _) do
@@ -175,7 +175,7 @@ defmodule Joken.Test do
 
 
       def claim(:nbf, _payload) do
-        Joken.Config.get_current_time() + 300
+        Joken.Helpers.get_current_time() + 300
       end
 
       def claim(_, _payload) do
@@ -183,7 +183,7 @@ defmodule Joken.Test do
       end
 
       def validate_claim(:nbf, payload, _) do
-        Joken.Config.validate_time_claim(payload, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+        Joken.Helpers.validate_time_claim(payload, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
       end
 
       def validate_claim(_, _payload, _) do
@@ -401,7 +401,7 @@ defmodule Joken.Test do
       end
 
       def claim(:exp, _payload) do
-        Joken.Config.get_current_time() - 100000
+        Joken.Helpers.get_current_time() - 100000
       end
 
       def claim(_, _payload) do
@@ -409,7 +409,7 @@ defmodule Joken.Test do
       end
 
       def validate_claim(:exp, payload, _) do
-        Joken.Config.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+        Joken.Helpers.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
       end
 
       def validate_claim(_, _payload, _) do

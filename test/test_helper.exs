@@ -24,15 +24,15 @@ defmodule Joken.TestPoison do
   end
 
   def validate_claim(:exp, payload, _) do
-    Joken.Config.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+    Joken.Helpers.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
   end
 
   def validate_claim(:nbf, payload, _) do
-    Joken.Config.validate_time_claim(payload, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+    Joken.Helpers.validate_time_claim(payload, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
   end
 
   def validate_claim(:iat, payload, _) do
-    Joken.Config.validate_time_claim(payload, :iat, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+    Joken.Helpers.validate_time_claim(payload, :iat, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
   end
 
   def validate_claim(_, _, _) do
@@ -65,15 +65,15 @@ defmodule Joken.TestJsx do
   end
 
   def validate_claim(:exp, payload, _) do
-    Joken.Config.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+    Joken.Helpers.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
   end
 
   def validate_claim(:nbf, payload, _) do
-    Joken.Config.validate_time_claim(payload, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+    Joken.Helpers.validate_time_claim(payload, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
   end
 
   def validate_claim(:iat, payload, _) do
-    Joken.Config.validate_time_claim(payload, :iat, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+    Joken.Helpers.validate_time_claim(payload, :iat, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
   end
 
   def validate_claim(_, _, _) do
