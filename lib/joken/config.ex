@@ -78,7 +78,7 @@ defmodule Joken.Config do
   Returns `:ok` if the claim is validated correctly or
   `{:error, message} if it does not
   """
-  defcallback validate_claim(Joken.claim, Joken.payload) :: :ok | {:error, String.t}
+  defcallback validate_claim(Joken.claim, Joken.payload, Dict.t) :: :ok | {:error, String.t}
 
   @doc """
   encode can take either a map or a keyword list or both and return a string.

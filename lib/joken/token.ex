@@ -57,10 +57,10 @@ defmodule Joken.Token do
 
   @spec decode(module, String.t, [Keyword.t]) :: {Joken.status, map | String.t}
   def decode(joken_config, token, options \\ []) do
-    skip_options = Dict.get options || [], :skip, []
 
+    {skip_options, options} = Dict.pop options, :skip, []
+    
     claims = @claims -- skip_options
-
 
     {status, result} = verify_signature(token, joken_config.secret_key, joken_config.algorithm)
 
@@ -71,7 +71,7 @@ defmodule Joken.Token do
         {:ok, data} = get_data(token, joken_config)
 
         results = Enum.into(claims, []) |> Enum.map(fn(claim) ->
-          joken_config.validate_claim(claim, data)
+          joken_config.validate_claim(claim, data, options)
         end)
         |> Enum.filter(fn(result) ->
           case result do
