@@ -1,4 +1,4 @@
-# v0.14.2-dev
+# v0.15.0-dev
 * Enhancements
   * Add options parameter to `Joken.Config.validate_claim`
   * Moved validation helpers functions to `Joken.Helpers`
