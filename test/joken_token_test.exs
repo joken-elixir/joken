@@ -344,7 +344,7 @@ defmodule Joken.Token.Test do
       end
 
       def decode(binary) do
-        Poison.decode!(binary, keys: :atoms!)
+        Poison.decode!(binary)
       end
 
       def claim(:exp, _payload) do
@@ -356,7 +356,7 @@ defmodule Joken.Token.Test do
       end
 
       def validate_claim(:exp, payload) do
-        Joken.Config.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+        Joken.Config.validate_time_claim(payload, "exp", "Token expired", fn(expires_at, now) -> expires_at > now end)
       end
 
       def validate_claim(_, _) do
@@ -380,7 +380,7 @@ defmodule Joken.Token.Test do
       end
 
       def decode(binary) do
-        Poison.decode!(binary, keys: :atoms!)
+        Poison.decode!(binary)
       end
 
       def claim(:exp, _payload) do
@@ -392,7 +392,7 @@ defmodule Joken.Token.Test do
       end
 
       def validate_claim(:exp, payload) do
-        Joken.Config.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+        Joken.Config.validate_time_claim(payload, "exp", "Token expired", fn(expires_at, now) -> expires_at > now end)
       end
 
       def validate_claim(_, _) do
@@ -400,11 +400,11 @@ defmodule Joken.Token.Test do
       end
     end 
 
-    {:ok, token} = Joken.Token.encode(ExpSuccessTest, @payload)
+    {:ok, token} = Joken.Token.encode(ExpSuccessTest,  %{ "name" => "John Doe" })
     {status, _} = Joken.Token.decode(ExpSuccessTest, token)
     assert(status == :ok)
 
-    {:ok, token} = Joken.Token.encode(ExpFailureTest, @payload)
+    {:ok, token} = Joken.Token.encode(ExpFailureTest, %{ "name" => "John Doe" })
     {status, mesg} = Joken.Token.decode(ExpFailureTest, token)
     assert(status == :error) 
     assert(mesg == "Token expired") 
