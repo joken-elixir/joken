@@ -427,7 +427,7 @@ defmodule Joken.Token.Test do
       end
 
       def decode(binary) do
-        Poison.decode!(binary, keys: :atoms!)
+        Poison.decode!(binary)
       end
 
       def claim(:iat, _payload) do
@@ -439,7 +439,7 @@ defmodule Joken.Token.Test do
       end
 
       def validate_claim(:iat, payload) do
-        Joken.Config.validate_time_claim(payload, :iat, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+        Joken.Config.validate_time_claim(payload, "iat", "Token not valid yet", fn(not_before, now) -> not_before < now end) 
       end
 
       def validate_claim(_, _) do
@@ -463,7 +463,7 @@ defmodule Joken.Token.Test do
       end
 
       def decode(binary) do
-        Poison.decode!(binary, keys: :atoms!)
+        Poison.decode!(binary)
       end
 
       def claim(:iat, _payload) do
@@ -475,7 +475,7 @@ defmodule Joken.Token.Test do
       end
 
       def validate_claim(:iat, payload) do
-        Joken.Config.validate_time_claim(payload, :iat, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+        Joken.Config.validate_time_claim(payload, "iat", "Token not valid yet", fn(not_before, now) -> not_before < now end) 
       end
 
       def validate_claim(_, _) do
@@ -483,10 +483,10 @@ defmodule Joken.Token.Test do
       end
     end 
 
-    {:ok, token} = Joken.Token.encode(IatSuccessTest, @payload)
+    {:ok, token} = Joken.Token.encode(IatSuccessTest,  %{ "name" => "John Doe" })
     assert {:ok, _} = Joken.Token.decode(IatSuccessTest, token)
 
-    {:ok, token} = Joken.Token.encode(IatFailureTest, @payload)
+    {:ok, token} = Joken.Token.encode(IatFailureTest,  %{ "name" => "John Doe" })
     assert {:error, "Token not valid yet"} == Joken.Token.decode(IatFailureTest, token)
   end
 end
