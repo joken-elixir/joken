@@ -31,7 +31,7 @@ defmodule Joken.Config do
         end
 
         def decode(binary) do
-          Poison.decode!(binary, keys: :atoms!)
+          Poison.decode!(binary)
         end
 
         def claim(:exp, payload) do
@@ -43,7 +43,7 @@ defmodule Joken.Config do
         end
 
         def validate_claim(:exp, payload) do
-          Joken.Config.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+          Joken.Config.validate_time_claim(payload, "exp", "Token expired", fn(expires_at, now) -> expires_at > now end)
         end
 
         def validate_claim(_, _) do
