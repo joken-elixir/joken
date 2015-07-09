@@ -468,10 +468,58 @@ defmodule Joken.Test do
     end 
 
     Application.put_env(:joken, :config_module, ExtraDataTest)
-    %{aud: "update"}
     {:ok, token} = Joken.encode(%{aud: "update"})
     {status, _} = Joken.decode token, [aud: "update"]
     assert(status == :ok)
+
+  end
+
+  test "validate custom claim from options" do
+    defmodule CustomClaimTest do
+      alias Poison, as: JSON
+      @behaviour Joken.Config
+
+      def secret_key() do
+        "test"
+      end
+
+      def algorithm() do
+        :HS256
+      end
+
+      def encode(map) do
+        JSON.encode!(map)
+      end
+
+      def decode(binary) do
+        JSON.decode!(binary, keys: :atoms!)
+      end
+
+      def claim(_, _) do
+        nil
+      end
+
+      def validate_claim(:user_id, payload, options) do
+        if Dict.get(options, :user_id) == Dict.get(payload, :user_id) do
+          :ok
+        else
+          {:error, "Invalid User Id"}
+        end
+        
+      end
+
+      def validate_claim(_, _, _) do
+        :ok
+      end
+    end 
+
+    Application.put_env(:joken, :config_module, CustomClaimTest)
+    {:ok, token} = Joken.encode(%{user_id: "abc"})
+    {status, _} = Joken.decode token, [user_id: "abc"]
+    assert(status == :ok)
+
+    {status, _} = Joken.decode token, [user_id: "cba"]
+    assert(status == :error)
 
   end
   

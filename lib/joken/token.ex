@@ -70,7 +70,9 @@ defmodule Joken.Token do
       _ ->
         {:ok, data} = get_data(token, joken_config)
 
-        results = Enum.into(claims, []) |> Enum.map(fn(claim) ->
+       results = claims ++ Dict.keys(options)
+        |> Enum.uniq
+        |> Enum.map(fn(claim) ->
           joken_config.validate_claim(claim, data, options)
         end)
         |> Enum.filter(fn(result) ->
