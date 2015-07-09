@@ -46,6 +46,9 @@ defmodule Joken.Token do
     end
   end
 
+  defp get_payload_json(%{__struct__: _mod} = payload, claims, json_module) do
+    get_payload_json(Map.from_struct(payload), claims, json_module)
+  end
   defp get_payload_json(payload, claims, json_module) do
     try do
       { :ok, Dict.merge(payload, claims) |> json_module.encode }
