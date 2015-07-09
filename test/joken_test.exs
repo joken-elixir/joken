@@ -37,18 +37,18 @@ defmodule Joken.Test do
       end
 
       def claim(:exp, _payload) do
-        Joken.Config.get_current_time() + 300
+        Joken.Helpers.get_current_time() + 300
       end
 
       def claim(_, _payload) do
         nil
       end
 
-      def validate_claim(:exp, payload) do
-        Joken.Config.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+      def validate_claim(:exp, payload, _) do
+        Joken.Helpers.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
       end
 
-      def validate_claim(_, _payload) do
+      def validate_claim(_, _payload, _) do
         :ok
       end
     end 
@@ -82,18 +82,18 @@ defmodule Joken.Test do
       end
 
       def claim(:exp, _payload) do
-        Joken.Config.get_current_time() - 300
+        Joken.Helpers.get_current_time() - 300
       end
 
       def claim(_, _payload) do
         nil
       end
 
-      def validate_claim(:exp, payload) do
-        Joken.Config.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+      def validate_claim(:exp, payload, _) do
+        Joken.Helpers.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
       end
 
-      def validate_claim(_, _payload) do
+      def validate_claim(_, _payload, _) do
         :ok
       end
     end 
@@ -128,18 +128,18 @@ defmodule Joken.Test do
       end
 
       def claim(:nbf, _payload) do
-        Joken.Config.get_current_time() - 300
+        Joken.Helpers.get_current_time() - 300
       end
 
       def claim(_, _payload) do
         nil
       end
 
-      def validate_claim(:nbf, payload) do
-        Joken.Config.validate_time_claim(payload, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+      def validate_claim(:nbf, payload, _) do
+        Joken.Helpers.validate_time_claim(payload, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
       end
 
-      def validate_claim(_, _payload) do
+      def validate_claim(_, _payload, _) do
         :ok
       end
     end 
@@ -175,18 +175,18 @@ defmodule Joken.Test do
 
 
       def claim(:nbf, _payload) do
-        Joken.Config.get_current_time() + 300
+        Joken.Helpers.get_current_time() + 300
       end
 
       def claim(_, _payload) do
         nil
       end
 
-      def validate_claim(:nbf, payload) do
-        Joken.Config.validate_time_claim(payload, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+      def validate_claim(:nbf, payload, _) do
+        Joken.Helpers.validate_time_claim(payload, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
       end
 
-      def validate_claim(_, _payload) do
+      def validate_claim(_, _payload, _) do
         :ok
       end
     end 
@@ -228,7 +228,7 @@ defmodule Joken.Test do
         nil
       end
 
-      def validate_claim(_, _payload) do
+      def validate_claim(_, _payload, _) do
         :ok
       end
     end 
@@ -270,11 +270,11 @@ defmodule Joken.Test do
         nil
       end
 
-      def validate_claim(:aud, _payload) do
+      def validate_claim(:aud, _payload, _) do
         {:error, "Invalid audience"}
       end
 
-      def validate_claim(_, _payload) do
+      def validate_claim(_, _payload, _) do
         :ok
       end
     end 
@@ -316,11 +316,11 @@ defmodule Joken.Test do
         nil
       end
 
-      def validate_claim(:aud, _payload) do
+      def validate_claim(:aud, _payload, _) do
         {:error, "Missing audience"}
       end
 
-      def validate_claim(_, _payload) do
+      def validate_claim(_, _payload, _) do
         :ok
       end
     end 
@@ -362,7 +362,7 @@ defmodule Joken.Test do
         nil
       end
 
-      def validate_claim(_, _payload) do
+      def validate_claim(_, _payload, _) do
         :ok
       end
     end 
@@ -401,18 +401,18 @@ defmodule Joken.Test do
       end
 
       def claim(:exp, _payload) do
-        Joken.Config.get_current_time() - 100000
+        Joken.Helpers.get_current_time() - 100000
       end
 
       def claim(_, _payload) do
         nil
       end
 
-      def validate_claim(:exp, payload) do
-        Joken.Config.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+      def validate_claim(:exp, payload, _) do
+        Joken.Helpers.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
       end
 
-      def validate_claim(_, _payload) do
+      def validate_claim(_, _payload, _) do
         :ok
       end
     end 
@@ -422,6 +422,105 @@ defmodule Joken.Test do
     {:ok, expired_token} = Joken.encode(@payload)
     {status, _} = Joken.decode expired_token, skip: [:exp]
     assert(status == :ok)
+  end
+
+  test "passing in extra data" do
+    defmodule ExtraDataTest do
+      alias Poison, as: JSON
+      @behaviour Joken.Config
+
+      def secret_key() do
+        "test"
+      end
+
+      def algorithm() do
+        :HS256
+      end
+
+      def encode(map) do
+        JSON.encode!(map)
+      end
+
+      def decode(binary) do
+        JSON.decode!(binary, keys: :atoms!)
+      end
+
+      def claim(:aud, _payload) do
+        "update"
+      end
+
+      def claim(_, _payload) do
+        nil
+      end
+
+      def validate_claim(:aud, payload, options) do
+        if Dict.get(options, :aud) == Dict.get(payload, :aud) do
+          :ok
+        else
+          {:error, "Invalid AUD"}
+        end
+        
+      end
+
+      def validate_claim(_, _payload, _) do
+        :ok
+      end
+    end 
+
+    Application.put_env(:joken, :config_module, ExtraDataTest)
+    {:ok, token} = Joken.encode(%{aud: "update"})
+    {status, _} = Joken.decode token, [aud: "update"]
+    assert(status == :ok)
+
+  end
+
+  test "validate custom claim from options" do
+    defmodule CustomClaimTest do
+      alias Poison, as: JSON
+      @behaviour Joken.Config
+
+      def secret_key() do
+        "test"
+      end
+
+      def algorithm() do
+        :HS256
+      end
+
+      def encode(map) do
+        JSON.encode!(map)
+      end
+
+      def decode(binary) do
+        JSON.decode!(binary, keys: :atoms!)
+      end
+
+      def claim(_, _) do
+        nil
+      end
+
+      def validate_claim(:user_id, payload, options) do
+        if Dict.get(options, :user_id) == Dict.get(payload, :user_id) do
+          :ok
+        else
+          {:error, "Invalid User Id"}
+        end
+        
+      end
+
+      def validate_claim(_, _, _) do
+        :ok
+      end
+    end 
+
+    Application.put_env(:joken, :config_module, CustomClaimTest)
+    {:ok, token} = Joken.encode(%{user_id: "abc"})
+    {status, _} = Joken.decode token, [user_id: "abc"]
+    assert(status == :ok)
+
+    {status, _} = Joken.decode token, [user_id: "cba"]
+    assert(status == :error)
+
   end
   
 end

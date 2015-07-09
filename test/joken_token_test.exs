@@ -55,7 +55,7 @@ defmodule Joken.Token.Test do
         nil
       end
 
-      def validate_claim(_, _) do
+      def validate_claim(_, _, _) do
         :ok
       end
     end
@@ -91,7 +91,7 @@ defmodule Joken.Token.Test do
         nil
       end
 
-      def validate_claim(_, _) do
+      def validate_claim(_, _, _) do
         :ok
       end
     end
@@ -148,7 +148,7 @@ defmodule Joken.Token.Test do
         nil
       end
 
-      def validate_claim(_, _) do
+      def validate_claim(_, _, _) do
         :ok
       end
     end
@@ -190,7 +190,7 @@ defmodule Joken.Token.Test do
         nil
       end
 
-      def validate_claim(_, _) do
+      def validate_claim(_, _, _) do
         :ok
       end
     end
@@ -227,7 +227,7 @@ defmodule Joken.Token.Test do
         nil
       end
 
-      def validate_claim(_, _) do
+      def validate_claim(_, _, _) do
         :ok
       end
     end
@@ -264,7 +264,7 @@ defmodule Joken.Token.Test do
         nil
       end
 
-      def validate_claim(_, _) do
+      def validate_claim(_, _, _) do
         :ok
       end
     end
@@ -301,7 +301,7 @@ defmodule Joken.Token.Test do
         nil
       end
 
-      def validate_claim(_, _) do
+      def validate_claim(_, _, _) do
         :ok
       end
     end
@@ -348,7 +348,7 @@ defmodule Joken.Token.Test do
       end
 
       def claim(:exp, _payload) do
-        Joken.Config.get_current_time() + 300
+        Joken.Helpers.get_current_time() + 300
       end
 
       def claim(_, _) do
@@ -359,7 +359,7 @@ defmodule Joken.Token.Test do
         Joken.Config.validate_time_claim(payload, "exp", "Token expired", fn(expires_at, now) -> expires_at > now end)
       end
 
-      def validate_claim(_, _) do
+      def validate_claim(_, _, _) do
         :ok
       end
     end
@@ -384,7 +384,7 @@ defmodule Joken.Token.Test do
       end
 
       def claim(:exp, _payload) do
-        Joken.Config.get_current_time() - 300
+        Joken.Helpers.get_current_time() - 300
       end
 
       def claim(_, _) do
@@ -395,7 +395,7 @@ defmodule Joken.Token.Test do
         Joken.Config.validate_time_claim(payload, "exp", "Token expired", fn(expires_at, now) -> expires_at > now end)
       end
 
-      def validate_claim(_, _) do
+      def validate_claim(_, _, _) do
         :ok
       end
     end 
@@ -431,7 +431,7 @@ defmodule Joken.Token.Test do
       end
 
       def claim(:iat, _payload) do
-        Joken.Config.get_current_time() - 300
+        Joken.Helpers.get_current_time() - 300
       end
 
       def claim(_, _) do
@@ -442,7 +442,7 @@ defmodule Joken.Token.Test do
         Joken.Config.validate_time_claim(payload, "iat", "Token not valid yet", fn(not_before, now) -> not_before < now end) 
       end
 
-      def validate_claim(_, _) do
+      def validate_claim(_, _, _) do
         :ok
       end
     end
@@ -467,7 +467,7 @@ defmodule Joken.Token.Test do
       end
 
       def claim(:iat, _payload) do
-        Joken.Config.get_current_time() + 300
+        Joken.Helpers.get_current_time() + 300
       end
 
       def claim(_, _) do
@@ -478,7 +478,7 @@ defmodule Joken.Token.Test do
         Joken.Config.validate_time_claim(payload, "iat", "Token not valid yet", fn(not_before, now) -> not_before < now end) 
       end
 
-      def validate_claim(_, _) do
+      def validate_claim(_, _, _) do
         :ok
       end
     end 
