@@ -1,6 +1,5 @@
-Joken
-=====
-[Documentation](http://hexdocs.pm/joken/)
+## Joken [![Documentation](https://img.shields.io/badge/docs-hexpm-blue.svg)](http://hexdocs.pm/joken/) [![Downloads](https://img.shields.io/hexpm/dt/joken.svg)](https://hex.pm/packages/joken)
+
 
 Encodes and decodes JSON Web Tokens.
 
@@ -63,7 +62,7 @@ Usage:
       nil
     end
 
-    def validate_claim(:exp, payload) do
+    def validate_claim(:exp, payload, options) do
       Joken.Config.validate_time_claim(payload, "exp", "Token expired", fn(expires_at, now) -> expires_at > now end)
     end
 
