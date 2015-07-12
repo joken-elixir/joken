@@ -105,12 +105,23 @@ defmodule Joken do
   @doc """
   Decodes the given JSON Web Token and gets the payload
 
+  token: The jwt token string to decode
+
+  options (optional): a keyword list of decoding options. Most are passed to
+  the validate_claim function when validating the claim. The `skip` option is
+  not and is used to tell the decoder to skip the given claims when validating
+
+  ex.
+
+      #decode the given string with no options given
       Joken.decode(token)
 
-  You can also pass a skip list of atoms in order to skip some validations.
-  Be advised that this is NOT intended to customize claim validation. It is
-  is only intended to be used when you want to refresh a token and need to
-  validate an expired token.
+      #decode the given string while skipping the exp claim
+      Joken.decode(token, [ skip: [:exp] ])
+
+      #decode the given string and pass the following the validate_claim function
+      Joken.decode(token, [ user_id: 1, roles: [:admin] ])    
+
   """
 
   @spec decode(String.t, Keyword.t) :: { status, map | String.t }
