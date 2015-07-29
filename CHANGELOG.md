@@ -1,3 +1,12 @@
+# v0.16.0
+* Enhancements
+  * Can now specify which config block the `joken_config` key is on
+
+* Breaking
+  * Must now add `use Joken, otp_app: :myapp` where `:myapp` is the name of the config block with the
+  `joken_config` key on it.
+  * `Joken.encode` and `Joken.decode` are now `Joken.encode_token` and `Joken.decode_token`
+
 # v0.15.0
 * Enhancements
   * Add options parameter to `Joken.Config.validate_claim`
