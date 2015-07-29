@@ -61,7 +61,7 @@ defmodule Joken do
         end
 
         def claim(:exp, payload) do
-          Joken.Config.get_current_time() + 300
+          Joken.Helpers.get_current_time() + 300
         end
 
         def claim(_, _) do
@@ -69,7 +69,7 @@ defmodule Joken do
         end
 
         def validate_claim(:exp, payload, options) do
-          Joken.Config.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
+          Joken.Helpers.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
         end
 
         def validate_claim(_, _, _) do
