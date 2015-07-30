@@ -4,20 +4,21 @@ defmodule Joken.Helpers do
   Helper function for validating time claims (exp, nbf, iat)
   """
   def validate_time_claim(payload, key, error_msg, validate_time_fun) do
+    
     key_found? = Dict.has_key?(payload, key)
     value = Dict.get(payload, key)
     current_time = get_current_time()
+    result = validate_time_fun.(value, current_time)
 
     cond do
-      key_found? and validate_time_fun.(value, current_time) ->
+      key_found? and result ->
         :ok
-      key_found? and !validate_time_fun.(value, current_time) ->
+      key_found? and !result ->
         {:error, error_msg}
       true ->
         :ok
     end
   end
-
 
   @doc """
   Helper function for validating non-time claims
