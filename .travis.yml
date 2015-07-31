@@ -1,0 +1,10 @@
+sudo: false # to use faster container based build environment
+language: elixir
+elixir:
+  - 1.0.5
+otp_release:
+  - 17.5
+  - 18.0
+after_script:
+  - mix deps.get --only docs
+  - MIX_ENV=docs mix docs # generate docs to check if it is not breaking.
