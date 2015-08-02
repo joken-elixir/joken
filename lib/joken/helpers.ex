@@ -3,8 +3,12 @@ defmodule Joken.Helpers do
   @doc """
   Helper function for validating time claims (exp, nbf, iat)
   """
+  def validate_time_claim(%{__struct__: _module} = payload, key, error_msg, validate_time_fun) do
+    validate_time_claim(Map.from_struct(payload), key, error_msg, validate_time_fun)
+  end
+
   def validate_time_claim(payload, key, error_msg, validate_time_fun) do
-    
+
     key_found? = Dict.has_key?(payload, key)
     value = Dict.get(payload, key)
     current_time = get_current_time()
@@ -23,6 +27,10 @@ defmodule Joken.Helpers do
   @doc """
   Helper function for validating non-time claims
   """
+  def validate_claim(%{__struct__: _mod} = payload, key_to_check, value, full_name) do
+    validate_claim(Map.from_struct(payload), key_to_check, value, full_name)
+  end
+  
   def validate_claim(payload, key_to_check, value, full_name) do
     key_found? = Dict.has_key?(payload, key_to_check)
     the_value = Dict.get(payload, key_to_check)

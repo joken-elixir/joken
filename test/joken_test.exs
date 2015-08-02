@@ -149,7 +149,6 @@ defmodule Joken.Test do
 
     Application.put_env(:joken, :config_module, AudSuccessTest)
 
-
     {:ok, token} = Joken.encode(@payload)
     {status, _} = Joken.decode(token)
     assert(status == :ok) 
@@ -303,7 +302,7 @@ defmodule Joken.Test do
 
     defstruct nbf: nil
 
-    def decode(binary), do: Poison.decode!(binary, keys: :atoms!, as: Joken.Test.StructToken)
+    def decode(binary), do: Poison.decode!(binary, keys: :atoms!, as: Joken.Test.StructToken)    
     
     def validate_claim(:nbf, payload, _) do
       Joken.Helpers.validate_time_claim(payload, :nbf, "Token not valid yet",
@@ -315,10 +314,25 @@ defmodule Joken.Test do
     def validate_claim(_, _payload, _), do: :ok
   end
   
-  test "encode a struct" do
+  test "struct not before (nbf) success" do
 
-    {:ok, token} = Joken.encode(%StructToken{nbf: Joken.Helpers.get_current_time() - 300})
-    {:ok, token} = Joken.decode(token)
+    Application.put_env(:joken, :config_module, StructToken)
+    struct = %StructToken{nbf: Joken.Helpers.get_current_time() - 300}
+
+    {:ok, token} = Joken.encode(struct)
+    {status, _} = Joken.decode(token)
+    assert status == :ok
+  end
+
+  test "struct not before (nbf) failure" do
+
+    Application.put_env(:joken, :config_module, StructToken)
+    struct = %StructToken{nbf: Joken.Helpers.get_current_time() + 300}
+
+    {:ok, token} = Joken.encode(struct)
+    {status, message} = Joken.decode(token)
+    assert status == :error
+    assert message == "Token not valid yet"
   end
   
 end

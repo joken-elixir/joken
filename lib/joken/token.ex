@@ -13,7 +13,6 @@ defmodule Joken.Token do
   def encode(joken_config, payload) do
     headerJSON = joken_config.encode(%{ alg: to_string(joken_config.algorithm), typ: :JWT })
 
-
     claims = Enum.reduce(@claims, %{}, fn(claim, current_claims) ->
       result = joken_config.claim(claim, payload)
 
@@ -23,7 +22,6 @@ defmodule Joken.Token do
         current_claims
       end
     end)
-
 
     {status, payloadJSON} = get_payload_json(payload, claims, joken_config)
 
@@ -74,10 +72,10 @@ defmodule Joken.Token do
       _ ->
         {:ok, data} = get_data(token, joken_config)
 
-       results = claims ++ Dict.keys(options)
+        results = claims ++ Dict.keys(options)
         |> Enum.uniq
         |> Enum.map(fn(claim) ->
-          joken_config.validate_claim(claim, data, options)
+           joken_config.validate_claim(claim, data, options)
         end)
         |> Enum.filter(fn(result) ->
           case result do
@@ -121,6 +119,8 @@ defmodule Joken.Token do
     data = Utils.base64url_decode(payload64)
     {:ok, joken_config.decode(data) }
   end
+
+  defp to_map(%{__struct__: _mod} = struct), do: struct
 
   defp to_map(keywords) do
     keywords |> Enum.into(%{})
