@@ -3,6 +3,25 @@ defmodule Joken.Test do
   
   @payload %{ name: "John Doe" }
 
+  defmodule BaseConfig do
+
+    defmacro __using__(_opts) do
+      quote do
+        @behaviour Joken.Config
+
+        def secret_key(), do: "test"
+        def algorithm(), do: :HS256
+        def encode(map), do: Poison.encode!(map)
+        def decode(binary), do: Poison.decode!(binary, keys: :atoms!)
+        def claim(_claim, _payload), do: nil
+        def validate_claim(_claim, _payload, _options), do: :ok
+
+        defoverridable algorithm: 0, encode: 1, decode: 1, claim: 2, validate_claim: 3
+      end
+    end
+    
+  end
+  
   test "signature validation"do
     Application.put_env(:joken, :config_module, Joken.TestPoison)
 
@@ -17,24 +36,7 @@ defmodule Joken.Test do
 
   test "expiration (exp) success" do
     defmodule ExpSuccessTest do
-      alias Poison, as: JSON
-      @behaviour Joken.Config
-
-      def secret_key() do
-        "test"
-      end
-
-      def algorithm() do
-        :HS256
-      end
-
-      def encode(map) do
-        JSON.encode!(map)
-      end
-
-      def decode(binary) do
-        JSON.decode!(binary, keys: :atoms!)
-      end
+      use BaseConfig
 
       def claim(:exp, _payload) do
         Joken.Helpers.get_current_time() + 300
@@ -62,40 +64,20 @@ defmodule Joken.Test do
 
   test "expiration (exp) failure" do
     defmodule ExpFailureTest do
-      alias Poison, as: JSON
-      @behaviour Joken.Config
-
-      def secret_key() do
-        "test"
-      end
-
-      def algorithm() do
-        :HS256
-      end
-
-      def encode(map) do
-        JSON.encode!(map)
-      end
-
-      def decode(binary) do
-        JSON.decode!(binary, keys: :atoms!)
-      end
+      use BaseConfig
 
       def claim(:exp, _payload) do
         Joken.Helpers.get_current_time() - 300
       end
 
-      def claim(_, _payload) do
-        nil
-      end
+      def claim(_, _payload), do: nil
 
       def validate_claim(:exp, payload, _) do
         Joken.Helpers.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
       end
 
-      def validate_claim(_, _payload, _) do
-        :ok
-      end
+      def validate_claim(_, _payload, _), do: :ok
+
     end 
 
     Application.put_env(:joken, :config_module, ExpFailureTest)
@@ -108,44 +90,22 @@ defmodule Joken.Test do
 
   test "not before (nbf) success" do
     defmodule NbfSuccessTest do
-      alias Poison, as: JSON
-      @behaviour Joken.Config
-
-      def secret_key() do
-        "test"
-      end
-
-      def algorithm() do
-        :HS256
-      end
-
-      def encode(map) do
-        JSON.encode!(map)
-      end
-
-      def decode(binary) do
-        JSON.decode!(binary, keys: :atoms!)
-      end
+      use BaseConfig
 
       def claim(:nbf, _payload) do
         Joken.Helpers.get_current_time() - 300
       end
 
-      def claim(_, _payload) do
-        nil
-      end
+      def claim(_, _payload), do: nil
 
       def validate_claim(:nbf, payload, _) do
         Joken.Helpers.validate_time_claim(payload, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
       end
 
-      def validate_claim(_, _payload, _) do
-        :ok
-      end
+      def validate_claim(_, _payload, _), do: :ok
     end 
 
     Application.put_env(:joken, :config_module, NbfSuccessTest)
-
 
     {:ok, token} = Joken.encode(@payload)
     {status, _} = Joken.decode(token)
@@ -153,42 +113,21 @@ defmodule Joken.Test do
   end
 
   test "not before (nbf) failure" do
+
     defmodule NbfFailureTest do
-      alias Poison, as: JSON
-      @behaviour Joken.Config
-
-      def secret_key() do
-        "test"
-      end
-
-      def algorithm() do
-        :HS256
-      end
-
-      def encode(map) do
-        JSON.encode!(map)
-      end
-
-      def decode(binary) do
-        JSON.decode!(binary, keys: :atoms!)
-      end
-
+      use BaseConfig
 
       def claim(:nbf, _payload) do
         Joken.Helpers.get_current_time() + 300
       end
 
-      def claim(_, _payload) do
-        nil
-      end
+      def claim(_, _payload), do: nil
 
       def validate_claim(:nbf, payload, _) do
         Joken.Helpers.validate_time_claim(payload, :nbf, "Token not valid yet", fn(not_before, now) -> not_before < now end) 
       end
 
-      def validate_claim(_, _payload, _) do
-        :ok
-      end
+      def validate_claim(_, _payload, _), do: :ok
     end 
 
     Application.put_env(:joken, :config_module, NbfFailureTest)
@@ -201,40 +140,14 @@ defmodule Joken.Test do
 
   test "audience (aud) success" do
     defmodule AudSuccessTest do
-      alias Poison, as: JSON
-      @behaviour Joken.Config
+      use BaseConfig
 
-      def secret_key() do
-        "test"
-      end
-
-      def algorithm() do
-        :HS256
-      end
-
-      def encode(map) do
-        JSON.encode!(map)
-      end
-
-      def decode(binary) do
-        JSON.decode!(binary, keys: :atoms!)
-      end
-
-      def claim(:aud, _payload) do
-        "Test"
-      end
-
-      def claim(_, _payload) do
-        nil
-      end
-
-      def validate_claim(_, _payload, _) do
-        :ok
-      end
+      def claim(:aud, _payload), do: "Test"
+      def claim(_, _payload), do: nil
+      def validate_claim(_, _payload, _), do: :ok
     end 
 
     Application.put_env(:joken, :config_module, AudSuccessTest)
-
 
     {:ok, token} = Joken.encode(@payload)
     {status, _} = Joken.decode(token)
@@ -243,40 +156,16 @@ defmodule Joken.Test do
 
   test "audience (aud) invalid" do
     defmodule InvalidAudienceTest do
-      alias Poison, as: JSON
-      @behaviour Joken.Config
+      use BaseConfig
 
-      def secret_key() do
-        "test"
-      end
-
-      def algorithm() do
-        :HS256
-      end
-
-      def encode(map) do
-        JSON.encode!(map)
-      end
-
-      def decode(binary) do
-        JSON.decode!(binary, keys: :atoms!)
-      end
-
-      def claim(:aud, _payload) do
-        "Test"
-      end
-
-      def claim(_, _payload) do
-        nil
-      end
+      def claim(:aud, _payload), do: "Test"
+      def claim(_, _payload), do: nil
 
       def validate_claim(:aud, _payload, _) do
         {:error, "Invalid audience"}
       end
 
-      def validate_claim(_, _payload, _) do
-        :ok
-      end
+      def validate_claim(_, _payload, _), do: :ok
     end 
 
     Application.put_env(:joken, :config_module, InvalidAudienceTest)
@@ -289,40 +178,16 @@ defmodule Joken.Test do
 
   test "audience (aud) missing" do
     defmodule MissingAudienceTest do
-      alias Poison, as: JSON
-      @behaviour Joken.Config
-
-      def secret_key() do
-        "test"
-      end
-
-      def algorithm() do
-        :HS256
-      end
-
-      def encode(map) do
-        JSON.encode!(map)
-      end
-
-      def decode(binary) do
-        JSON.decode!(binary, keys: :atoms!)
-      end
-
-      def claim(:aud, _payload) do
-        "Test"
-      end
-
-      def claim(_, _payload) do
-        nil
-      end
+      use BaseConfig
+      
+      def claim(:aud, _payload), do: "Test"
+      def claim(_, _payload), do: nil
 
       def validate_claim(:aud, _payload, _) do
         {:error, "Missing audience"}
       end
 
-      def validate_claim(_, _payload, _) do
-        :ok
-      end
+      def validate_claim(_, _payload, _), do: :ok
     end 
 
     Application.put_env(:joken, :config_module, MissingAudienceTest)
@@ -335,36 +200,12 @@ defmodule Joken.Test do
 
   test "subject (sub) success" do
     defmodule SubSuccessTest do
-      alias Poison, as: JSON
-      @behaviour Joken.Config
+      use BaseConfig
 
-      def secret_key() do
-        "test"
-      end
+      def claim(:sub, _payload), do: "Test"
+      def claim(_, _payload), do: nil
 
-      def algorithm() do
-        :HS256
-      end
-
-      def encode(map) do
-        JSON.encode!(map)
-      end
-
-      def decode(binary) do
-        JSON.decode!(binary, keys: :atoms!)
-      end
-
-      def claim(:sub, _payload) do
-        "Test"
-      end
-
-      def claim(_, _payload) do
-        nil
-      end
-
-      def validate_claim(_, _payload, _) do
-        :ok
-      end
+      def validate_claim(_, _payload, _), do: :ok
     end 
 
     Application.put_env(:joken, :config_module, SubSuccessTest)
@@ -381,40 +222,19 @@ defmodule Joken.Test do
 
   test "claim skipping" do
     defmodule ExpSkippedTest do
-      alias Poison, as: JSON
-      @behaviour Joken.Config
-
-      def secret_key() do
-        "test"
-      end
-
-      def algorithm() do
-        :HS256
-      end
-
-      def encode(map) do
-        JSON.encode!(map)
-      end
-
-      def decode(binary) do
-        JSON.decode!(binary, keys: :atoms!)
-      end
+      use BaseConfig
 
       def claim(:exp, _payload) do
         Joken.Helpers.get_current_time() - 100000
       end
 
-      def claim(_, _payload) do
-        nil
-      end
+      def claim(_, _payload), do: nil
 
       def validate_claim(:exp, payload, _) do
         Joken.Helpers.validate_time_claim(payload, :exp, "Token expired", fn(expires_at, now) -> expires_at > now end)
       end
 
-      def validate_claim(_, _payload, _) do
-        :ok
-      end
+      def validate_claim(_, _payload, _), do: :ok
     end 
 
     Application.put_env(:joken, :config_module, ExpSkippedTest)
@@ -426,32 +246,10 @@ defmodule Joken.Test do
 
   test "passing in extra data" do
     defmodule ExtraDataTest do
-      alias Poison, as: JSON
-      @behaviour Joken.Config
+      use BaseConfig
 
-      def secret_key() do
-        "test"
-      end
-
-      def algorithm() do
-        :HS256
-      end
-
-      def encode(map) do
-        JSON.encode!(map)
-      end
-
-      def decode(binary) do
-        JSON.decode!(binary, keys: :atoms!)
-      end
-
-      def claim(:aud, _payload) do
-        "update"
-      end
-
-      def claim(_, _payload) do
-        nil
-      end
+      def claim(:aud, _payload), do: "update"
+      def claim(_, _payload), do: nil
 
       def validate_claim(:aud, payload, options) do
         if Dict.get(options, :aud) == Dict.get(payload, :aud) do
@@ -462,9 +260,7 @@ defmodule Joken.Test do
         
       end
 
-      def validate_claim(_, _payload, _) do
-        :ok
-      end
+      def validate_claim(_, _payload, _), do: :ok
     end 
 
     Application.put_env(:joken, :config_module, ExtraDataTest)
@@ -476,28 +272,9 @@ defmodule Joken.Test do
 
   test "validate custom claim from options" do
     defmodule CustomClaimTest do
-      alias Poison, as: JSON
-      @behaviour Joken.Config
+      use BaseConfig
 
-      def secret_key() do
-        "test"
-      end
-
-      def algorithm() do
-        :HS256
-      end
-
-      def encode(map) do
-        JSON.encode!(map)
-      end
-
-      def decode(binary) do
-        JSON.decode!(binary, keys: :atoms!)
-      end
-
-      def claim(_, _) do
-        nil
-      end
+      def claim(_, _), do: nil
 
       def validate_claim(:user_id, payload, options) do
         if Dict.get(options, :user_id) == Dict.get(payload, :user_id) do
@@ -508,9 +285,7 @@ defmodule Joken.Test do
         
       end
 
-      def validate_claim(_, _, _) do
-        :ok
-      end
+      def validate_claim(_, _, _), do: :ok
     end 
 
     Application.put_env(:joken, :config_module, CustomClaimTest)
@@ -520,7 +295,44 @@ defmodule Joken.Test do
 
     {status, _} = Joken.decode token, [user_id: "cba"]
     assert(status == :error)
+  end
 
+  defmodule StructToken do
+    use BaseConfig
+
+    defstruct nbf: nil
+
+    def decode(binary), do: Poison.decode!(binary, keys: :atoms!, as: Joken.Test.StructToken)    
+    
+    def validate_claim(:nbf, payload, _) do
+      Joken.Helpers.validate_time_claim(payload, :nbf, "Token not valid yet",
+        fn(not_before, now) ->
+           not_before < now
+        end) 
+    end
+
+    def validate_claim(_, _payload, _), do: :ok
+  end
+  
+  test "struct not before (nbf) success" do
+
+    Application.put_env(:joken, :config_module, StructToken)
+    struct = %StructToken{nbf: Joken.Helpers.get_current_time() - 300}
+
+    {:ok, token} = Joken.encode(struct)
+    {status, _} = Joken.decode(token)
+    assert status == :ok
+  end
+
+  test "struct not before (nbf) failure" do
+
+    Application.put_env(:joken, :config_module, StructToken)
+    struct = %StructToken{nbf: Joken.Helpers.get_current_time() + 300}
+
+    {:ok, token} = Joken.encode(struct)
+    {status, message} = Joken.decode(token)
+    assert status == :error
+    assert message == "Token not valid yet"
   end
   
 end

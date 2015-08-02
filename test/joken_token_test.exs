@@ -4,7 +4,6 @@ defmodule Joken.Token.Test do
   @moduledoc """
   Tests calling the Joken.Token module directly
   """
-
   @secret "test"
   @payload %{ name: "John Doe" }
 
@@ -23,6 +22,27 @@ defmodule Joken.Token.Test do
   @poison_json_module Joken.TestPoison
   @jsx_json_module Joken.TestJsx
 
+  # base config that is overriden in each test
+  defmodule BaseConfig do
+
+    @moduledoc false
+
+    defmacro __using__(_opts) do
+      quote do
+        @behaviour Joken.Config
+
+        def secret_key(), do: "test"
+        def algorithm(), do: :HS256
+        def encode(map), do: Poison.encode!(map)
+        def decode(binary), do: Poison.decode!(binary, keys: :atoms!)
+        def claim(_claim, _payload), do: nil
+        def validate_claim(_claim, _payload, _options), do: :ok
+
+        defoverridable [algorithm: 0, encode: 1, decode: 1, claim: 2, validate_claim: 3]
+      end
+    end
+  end
+  
   test "encode and decode with HS256 (Poison)" do
     {:ok, token} = Joken.Token.encode(@poison_json_module, @payload)
     assert(token == "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.B3tqUk6UdT8K5AQUGdYFXPj7R7_JznRi5PRrv_N7d1I")
@@ -32,32 +52,11 @@ defmodule Joken.Token.Test do
   end
 
   test "encode and decode with HS384 (Poison)" do
+
     defmodule Decode384 do
-      @behaviour Joken.Config
+      use BaseConfig
 
-      def secret_key() do
-        "test"
-      end
-
-      def algorithm() do
-        :HS384
-      end
-
-      def encode(map) do
-        Poison.encode!(map)
-      end
-
-      def decode(binary) do
-        Poison.decode!(binary, keys: :atoms!)
-      end
-
-      def claim(_, _) do
-        nil
-      end
-
-      def validate_claim(_, _, _) do
-        :ok
-      end
+      def algorithm(), do: :HS384
     end
 
     {:ok, token} = Joken.Token.encode(Decode384, @payload)
@@ -68,32 +67,11 @@ defmodule Joken.Token.Test do
   end
 
   test "encode and decode with HS512 (Poison)" do
+
     defmodule Decode512 do
-      @behaviour Joken.Config
+      use BaseConfig
 
-      def secret_key() do
-        "test"
-      end
-
-      def algorithm() do
-        :HS512
-      end
-
-      def encode(map) do
-        Poison.encode!(map)
-      end
-
-      def decode(binary) do
-        Poison.decode!(binary, keys: :atoms!)
-      end
-
-      def claim(_, _) do
-        nil
-      end
-
-      def validate_claim(_, _, _) do
-        :ok
-      end
+      def algorithm(), do: :HS512
     end
 
     {:ok, token} = Joken.Token.encode(Decode512, @payload)
@@ -123,34 +101,12 @@ defmodule Joken.Token.Test do
     assert {:ok, _} = Joken.Token.decode(@poison_json_module, @unsorted_payload_token)
   end
 
-
   test "error with invalid algorithm" do
+
     defmodule Decode1024 do
-      @behaviour Joken.Config
+      use BaseConfig
 
-      def secret_key() do
-        "test"
-      end
-
-      def algorithm() do
-        :HS1024
-      end
-
-      def encode(map) do
-        Poison.encode!(map)
-      end
-
-      def decode(binary) do
-        Poison.decode!(binary, keys: :atoms!)
-      end
-
-      def claim(_, _) do
-        nil
-      end
-
-      def validate_claim(_, _, _) do
-        :ok
-      end
+      def algorithm(), do: :HS1024
     end
 
     {:error, message} = Joken.Token.encode(Decode1024, @payload)
@@ -167,31 +123,15 @@ defmodule Joken.Token.Test do
 
   test "encode and decode with HS384 (JSX)" do
     defmodule TestJsx384 do
-      @behaviour Joken.Config
+      use BaseConfig
 
-      def secret_key() do
-        "test"
-      end
+      def algorithm(), do: :HS384
 
-      def algorithm() do
-        :HS384
-      end
-
-      def encode(map) do
-        :jsx.encode(map)
-      end
+      def encode(map), do: :jsx.encode(map)
 
       def decode(binary) do
         :jsx.decode(binary)
         |> Enum.map(fn({key, value})-> {String.to_atom(key), value} end)
-      end
-
-      def claim(_, _) do
-        nil
-      end
-
-      def validate_claim(_, _, _) do
-        :ok
       end
     end
 
@@ -203,32 +143,17 @@ defmodule Joken.Token.Test do
   end
 
   test "encode and decode with HS512 (JSX)" do
+
     defmodule TestJsx512 do
-      @behaviour Joken.Config
+      use BaseConfig
 
-      def secret_key() do
-        "test"
-      end
+      def algorithm(), do: :HS512
 
-      def algorithm() do
-        :HS512
-      end
-
-      def encode(map) do
-        :jsx.encode(map)
-      end
+      def encode(map), do: :jsx.encode(map)
 
       def decode(binary) do
         :jsx.decode(binary)
         |> Enum.map(fn({key, value})-> {String.to_atom(key), value} end)
-      end
-
-      def claim(_, _) do
-        nil
-      end
-
-      def validate_claim(_, _, _) do
-        :ok
       end
     end
 
@@ -240,32 +165,17 @@ defmodule Joken.Token.Test do
   end
 
   test "missing signature" do
+
     defmodule TestJsx512Missing do
-      @behaviour Joken.Config
+      use BaseConfig
 
-      def secret_key() do
-        "test"
-      end
+      def algorithm(), do: :HS512
 
-      def algorithm() do
-        :HS512
-      end
-
-      def encode(map) do
-        :jsx.encode(map)
-      end
+      def encode(map), do: :jsx.encode(map)
 
       def decode(binary) do
         :jsx.decode(binary)
         |> Enum.map(fn({key, value})-> {String.to_atom(key), value} end)
-      end
-
-      def claim(_, _) do
-        nil
-      end
-
-      def validate_claim(_, _, _) do
-        :ok
       end
     end
 
@@ -278,31 +188,15 @@ defmodule Joken.Token.Test do
 
   test "unsecure token" do
     defmodule TestJsxNone do
-      @behaviour Joken.Config
+      use BaseConfig
 
-      def secret_key() do
-        "test"
-      end
+      def algorithm(), do: :none
 
-      def algorithm() do
-        :none
-      end
-
-      def encode(map) do
-        :jsx.encode(map)
-      end
+      def encode(map), do: :jsx.encode(map)
 
       def decode(binary) do
         :jsx.decode(binary)
         |> Enum.map(fn({key, value})-> {String.to_atom(key), value} end)
-      end
-
-      def claim(_, _) do
-        nil
-      end
-
-      def validate_claim(_, _, _) do
-        :ok
       end
     end
 
@@ -329,75 +223,39 @@ defmodule Joken.Token.Test do
 
   test "expiration (exp)" do
     defmodule ExpSuccessTest do
-      @behaviour Joken.Config
+      use BaseConfig
 
-      def secret_key() do
-        "test"
-      end
-
-      def algorithm() do
-        :HS256
-      end
-
-      def encode(map) do
-        Poison.encode!(map)
-      end
-
-      def decode(binary) do
-        Poison.decode!(binary)
-      end
-
+      def decode(binary), do: Poison.decode!(binary)
+      
       def claim(:exp, _payload) do
         Joken.Helpers.get_current_time() + 300
       end
 
-      def claim(_, _) do
-        nil
-      end
+      def claim(_, _), do: nil
 
       def validate_claim(:exp, payload, _) do
         Joken.Helpers.validate_time_claim(payload, "exp", "Token expired", fn(expires_at, now) -> expires_at > now end)
       end
 
-      def validate_claim(_, _, _) do
-        :ok
-      end
+      def validate_claim(_, _, _), do: :ok
     end
 
     defmodule ExpFailureTest do
-      @behaviour Joken.Config
+      use BaseConfig
 
-      def secret_key() do
-        "test"
-      end
-
-      def algorithm() do
-        :HS256
-      end
-
-      def encode(map) do
-        Poison.encode!(map)
-      end
-
-      def decode(binary) do
-        Poison.decode!(binary)
-      end
-
+      def decode(binary), do: Poison.decode!(binary)
+      
       def claim(:exp, _payload) do
         Joken.Helpers.get_current_time() - 300
       end
 
-      def claim(_, _) do
-        nil
-      end
+      def claim(_, _), do: nil
 
       def validate_claim(:exp, payload, _) do
         Joken.Helpers.validate_time_claim(payload, "exp", "Token expired", fn(expires_at, now) -> expires_at > now end)
       end
 
-      def validate_claim(_, _, _) do
-        :ok
-      end
+      def validate_claim(_, _, _), do: :ok
     end 
 
     {:ok, token} = Joken.Token.encode(ExpSuccessTest,  %{ "name" => "John Doe" })
@@ -411,76 +269,42 @@ defmodule Joken.Token.Test do
   end
 
   test "valid iat claim" do
+
     defmodule IatSuccessTest do
-      @behaviour Joken.Config
+      use BaseConfig
 
-      def secret_key() do
-        "test"
-      end
-
-      def algorithm() do
-        :HS256
-      end
-
-      def encode(map) do
-        Poison.encode!(map)
-      end
-
-      def decode(binary) do
-        Poison.decode!(binary)
-      end
-
+      def decode(binary), do: Poison.decode!(binary)
+      
       def claim(:iat, _payload) do
         Joken.Helpers.get_current_time() - 300
       end
 
-      def claim(_, _) do
-        nil
-      end
+      def claim(_, _), do: nil
 
       def validate_claim(:iat, payload, _) do
         Joken.Helpers.validate_time_claim(payload, "iat", "Token not valid yet", fn(not_before, now) -> not_before < now end) 
       end
 
-      def validate_claim(_, _, _) do
-        :ok
-      end
+      def validate_claim(_, _, _), do: :ok
     end
 
     defmodule IatFailureTest do
-      @behaviour Joken.Config
+      use BaseConfig
+      require Logger
 
-      def secret_key() do
-        "test"
-      end
-
-      def algorithm() do
-        :HS256
-      end
-
-      def encode(map) do
-        Poison.encode!(map)
-      end
-
-      def decode(binary) do
-        Poison.decode!(binary)
-      end
-
+      def decode(binary), do: Poison.decode!(binary)
+      
       def claim(:iat, _payload) do
         Joken.Helpers.get_current_time() + 300
       end
 
-      def claim(_, _) do
-        nil
-      end
+      def claim(_, _), do: nil
 
       def validate_claim(:iat, payload, _) do
-        Joken.Helpers.validate_time_claim(payload, "iat", "Token not valid yet", fn(not_before, now) -> not_before < now end) 
+        Joken.Helpers.validate_time_claim(payload, "iat", "Token not valid yet", &(&1 < &2))
       end
 
-      def validate_claim(_, _, _) do
-        :ok
-      end
+      def validate_claim(_, _, _), do: :ok
     end 
 
     {:ok, token} = Joken.Token.encode(IatSuccessTest,  %{ "name" => "John Doe" })
