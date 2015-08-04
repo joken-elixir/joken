@@ -16,6 +16,7 @@ defmodule Joken.Mixfile do
 
   defp deps do
     [
+      {:plug, "~> 0.14", optional: true},
       {:earmark, "~> 0.1", only: :docs},
       {:ex_doc, "~> 0.7", only: :docs},
       {:poison, "~> 1.3", only: :test},
