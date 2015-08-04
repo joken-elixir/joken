@@ -56,8 +56,8 @@ defmodule Joken.Plug do
   This plug accepts the following options in its initialization:
 
   - `config_module`: the `Joken.Config` implementation
-  - `error_map` (optional): a function that will be called with the error message
-  and must return a map. The resulting map is going to be encoded to JSON and put in the body
+  - `on_error` (optional): a function that will be called with `conn` and `message`. If it 
+  returns {:body, body_map} then body_map will be serialized to JSON and put in the body
   of all 401 responses.
 
   When using this with per route options you must pass a private map of options
@@ -74,13 +74,16 @@ defmodule Joken.Plug do
   @doc false
   def init(opts) do
     config_module = Keyword.get(opts, :config_module, Application.get_env(:joken, :config_module))
-    {config_module}
+    on_error = Keyword.get(opts, :on_error)
+    {config_module, on_error}
   end
 
   @doc false
-  def call(conn, {config_module}) do
+  def call(conn, {config_module, on_error}) do
 
-    conn = put_private(conn, :joken_config_module, config_module)
+    conn = conn
+    |> put_private(:joken_config_module, config_module)
+    |> put_private(:joken_on_error, on_error)
     
     if Map.get(conn.private, :joken_skip, false) do
       conn
@@ -124,13 +127,22 @@ defmodule Joken.Plug do
   end
 
   defp send_401(conn, message) do
+
     config_module = conn.private[:joken_config_module]
-    json = config_module.encode(error_map(message, 401))
+    on_error = conn.private[:joken_on_error]
+    body = ""
     
-    conn
-    |> put_req_header("content-type", "application/json")
-    |> send_resp(401, json)
-    |> halt
+    if on_error do
+      case on_error.(conn, message) do
+        {:body, body_map} ->
+          body = config_module.encode(body_map)
+          conn = put_resp_content_type(conn, "application/json")
+        _ ->
+          :ok
+      end
+    end
+
+    conn |> send_resp(401, body) |> halt
   end
   
 end

@@ -22,7 +22,9 @@ defmodule JokenPlug.Test do
     @is_not_subject %{joken_evaluate: &MyPlugRouter.is_not_subject/1 }
 
     plug :match
-    plug Joken.Plug, config_module: MyConfig
+    plug Joken.Plug,
+      config_module: MyConfig,
+      on_error: &MyPlugRouter.error_logging/2
     plug :dispatch
 
     post "/generate_token", private: @skip_auth do
@@ -62,7 +64,30 @@ defmodule JokenPlug.Test do
 
     def is_subject(payload), do: payload.sub == 1234567890
     def is_not_subject(payload), do: payload.sub != 1234567890
+    def error_logging(_conn, message), do: IO.puts "Message: #{message}"
+  end
 
+  defmodule CustomErrorBodyRouter do
+    use Plug.Router
+
+    plug Joken.Plug, config_module: MyConfig, on_error: &CustomErrorBodyRouter.on_error/2
+    plug :match
+    plug :dispatch
+
+    post "/no_token_error" do
+      :ok
+    end
+
+    match _ do
+      conn
+      |> send_resp(404, "Not found")
+    end
+
+    def on_error(_conn, message) do
+      body = %{status: 401,
+               message: message}
+      {:body, body}
+    end
   end
 
   test "generates token properly" do
@@ -82,7 +107,7 @@ defmodule JokenPlug.Test do
   test "sends 401 when credentials are missing" do
     conn = conn(:get, "/verify_token") |> MyPlugRouter.call([])
     assert conn.status == 401
-    assert conn.resp_body == ~s({"status_code":401,"error":"Unauthorized","description":"Unauthorized"}) 
+    assert conn.resp_body == ""
   end
 
   test "skips verification properly" do
@@ -116,7 +141,13 @@ defmodule JokenPlug.Test do
     |> MyPlugRouter.call([])
 
     assert conn.status == 401
-    assert conn.resp_body == ~s({"status_code":401,"error":"Unauthorized","description":"Unauthorized"}) 
+    assert conn.resp_body == ""
+  end
+
+  test "generates custom error body" do
+    conn = conn(:post, "/no_token_error") |> CustomErrorBodyRouter.call([])
+    assert conn.status == 401
+    assert conn.resp_body == ~s({"status":401,"message":"Unauthorized"})
   end
 
 end
