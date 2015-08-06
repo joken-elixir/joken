@@ -16,13 +16,13 @@ defmodule Joken.Mixfile do
 
   defp deps do
     [
-      {:earmark, "~> 0.1", only: :dev},
-      {:ex_doc, "~> 0.7", only: :dev},
+      {:plug, "~> 0.14", optional: true},
+      {:earmark, "~> 0.1", only: :docs},
+      {:ex_doc, "~> 0.7", only: :docs},
       {:poison, "~> 1.3", only: :test},
       {:jsx, "~> 2.1.1",  only: :test}
     ]
   end
-
 
   defp description do
     """
@@ -32,11 +32,11 @@ defmodule Joken.Mixfile do
 
   defp package do
     [
-     files: ["lib", "priv", "mix.exs", "README*", "readme*", "LICENSE*", "license*", "CHANGELOG*"],
-     contributors: ["Bryan Joseph"],
-     licenses: ["Apache 2.0"],
-     links: %{"GitHub" => "https://github.com/bryanjos/joken",
-              "Docs" => "https://github.com/bryanjos/joken"}
+      files: ["lib", "priv", "mix.exs", "README*", "readme*", "LICENSE*", "license*", "CHANGELOG*"],
+      contributors: ["Bryan Joseph"],
+      licenses: ["Apache 2.0"],
+      links: %{"GitHub" => "https://github.com/bryanjos/joken",
+               "Docs" => "http://hexdocs.pm/joken"}
     ]
   end
 end
