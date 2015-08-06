@@ -2,7 +2,6 @@ defmodule Joken.Token do
   alias Joken.Utils
 
   @claims [:exp, :nbf, :iat, :aud, :iss, :sub, :jti]
-  @supported_algorithms %{ HS256: :sha256 , HS384: :sha384, HS512: :sha512 }
 
   @moduledoc """
   Module that handles encoding and decoding of tokens. For most cases, it's recommended to use the Joken module, but
@@ -25,21 +24,22 @@ defmodule Joken.Token do
 
     {status, payloadJSON} = get_payload_json(payload, claims, joken_config)
 
-    case Dict.has_key?(@supported_algorithms, joken_config.algorithm) do
-      false ->
-        {:error, "Unsupported algorithm"}
-      _ ->
+    case status do
+      :error ->
+        {:error, "Error encoding to JSON"}
+      :ok ->
+        {status, jws} = try do
+          {:ok, JOSE.JWS.from_binary(headerJSON)}
+        catch
+          :error, reason ->
+            {:error, reason}
+        end
         case status do
           :error ->
-            {:error, "Error encoding to JSON"}
+            {:error, "Unsupported algorithm"}
           :ok ->
-            header64 = Utils.base64url_encode(headerJSON)
-            payload64 = Utils.base64url_encode(payloadJSON)
-
-            signature = :crypto.hmac(@supported_algorithms[joken_config.algorithm], joken_config.secret_key, "#{header64}.#{payload64}")
-            signature64 = Utils.base64url_encode(signature)
-
-            {:ok, "#{header64}.#{payload64}.#{signature64}"}
+            jwk = get_secret_key(joken_config)
+            {:ok, :erlang.element(2, JOSE.JWS.compact(JOSE.JWK.sign(payloadJSON, jws, jwk)))}
         end
     end
   end
@@ -64,7 +64,7 @@ defmodule Joken.Token do
     
     claims = @claims -- skip_options
 
-    {status, result} = verify_signature(token, joken_config.secret_key, joken_config.algorithm)
+    {status, result} = verify_signature(token, get_secret_key(joken_config), joken_config.algorithm)
 
     case status do
       :error ->
@@ -96,21 +96,25 @@ defmodule Joken.Token do
 
   end
 
-  defp verify_signature(token, key, algorithm) do
-    case String.split(token, ".") do
-      [ _header64, _payload64 ] -> { :error, "Missing signature" }
-      [ header64, payload64, jwt_signature ] ->
-        signature = :crypto.hmac(@supported_algorithms[algorithm], key, "#{header64}.#{payload64}")
-
-        if Utils.base64url_encode(signature) == jwt_signature do
-            { :ok, token }
-        else
-            {:error, "Invalid signature"}
-        end
-      _ ->
-        {:error, "Invalid JSON Web Token"}
+  defp verify_signature(token, jwk, algorithm) do
+    try do
+      case JOSE.JWK.verify(token, jwk) do
+        {true, _payload, jws} ->
+          jws = :erlang.element(2, JOSE.JWS.to_map(jws))
+          algorithm_string = algorithm |> to_string
+          case jws["alg"] do
+            ^algorithm_string ->
+              {:ok, token}
+            _ ->
+              {:error, "Invalid signature algorithm"}
+          end
+        _ ->
+          {:error, "Invalid signature"}
+      end
+    catch
+      :error, _ ->
+        {:error, "Missing signature"}
     end
-
   end
 
   defp get_data(jwt, joken_config) do
@@ -118,6 +122,18 @@ defmodule Joken.Token do
 
     data = Utils.base64url_decode(payload64)
     {:ok, joken_config.decode(data) }
+  end
+
+  defp get_secret_key(joken_config) do
+    case joken_config.secret_key do
+      iodata when is_binary(iodata) or is_list(iodata) ->
+        JOSE.JWK.from_map(%{
+          "kty" => "oct",
+          "k" => :base64url.encode(:erlang.iolist_to_binary(iodata))
+        })
+      secret_key ->
+        secret_key
+    end
   end
 
   defp to_map(%{__struct__: _mod} = struct), do: struct
