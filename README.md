@@ -11,12 +11,14 @@ Currently supports the following algorithms:
 * HS256
 * HS384
 * HS512
-* PS256
-* PS384
-* PS512
+* PS256 <sup>[1](#footnote-1)</sup>
+* PS384 <sup>[1](#footnote-1)</sup>
+* PS512 <sup>[1](#footnote-1)</sup>
 * RS256
 * RS384
 * RS512
+
+<sup><a name="footnote-1">1</a></sup> Implemented mostly in pure Erlang. May be less performant than other supported signature algorithms. See [jose JWS algorithm support](https://github.com/potatosalad/erlang-jose#json-web-signature-jws-rfc-7515) for more information.
 
 Currently supports the following claims:
 
