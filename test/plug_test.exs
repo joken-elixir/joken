@@ -75,6 +75,7 @@ defmodule JokenPlug.Test do
     plug :dispatch
 
     post "/no_token_error" do
+      _ = conn
       :ok
     end
 
