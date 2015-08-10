@@ -8,3 +8,4 @@ otp_release:
 after_script:
   - mix deps.get --only docs
   - MIX_ENV=docs mix docs # generate docs to check if it is not breaking.
+  - MIX_ENV=test mix bench
