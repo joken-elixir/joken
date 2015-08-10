@@ -1,7 +1,17 @@
 defmodule Joken.Token.Bench do
   use Benchfella
   import Joken.Helpers
-  
+
+  setup_all do
+    app = :joken
+    :application.ensure_all_started(app)
+    {:ok, app}
+  end
+
+  teardown_all app do
+    :application.stop(app)
+  end
+
   defmodule BaseConfig do
 
     def rsa_key do
@@ -141,34 +151,32 @@ defmodule Joken.Token.Bench do
   ## ES256, ES384, ES512 benchmarks
   ## ------------------------------
 
-  # This crashes BEAM up. Must review.
+  defmodule ES256TokenGeneration do
+    use BaseConfig, algorithm: :ES256, key: BaseConfig.ec_p256_key
+  end
 
-  #  defmodule ES256TokenGeneration do
-  #    use BaseConfig, algorithm: :ES256, key: BaseConfig.ec_p256_key
-  #  end
-  #
-  #  defmodule ES384TokenGeneration do
-  #    use BaseConfig, algorithm: :ES384, key: BaseConfig.ec_p384_key
-  #  end
-  #
-  #  defmodule ES512TokenGeneration do
-  #    use BaseConfig, algorithm: :ES512, key: BaseConfig.ec_p521_key
-  #  end
-  #  
-  #  bench "ES256 token generation" do
-  #    {:ok, _token} = Joken.Token.encode ES256TokenGeneration, %{}
-  #    :ok
-  #  end
-  #
-  #  bench "ES384 token generation" do
-  #    {:ok, _token} = Joken.Token.encode ES384TokenGeneration, %{}
-  #    :ok
-  #  end
-  #  
-  #  bench "ES512 token generation" do
-  #    {:ok, _token} = Joken.Token.encode ES512TokenGeneration, %{}
-  #    :ok
-  #  end
+  defmodule ES384TokenGeneration do
+    use BaseConfig, algorithm: :ES384, key: BaseConfig.ec_p384_key
+  end
+
+  defmodule ES512TokenGeneration do
+    use BaseConfig, algorithm: :ES512, key: BaseConfig.ec_p521_key
+  end
+
+  bench "ES256 token generation" do
+    {:ok, _token} = Joken.Token.encode ES256TokenGeneration, %{}
+    :ok
+  end
+
+  bench "ES384 token generation" do
+    {:ok, _token} = Joken.Token.encode ES384TokenGeneration, %{}
+    :ok
+  end
+
+  bench "ES512 token generation" do
+    {:ok, _token} = Joken.Token.encode ES512TokenGeneration, %{}
+    :ok
+  end
 
   ## ------------------------------
   ## PS256, PS384, PS512 benchmarks
