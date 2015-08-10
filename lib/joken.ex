@@ -1,4 +1,5 @@
 defmodule Joken do
+  use Behaviour
   alias Joken.Token
 
   @type algorithm :: :HS256 | :HS384 | :HS512
@@ -78,29 +79,54 @@ defmodule Joken do
       end
 
 
-  Joken looks for a `joken` config with `config_module`. `config_module` module being a module that implements the `Joken.Config` Behaviour.
+  Joken looks for a config block with `joken_config`. `joken_config` module being a module that implements the `Joken.Config` Behaviour.
 
-       config :joken,
-         config_module: My.Config.Module
+       config :my_app,
+         joken_config: My.Config.Module
+
+  Next, tell Joken where to find the config block
+    use Joken, otp_app: :my_app
 
   then to encode and decode
+      {:ok, token} = encode_token(%{username: "johndoe"})
+      {:ok, decoded_payload} = decode_token(jwt)
 
-      {:ok, token} = Joken.encode(%{username: "johndoe"})
+  Optional: you can configure the key that the module is located on as well with `joken_config_key`
+        config :my_app,
+         my_joken_config_key: My.Config.Module
 
-      {:ok, decoded_payload} = Joken.decode(jwt)
+
+    use Joken, otp_app: :my_app, joken_config_key: :my_joken_config_key
   """
 
+  defmacro __using__(opts) do
+    quote do
+      @behaviour Joken
+
+      def encode_token(payload) do
+        Token.encode(config_module, payload)
+      end
+
+      def decode_token(jwt, options \\ []) do
+        Token.decode(config_module, jwt, options)
+      end
+
+      defp config_module() do
+        Application.get_env(
+          unquote(Dict.get(opts, :otp_app)), 
+          unquote(Dict.get(opts, :joken_config_key, :joken_config))
+        )
+      end
+    end
+  end
 
   @doc """
   Encodes the given payload and optional claims into a JSON Web Token
 
       Joken.encode(%{ name: "John Doe" })
   """
+  defcallback encode_token(payload) :: { status, String.t }
 
-  @spec encode(payload) :: { status, String.t }
-  def encode(payload) do
-    Token.encode(config_module, payload)
-  end
 
   @doc """
   Decodes the given JSON Web Token and gets the payload
@@ -123,13 +149,5 @@ defmodule Joken do
       Joken.decode(token, [ user_id: 1, roles: [:admin] ])    
 
   """
-
-  @spec decode(String.t, Keyword.t) :: { status, map | String.t }
-  def decode(jwt, options \\ []) do
-    Token.decode(config_module, jwt, options)
-  end
-
-  defp config_module() do
-    Application.get_env(:joken, :config_module)
-  end
+  defcallback decode_token(String.t, Keyword.t) :: { status, map | String.t }
 end

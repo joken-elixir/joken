@@ -1,5 +1,6 @@
 defmodule Joken.Test do
   use ExUnit.Case
+  use Joken, otp_app: :joken
   
   @payload %{ name: "John Doe" }
 
@@ -23,14 +24,14 @@ defmodule Joken.Test do
   end
   
   test "signature validation"do
-    Application.put_env(:joken, :config_module, Joken.TestPoison)
+    Application.put_env(:joken, :joken_config, Joken.TestPoison)
 
-    {:ok, token} = Joken.encode(@payload)
+    {:ok, token} = encode_token(@payload)
     assert(token == "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.3fazvmF342WiHp5uhY-wkWArn-YJxq1IO7Msrtfk-OQ")
-    {:ok, _} = Joken.decode(token)
+    {:ok, _} = decode_token(token)
 
     new_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.3fazvmF342WiHp5uhY-wkWArn-YJxq1IO7Msrtfk-OD"
-    {:error, mesg} = Joken.decode( new_token)
+    {:error, mesg} = decode_token( new_token)
     assert(mesg == "Invalid signature") 
   end
 
@@ -55,10 +56,10 @@ defmodule Joken.Test do
       end
     end 
 
-    Application.put_env(:joken, :config_module, ExpSuccessTest)
+    Application.put_env(:joken, :joken_config, ExpSuccessTest)
 
-    {:ok, token} = Joken.encode(@payload)
-    {status, _} = Joken.decode(token)
+    {:ok, token} = encode_token(@payload)
+    {status, _} = decode_token(token)
     assert(status == :ok) 
   end
 
@@ -80,10 +81,10 @@ defmodule Joken.Test do
 
     end 
 
-    Application.put_env(:joken, :config_module, ExpFailureTest)
+    Application.put_env(:joken, :joken_config, ExpFailureTest)
 
-    {:ok, token} = Joken.encode(@payload)
-    {status, mesg} = Joken.decode(token)
+    {:ok, token} = encode_token(@payload)
+    {status, mesg} = decode_token(token)
     assert(status == :error) 
     assert(mesg == "Token expired") 
   end
@@ -105,10 +106,10 @@ defmodule Joken.Test do
       def validate_claim(_, _payload, _), do: :ok
     end 
 
-    Application.put_env(:joken, :config_module, NbfSuccessTest)
+    Application.put_env(:joken, :joken_config, NbfSuccessTest)
 
-    {:ok, token} = Joken.encode(@payload)
-    {status, _} = Joken.decode(token)
+    {:ok, token} = encode_token(@payload)
+    {status, _} = decode_token(token)
     assert(status == :ok) 
   end
 
@@ -130,10 +131,10 @@ defmodule Joken.Test do
       def validate_claim(_, _payload, _), do: :ok
     end 
 
-    Application.put_env(:joken, :config_module, NbfFailureTest)
+    Application.put_env(:joken, :joken_config, NbfFailureTest)
 
-    {:ok, token} = Joken.encode(@payload)
-    {status, mesg} = Joken.decode(token)
+    {:ok, token} = encode_token(@payload)
+    {status, mesg} = decode_token(token)
     assert(status == :error) 
     assert(mesg == "Token not valid yet") 
   end
@@ -147,10 +148,10 @@ defmodule Joken.Test do
       def validate_claim(_, _payload, _), do: :ok
     end 
 
-    Application.put_env(:joken, :config_module, AudSuccessTest)
+    Application.put_env(:joken, :joken_config, AudSuccessTest)
 
-    {:ok, token} = Joken.encode(@payload)
-    {status, _} = Joken.decode(token)
+    {:ok, token} = encode_token(@payload)
+    {status, _} = decode_token(token)
     assert(status == :ok) 
   end
 
@@ -168,10 +169,10 @@ defmodule Joken.Test do
       def validate_claim(_, _payload, _), do: :ok
     end 
 
-    Application.put_env(:joken, :config_module, InvalidAudienceTest)
+    Application.put_env(:joken, :joken_config, InvalidAudienceTest)
 
-    {:ok, token} = Joken.encode(@payload)
-    {status, mesg} = Joken.decode(token)
+    {:ok, token} = encode_token(@payload)
+    {status, mesg} = decode_token(token)
     assert(status == :error)
     assert(mesg == "Invalid audience")  
   end
@@ -190,10 +191,10 @@ defmodule Joken.Test do
       def validate_claim(_, _payload, _), do: :ok
     end 
 
-    Application.put_env(:joken, :config_module, MissingAudienceTest)
+    Application.put_env(:joken, :joken_config, MissingAudienceTest)
 
-    {:ok, token} = Joken.encode(@payload)
-    {status, mesg} = Joken.decode(token)
+    {:ok, token} = encode_token(@payload)
+    {status, mesg} = decode_token(token)
     assert(status == :error)
     assert(mesg == "Missing audience")  
   end
@@ -208,15 +209,15 @@ defmodule Joken.Test do
       def validate_claim(_, _payload, _), do: :ok
     end 
 
-    Application.put_env(:joken, :config_module, SubSuccessTest)
+    Application.put_env(:joken, :joken_config, SubSuccessTest)
 
-    {:ok, token} = Joken.encode(@payload)
-    {status, _} = Joken.decode(token)
+    {:ok, token} = encode_token(@payload)
+    {status, _} = decode_token(token)
     assert(status == :ok)
   end
 
   test "malformed token" do
-    {status, _} = Joken.decode("foobar")
+    {status, _} = decode_token("foobar")
     assert(status == :error)
   end
 
@@ -237,10 +238,10 @@ defmodule Joken.Test do
       def validate_claim(_, _payload, _), do: :ok
     end 
 
-    Application.put_env(:joken, :config_module, ExpSkippedTest)
+    Application.put_env(:joken, :joken_config, ExpSkippedTest)
 
-    {:ok, expired_token} = Joken.encode(@payload)
-    {status, _} = Joken.decode expired_token, skip: [:exp]
+    {:ok, expired_token} = encode_token(@payload)
+    {status, _} = decode_token expired_token, skip: [:exp]
     assert(status == :ok)
   end
 
@@ -263,9 +264,9 @@ defmodule Joken.Test do
       def validate_claim(_, _payload, _), do: :ok
     end 
 
-    Application.put_env(:joken, :config_module, ExtraDataTest)
-    {:ok, token} = Joken.encode(%{aud: "update"})
-    {status, _} = Joken.decode token, [aud: "update"]
+    Application.put_env(:joken, :joken_config, ExtraDataTest)
+    {:ok, token} = encode_token(%{aud: "update"})
+    {status, _} = decode_token token, [aud: "update"]
     assert(status == :ok)
 
   end
@@ -288,12 +289,12 @@ defmodule Joken.Test do
       def validate_claim(_, _, _), do: :ok
     end 
 
-    Application.put_env(:joken, :config_module, CustomClaimTest)
-    {:ok, token} = Joken.encode(%{user_id: "abc"})
-    {status, _} = Joken.decode token, [user_id: "abc"]
+    Application.put_env(:joken, :joken_config, CustomClaimTest)
+    {:ok, token} = encode_token(%{user_id: "abc"})
+    {status, _} = decode_token token, [user_id: "abc"]
     assert(status == :ok)
 
-    {status, _} = Joken.decode token, [user_id: "cba"]
+    {status, _} = decode_token token, [user_id: "cba"]
     assert(status == :error)
   end
 
@@ -316,21 +317,21 @@ defmodule Joken.Test do
   
   test "struct not before (nbf) success" do
 
-    Application.put_env(:joken, :config_module, StructToken)
+    Application.put_env(:joken, :joken_config, StructToken)
     struct = %StructToken{nbf: Joken.Helpers.get_current_time() - 300}
 
-    {:ok, token} = Joken.encode(struct)
-    {status, _} = Joken.decode(token)
+    {:ok, token} = encode_token(struct)
+    {status, _} = decode_token(token)
     assert status == :ok
   end
 
   test "struct not before (nbf) failure" do
 
-    Application.put_env(:joken, :config_module, StructToken)
+    Application.put_env(:joken, :joken_config, StructToken)
     struct = %StructToken{nbf: Joken.Helpers.get_current_time() + 300}
 
-    {:ok, token} = Joken.encode(struct)
-    {status, message} = Joken.decode(token)
+    {:ok, token} = encode_token(struct)
+    {status, message} = decode_token(token)
     assert status == :error
     assert message == "Token not valid yet"
   end

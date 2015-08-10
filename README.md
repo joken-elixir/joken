@@ -80,20 +80,25 @@ and not add or validate the others:
   end
 ```
 
-Once you have implemented the behaviour module, you must add a configuration for `joken` with a property `config_module` with your behaviour module. Ex:
+Once you have implemented the behaviour module, you must add a configuration a property `joken_config` with your behaviour module to a config block and tell Joken where to find it. Ex:
 
 ```elixir
-config :joken,
-  config_module: My.Config.Module
+config :my_app,
+  joken_config: My.Config.Module
+```
+
+next, add a use expression
+```elixir
+use Joken, otp_app: :my_app
 ```
 
 then to encode:
 
 ```elixir
-{:ok, token} = Joken.encode(%{username: "johndoe"})
+{:ok, token} = encode_token(%{username: "johndoe"})
 ```
 
 and to decode:
 ```elixir
-{:ok, decoded_payload} = Joken.decode(jwt)
+{:ok, decoded_payload} = decode_token(jwt)
 ```
