@@ -87,10 +87,16 @@ defmodule Joken do
   Next, tell Joken where to find the config block
     use Joken, otp_app: :my_app
 
-
   then to encode and decode
       {:ok, token} = encode_token(%{username: "johndoe"})
       {:ok, decoded_payload} = decode_token(jwt)
+
+  Optional: you can configure the key that the module is located on as well with `joken_config_key`
+        config :my_app,
+         my_joken_config_key: My.Config.Module
+
+
+    use Joken, otp_app: :my_app, joken_config_key: :my_joken_config_key
   """
 
   defmacro __using__(opts) do
@@ -106,7 +112,10 @@ defmodule Joken do
       end
 
       defp config_module() do
-        Application.get_env(unquote(opts[:otp_app]), :joken_config)
+        Application.get_env(
+          unquote(Dict.get(opts, :otp_app)), 
+          unquote(Dict.get(opts, :joken_config_key, :joken_config))
+        )
       end
     end
   end
