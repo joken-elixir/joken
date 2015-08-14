@@ -2,6 +2,11 @@ defmodule JokenPlug.Test do
   use ExUnit.Case, async: true
   use Plug.Test
 
+  setup_all do
+    JOSE.JWA.crypto_fallback(true)
+    :ok
+  end
+
   defmodule MyConfig do
     @behaviour Joken.Config
 
