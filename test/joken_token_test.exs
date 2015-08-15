@@ -646,6 +646,17 @@ defmodule Joken.Token.Test do
     assert(mesg == "Invalid signature") 
   end
 
+  test "skip signature validation (JSX)" do
+    {:ok, token} = Joken.Token.encode(@jsx_json_module, @payload)
+    assert(token == "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.3fazvmF342WiHp5uhY-wkWArn-YJxq1IO7Msrtfk-OQ")
+    {:ok, _} = Joken.Token.decode(@jsx_json_module, token)
+
+    new_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.3fazvmF342WiHp5uhY-wkWArn-YJxq1IO7Msrtfk-OD"
+    {:ok, decoded_payload} = Joken.Token.decode(@jsx_json_module, new_token, skip_verify: true)
+    assert(@payload == decoded_payload)
+
+  end
+
   test "expiration (exp)" do
     defmodule ExpSuccessTest do
       use BaseConfig

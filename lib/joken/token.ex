@@ -64,7 +64,8 @@ defmodule Joken.Token do
     
     claims = @claims -- skip_options
 
-    {status, result} = verify_signature(token, get_secret_key(joken_config), joken_config.algorithm)
+    {skip_verify, _} = Dict.pop options, :skip_verify, false
+    {status, result} = verify_signature(token, get_secret_key(joken_config), joken_config.algorithm, skip_verify)
 
     case status do
       :error ->
@@ -96,7 +97,9 @@ defmodule Joken.Token do
 
   end
 
-  defp verify_signature(token, jwk, algorithm) do
+  defp verify_signature(token, _, _, true), do: {:ok, token}
+
+  defp verify_signature(token, jwk, algorithm, _) do
     try do
       case JOSE.JWK.verify(token, jwk) do
         {true, _payload, jws} ->
