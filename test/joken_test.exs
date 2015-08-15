@@ -1,6 +1,11 @@
 defmodule Joken.Test do
   use ExUnit.Case
-  
+
+  setup_all do
+    JOSE.JWA.crypto_fallback(true)
+    :ok
+  end
+
   @payload %{ name: "John Doe" }
 
   defmodule BaseConfig do

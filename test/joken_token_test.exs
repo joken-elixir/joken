@@ -1,6 +1,11 @@
 defmodule Joken.Token.Test do
   use ExUnit.Case
 
+  setup_all do
+    JOSE.JWA.crypto_fallback(true)
+    :ok
+  end
+
   @moduledoc """
   Tests calling the Joken.Token module directly
   """

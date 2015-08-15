@@ -5,6 +5,7 @@ defmodule Joken.Token.Bench do
   setup_all do
     app = :joken
     :application.ensure_all_started(app)
+    JOSE.JWA.crypto_fallback(true)
     {:ok, app}
   end
 
