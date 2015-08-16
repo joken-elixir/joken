@@ -1,4 +1,6 @@
 defmodule Joken.Token do
+  defstruct json_module: nil, payload: nil, errors: [], token: nil
+
   alias Joken.Utils
 
   @claims [:exp, :nbf, :iat, :aud, :iss, :sub, :jti]
@@ -34,6 +36,7 @@ defmodule Joken.Token do
           :error, reason ->
             {:error, reason}
         end
+        
         case status do
           :error ->
             {:error, "Unsupported algorithm"}

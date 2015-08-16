@@ -1,5 +1,6 @@
 defmodule Joken do
   alias Joken.Token
+  alias Joken.Signer
 
   @type algorithm :: :HS256 | :HS384 | :HS512
   @type claim :: :exp | :nbf | :iat | :aud | :iss | :sub | :jti
@@ -131,5 +132,39 @@ defmodule Joken do
 
   defp config_module() do
     Application.get_env(:joken, :config_module)
+  end
+
+
+
+  def token() do
+    %Joken.Token{}
+  end
+
+  def token(payload) when is_map(payload) do
+    %Joken.Token{payload: payload}
+  end
+
+  def token(token) when is_binary(token) do
+    %Joken.Token{token: token}
+  end
+
+  def sign(token, %Signer{ jws: nil, jwk: %{ "kty" => "oct" } = jwk }) do
+    jws = %{ "alg" => "HS256" }
+    sign(token, %Signer{ jwk: jwk, jws: jws})
+  end
+
+  def sign(token, %Signer{ jws: nil, jwk: jwk }) when is_binary(jwk) do
+    jws = %{ "alg" => "HS256" }
+    sign(token, %Signer{ jwk: jwk, jws: jws})
+  end
+
+  def sign(token, %Signer{ jws: jws, jwk: secret }) when is_binary(secret) do
+    jwk = %{ "kty" => "oct", "k" => :base64url.encode(:erlang.iolist_to_binary(secret)) }
+    sign(token, %Signer{ jwk: jwk, jws: jws})
+  end
+
+  def sign(token, signer) do
+    {_, compacted_token} = JOSE.JWS.compact(JOSE.JWT.sign(signer.jwk, signer.jws, token.payload))
+    %{ token | token: compacted_token }
   end
 end

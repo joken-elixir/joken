@@ -338,6 +338,5 @@ defmodule Joken.Test do
     {status, message} = Joken.decode(token)
     assert status == :error
     assert message == "Token not valid yet"
-  end
-  
+  end  
 end
