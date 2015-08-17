@@ -1,9 +1,14 @@
 defmodule Joken.Token do
-  defstruct json_module: nil, payload: nil, errors: [], token: nil
-
   alias Joken.Utils
 
   @claims [:exp, :nbf, :iat, :aud, :iss, :sub, :jti]
+  
+  defstruct [json_module: Poison,
+             claims: %{},
+             validations: %{},
+             error: nil,
+             token: nil,
+             signer: nil]
 
   @moduledoc """
   Module that handles encoding and decoding of tokens. For most cases, it's recommended to use the Joken module, but

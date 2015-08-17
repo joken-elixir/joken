@@ -1,6 +1,8 @@
 defmodule Joken do
   alias Joken.Token
   alias Joken.Signer
+  alias Joken.Token
+  import Joken.Helpers
 
   @type algorithm :: :HS256 | :HS384 | :HS512
   @type claim :: :exp | :nbf | :iat | :aud | :iss | :sub | :jti
@@ -135,36 +137,94 @@ defmodule Joken do
   end
 
 
-
   def token() do
-    %Joken.Token{}
+    %Token{}
+    |> with_exp
+    |> with_iat
+    |> with_nbf
+    |> with_iss
+    |> with_validation(:exp, &(&1 > get_current_time))
+    |> with_validation(:iat, &(&1 < get_current_time))
+    |> with_validation(:nbf, &(&1 < get_current_time))
+    |> with_validation(:iss, &(&1 == "Joken"))
   end
 
   def token(payload) when is_map(payload) do
-    %Joken.Token{payload: payload}
+    %Token{claims: payload}
   end
 
   def token(token) when is_binary(token) do
-    %Joken.Token{token: token}
+    %Token{token: token}
   end
 
-  def sign(token, %Signer{ jws: nil, jwk: %{ "kty" => "oct" } = jwk }) do
-    jws = %{ "alg" => "HS256" }
-    sign(token, %Signer{ jwk: jwk, jws: jws})
+  def with_exp(token = %Token{claims: claims}) do
+    %{ token | claims: Map.put(claims, :exp, get_current_time + (2 * 60 * 60 * 1000)) }
+  end
+  def with_exp(token = %Token{claims: claims}, time_to_expire) do
+    %{ token | claims: Map.put(claims, :exp, time_to_expire) }
   end
 
-  def sign(token, %Signer{ jws: nil, jwk: jwk }) when is_binary(jwk) do
-    jws = %{ "alg" => "HS256" }
-    sign(token, %Signer{ jwk: jwk, jws: jws})
+  def with_iat(token = %Token{claims: claims}) do
+    %{ token | claims: Map.put(claims, :iat, get_current_time) }
+  end
+  def with_iat(token = %Token{claims: claims}, time_issued_at) do
+    %{ token | claims: Map.put(claims, :iat, time_issued_at) }
   end
 
-  def sign(token, %Signer{ jws: jws, jwk: secret }) when is_binary(secret) do
-    jwk = %{ "kty" => "oct", "k" => :base64url.encode(:erlang.iolist_to_binary(secret)) }
-    sign(token, %Signer{ jwk: jwk, jws: jws})
+  def with_nbf(token = %Token{claims: claims}) do
+    %{ token | claims: Map.put(claims, :nbf, get_current_time - 100) }
+  end
+  def with_nbf(token = %Token{claims: claims}, time_not_before) do
+    %{ token | claims: Map.put(claims, :nbf, time_not_before) }
   end
 
-  def sign(token, signer) do
-    {_, compacted_token} = JOSE.JWS.compact(JOSE.JWT.sign(signer.jwk, signer.jws, token.payload))
-    %{ token | token: compacted_token }
+  def with_iss(token = %Token{claims: claims}) do
+    %{ token | claims: Map.put(claims, :iss, "Joken") }
   end
+  def with_iss(token = %Token{claims: claims}, issuer) do
+    %{ token | claims: Map.put(claims, :iss, issuer) }
+  end
+
+  def with_sub(token = %Token{claims: claims}, sub) do
+    %{ token | claims: Map.put(claims, :sub, sub) }
+  end
+
+  def with_aud(token = %Token{claims: claims}, aud) do
+    %{ token | claims: Map.put(claims, :aud, aud) }
+  end
+
+  def with_jti(token = %Token{claims: claims}, jti) do
+    %{ token | claims: Map.put(claims, :jti, jti) }
+  end
+
+  def with_claim(token = %Token{claims: claims}, claim_key, claim_value) do
+    %{ token | claims: Map.put(claims, claim_key, claim_value) }
+  end
+
+  def with_HS256(token, secret) when is_binary(secret) do
+    %{ token | signer: %Signer{jws: %{ "alg" => "HS256" }, jwk: secret} }
+  end
+
+  def with_HS384(token, secret) when is_binary(secret) do
+    %{ token | signer: %Signer{jws: %{ "alg" => "HS384" }, jwk: secret} }
+  end
+
+  def with_HS512(token, secret) when is_binary(secret) do
+    %{ token | signer: %Signer{jws: %{ "alg" => "HS512" }, jwk: secret} }
+  end
+
+  def sign(token), do: Signer.sign(token)
+  def sign(token, signer), do: Signer.sign(token, signer)
+
+  def get_compact(%Token{} = token), do: token.token
+
+  def with_validation(token = %Token{validations: validations}, claim, function) when is_atom(claim) and is_function(function) do
+
+    %{ token | validations: Map.put(validations, claim, function) }
+  end
+
+  def verify(%Token{} = token) do
+    Signer.verify(token)
+  end
+  
 end
