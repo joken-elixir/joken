@@ -2,6 +2,22 @@ defmodule Joken.Token do
   alias Joken.Utils
 
   @claims [:exp, :nbf, :iat, :aud, :iss, :sub, :jti]
+
+  @type json_module :: module
+  @type claims      :: %{atom => any}
+  @type validations :: %{atom => function}
+  @type error       :: binary
+  @type token       :: binary
+  @type signer      :: Joken.Signer.t
+
+  @type t :: %__MODULE__{
+    json_module: module,
+    claims: claims,
+    validations: validations,
+    error: error,
+    token: token,
+    signer: signer
+  }
   
   defstruct [json_module: nil,
              claims: %{},

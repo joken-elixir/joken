@@ -2,21 +2,41 @@ defmodule Joken.Signer do
   alias Joken.Token
   alias Joken.Signer
 
+  @moduledoc """
+  Signer is the JWK (JSON Web Key) and JWS (JSON Web Signature) configuration of Joken.
+
+  JWK is used by JWS to generate a token _signature_ that is appended to the end of the
+  token compact representation.
+
+  Joken uses https://hex.pm/packages/jose to do signing and verification.
+  """
+  
+  @type jwk :: %{}
+  @type jws :: %{}
+
+  @type t :: %__MODULE__{
+    jwk: jwk,
+    jws: jws
+  }
+  
   defstruct [:jwk, :jws]
 
   @doc "Convenience for generating an HS256 Joken.Signer"
+  @spec hs256(binary) :: Signer.t
   def hs256(secret) when is_binary(secret) do
     %Signer{jws: %{ "alg" => "HS256" },
             jwk: %{ "kty" => "oct", "k" => :base64url.encode(secret) }}
   end
 
   @doc "Convenience for generating an HS384 Joken.Signer"
+  @spec hs384(binary) :: Signer.t
   def hs384(secret) when is_binary(secret) do
     %Signer{jws: %{ "alg" => "HS384" },
             jwk: %{ "kty" => "oct", "k" => :base64url.encode(secret) }}
   end
 
   @doc "Convenience for generating an HS512 Joken.Signer"
+  @spec hs512(binary) :: Signer.t
   def hs512(secret) when is_binary(secret) do
     %Signer{jws: %{ "alg" => "HS512" },
             jwk: %{ "kty" => "oct", "k" => :base64url.encode(secret) }}
@@ -27,6 +47,7 @@ defmodule Joken.Signer do
 
   It raises ArgumentError if no signer was configured.
   """
+  @spec sign(Token.t) :: Token.t
   def sign(%Token{signer: nil}) do
     raise ArgumentError, message: "Missing Signer"
   end
@@ -39,6 +60,7 @@ defmodule Joken.Signer do
 
   This will override the configured signer.
   """
+  @spec sign(Token.t, Signer.t) :: Token.t
   def sign(token, %Signer{ jws: nil, jwk: %{ "kty" => "oct" } = jwk }) do
     jws = %{ "alg" => "HS256" }
     sign(token, %Signer{ jwk: jwk, jws: jws})
@@ -61,6 +83,7 @@ defmodule Joken.Signer do
   Verifies a token signature and decodes its payload. This assumes a signer was configured. 
   It raises if there was none.
   """
+  @spec verify(Token.t) :: Token.t
   def verify(%Token{signer: nil}) do
     raise ArgumentError, message: "Missing Signer"
   end
@@ -72,6 +95,7 @@ defmodule Joken.Signer do
   Verifies a token signature and decodes its payload. 
   It uses the given signer and sets it on the token.
   """
+  @spec verify(Token.t, Signer.t) :: Token.t
   def verify(t = %Token{token: token}, s = %Signer{jwk: jwk, jws: %{ "alg" => algorithm}}) do
 
     t = %{ t | signer: s }
@@ -97,7 +121,8 @@ defmodule Joken.Signer do
     end
   end
 
-  # used to decode payload
+  ### PRIVATE
+  
   defp decode_payload(%Token{json_module: json}, payload) when is_binary(payload) do
     json.decode! payload
   end
