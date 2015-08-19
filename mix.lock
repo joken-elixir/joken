@@ -4,5 +4,5 @@
   "ex_doc": {:hex, :ex_doc, "0.8.2"},
   "jose": {:hex, :jose, "1.2.0"},
   "jsx": {:hex, :jsx, "2.7.0"},
-  "plug": {:hex, :plug, "0.14.0"},
+  "plug": {:hex, :plug, "1.0.0"},
   "poison": {:hex, :poison, "1.4.0"}}
