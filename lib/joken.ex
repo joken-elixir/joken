@@ -139,6 +139,7 @@ defmodule Joken do
 
   def token() do
     %Token{}
+    |> with_json_module(Poison)
     |> with_exp
     |> with_iat
     |> with_nbf
@@ -151,12 +152,19 @@ defmodule Joken do
 
   def token(payload) when is_map(payload) do
     %Token{claims: payload}
+    |> with_json_module(Poison)
   end
 
   def token(token) when is_binary(token) do
     %Token{token: token}
+    |> with_json_module(Poison)
   end
 
+  def with_json_module(token = %Token{}, module) when is_atom(module) do
+    JOSE.json_module(module)
+    %{ token | json_module: module }
+  end
+  
   def with_exp(token = %Token{claims: claims}) do
     %{ token | claims: Map.put(claims, :exp, get_current_time + (2 * 60 * 60 * 1000)) }
   end
@@ -201,30 +209,28 @@ defmodule Joken do
     %{ token | claims: Map.put(claims, claim_key, claim_value) }
   end
 
-  def with_HS256(token, secret) when is_binary(secret) do
-    %{ token | signer: %Signer{jws: %{ "alg" => "HS256" }, jwk: secret} }
-  end
+  # convenience functions
+  def hs256(secret), do: Signer.hs256(secret)
+  def hs384(secret), do: Signer.hs384(secret)
+  def hs512(secret), do: Signer.hs512(secret)
 
-  def with_HS384(token, secret) when is_binary(secret) do
-    %{ token | signer: %Signer{jws: %{ "alg" => "HS384" }, jwk: secret} }
-  end
-
-  def with_HS512(token, secret) when is_binary(secret) do
-    %{ token | signer: %Signer{jws: %{ "alg" => "HS512" }, jwk: secret} }
+  # only adds the signer but does not call sign
+  def with_signer(token = %Token{}, signer = %Signer{}) do
+    %{ token | signer: signer }
   end
 
   def sign(token), do: Signer.sign(token)
   def sign(token, signer), do: Signer.sign(token, signer)
 
-  def get_compact(%Token{} = token), do: token.token
+  def get_compact(%Token{token: token}), do: token
+  def get_claims(%Token{claims: claims}), do: claims 
 
   def with_validation(token = %Token{validations: validations}, claim, function) when is_atom(claim) and is_function(function) do
 
     %{ token | validations: Map.put(validations, claim, function) }
   end
 
-  def verify(%Token{} = token) do
-    Signer.verify(token)
-  end
-  
+  def verify(%Token{} = token), do: Signer.verify(token)
+  def verify(%Token{} = token, %Signer{} = signer), do: Signer.verify(token, signer)
+
 end

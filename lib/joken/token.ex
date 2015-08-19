@@ -3,7 +3,7 @@ defmodule Joken.Token do
 
   @claims [:exp, :nbf, :iat, :aud, :iss, :sub, :jti]
   
-  defstruct [json_module: Poison,
+  defstruct [json_module: nil,
              claims: %{},
              validations: %{},
              error: nil,
