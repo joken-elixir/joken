@@ -1,9 +1,30 @@
 defmodule Joken.Token do
-  defstruct json_module: nil, payload: nil, errors: [], token: nil
-
   alias Joken.Utils
 
   @claims [:exp, :nbf, :iat, :aud, :iss, :sub, :jti]
+
+  @type json_module :: module
+  @type claims      :: %{atom => any}
+  @type validations :: %{atom => function}
+  @type error       :: binary
+  @type token       :: binary
+  @type signer      :: Joken.Signer.t
+
+  @type t :: %__MODULE__{
+    json_module: module,
+    claims: claims,
+    validations: validations,
+    error: error,
+    token: token,
+    signer: signer
+  }
+  
+  defstruct [json_module: nil,
+             claims: %{},
+             validations: %{},
+             error: nil,
+             token: nil,
+             signer: nil]
 
   @moduledoc """
   Module that handles encoding and decoding of tokens. For most cases, it's recommended to use the Joken module, but
