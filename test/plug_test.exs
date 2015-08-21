@@ -22,9 +22,15 @@ defmodule JokenPlug.Test do
     plug :dispatch
 
     post "/generate_token", private: @skip_auth do
+
+      compact = token()
+      |> with_sub(1234567890)
+      |> sign(hs256("secret"))
+      |> get_compact
+
       conn
       |> put_resp_content_type("text/plain")
-      |> send_resp(200, token() |> sign(hs256("secret")) |> get_compact)      
+      |> send_resp(200, compact)
     end
       
     get "/verify_token" do
@@ -56,13 +62,14 @@ defmodule JokenPlug.Test do
       |> send_resp(404, "Not found")
     end
 
-    def is_subject(token) do
-      token
+    def is_subject(payload) do
+      payload
       |> with_validation(:sub, &(&1 == 1234567890))
       |> with_signer(hs256("secret"))
     end
-    def is_not_subject(payload) do 
-      token
+
+    def is_not_subject(payload) do
+      payload
       |> with_validation(:sub, &(&1 != 1234567890))
       |> with_signer(hs256("secret"))
     end
@@ -71,8 +78,8 @@ defmodule JokenPlug.Test do
       {conn, message}
     end
 
-    def on_verifying(token) do
-      token
+    def on_verifying(payload) do
+      payload
       |> with_signer(hs256("secret"))
       |> with_sub(1234567890)
     end
@@ -93,18 +100,16 @@ defmodule JokenPlug.Test do
     end
 
     match _ do
-      conn
-      |> send_resp(404, "Not found")
+      conn |> send_resp(404, "Not found")
     end
 
     def on_error(conn, message) do
-      body = %{status: 401,
-               message: message}
+      body = %{status: 401, message: message}
       {conn, body}
     end
 
-    def on_verifying(token) do
-      token
+    def on_verifying(payload) do
+      payload
       |> with_signer(hs256("secret"))
       |> with_sub(1234567890)
     end
@@ -162,7 +167,7 @@ defmodule JokenPlug.Test do
     |> MyPlugRouter.call([])
 
     assert conn.status == 401
-    assert conn.resp_body == ""
+    assert conn.resp_body == "Invalid payload"
   end
 
   test "generates custom error body" do
