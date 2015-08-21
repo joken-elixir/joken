@@ -1,4 +1,4 @@
-defmodule Joken.New.Test do
+defmodule Joken.Test do
   use ExUnit.Case, async: true
   alias Joken.Signer
   import Joken

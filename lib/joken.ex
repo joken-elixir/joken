@@ -3,11 +3,6 @@ defmodule Joken do
   alias Joken.Signer
   import Joken.Helpers
 
-  @type algorithm :: :HS256 | :HS384 | :HS512
-  @type claim :: :exp | :nbf | :iat | :aud | :iss | :sub | :jti
-  @type status :: :ok | :error
-  @type payload :: map | Keyword.t
-
   @moduledoc """
 
   """
