@@ -96,6 +96,9 @@ defmodule Joken.Signer do
   It uses the given signer and sets it on the token.
   """
   @spec verify(Token.t, Signer.t) :: Token.t
+  def verify(t = %Token{token: nil}, _signer) do
+    %{ t | error: "No compact token set for verification"}
+  end
   def verify(t = %Token{token: token}, s = %Signer{jwk: jwk, jws: %{ "alg" => algorithm}}) do
 
     t = %{ t | signer: s }
@@ -117,7 +120,7 @@ defmodule Joken.Signer do
       end
     catch
       :error, _ ->
-        %{ t | error: "Missing signature" }
+        %{ t | error: "Could not verify token" }
     end
   end
 

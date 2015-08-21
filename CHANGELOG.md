@@ -1,3 +1,6 @@
+# v0.16.0-dev
+* Enhancements
+
 # v0.15.0
 * Enhancements
   * Add options parameter to `Joken.Config.validate_claim`
