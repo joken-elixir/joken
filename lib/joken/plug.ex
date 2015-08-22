@@ -104,8 +104,8 @@ defmodule Joken.Plug do
   defp parse_auth(conn, ["Bearer " <> incoming_token]) do
     payload_fun = Map.get(conn.private, :joken_on_verifying)
 
-    verified_token = token(incoming_token)
-    |> payload_fun.()
+    verified_token = payload_fun.()
+    |> with_compact_token(incoming_token)
     |> verify
 
     evaluate(conn, verified_token)

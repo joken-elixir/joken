@@ -2,6 +2,7 @@ defmodule JokenPlug.Test do
   use ExUnit.Case, async: true
   use Plug.Test
   import Joken
+  alias Joken.Token
 
   setup_all do
     JOSE.JWA.crypto_fallback(true)
@@ -12,12 +13,12 @@ defmodule JokenPlug.Test do
     use Plug.Router
 
     @skip_auth %{joken_skip: true}
-    @is_subject %{joken_on_verifying: &MyPlugRouter.is_subject/1 }
-    @is_not_subject %{joken_on_verifying: &MyPlugRouter.is_not_subject/1 }
+    @is_subject %{joken_on_verifying: &MyPlugRouter.is_subject/0 }
+    @is_not_subject %{joken_on_verifying: &MyPlugRouter.is_not_subject/0 }
 
     plug :match
     plug Joken.Plug,
-      on_verifying: &MyPlugRouter.on_verifying/1,
+      on_verifying: &MyPlugRouter.on_verifying/0,
       on_error: &MyPlugRouter.error_logging/2
     plug :dispatch
 
@@ -62,14 +63,16 @@ defmodule JokenPlug.Test do
       |> send_resp(404, "Not found")
     end
 
-    def is_subject(payload) do
-      payload
+    def is_subject() do
+      %Token{}
+      |> with_json_module(Poison)
       |> with_validation(:sub, &(&1 == 1234567890))
       |> with_signer(hs256("secret"))
     end
 
-    def is_not_subject(payload) do
-      payload
+    def is_not_subject() do
+      %Token{}
+      |> with_json_module(Poison)
       |> with_validation(:sub, &(&1 != 1234567890))
       |> with_signer(hs256("secret"))
     end
@@ -78,8 +81,9 @@ defmodule JokenPlug.Test do
       {conn, message}
     end
 
-    def on_verifying(payload) do
-      payload
+    def on_verifying() do
+      %Token{}
+      |> with_json_module(Poison)
       |> with_signer(hs256("secret"))
       |> with_sub(1234567890)
     end
@@ -108,8 +112,9 @@ defmodule JokenPlug.Test do
       {conn, body}
     end
 
-    def on_verifying(payload) do
-      payload
+    def on_verifying() do
+      %Token{}
+      |> with_json_module(Poison)
       |> with_signer(hs256("secret"))
       |> with_sub(1234567890)
     end
