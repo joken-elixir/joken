@@ -76,17 +76,17 @@ defmodule Joken.Token.Bench do
   ## RS256, RS384, RS512 benchmarks
   ## ------------------------------  
   bench "RS256 token generation" do
-   token |> sign(%Signer{ jws: %{ "alg" => "RS256" }, jwk: Keys.rsa_key }) |> get_compact
+    token |> sign(rs256(Keys.rsa_key)) |> get_compact
     :ok
   end
 
   bench "RS384 token generation" do
-   token |> sign(%Signer{ jws: %{ "alg" => "RS384" }, jwk: Keys.rsa_key }) |> get_compact
+    token |> sign(rs384(Keys.rsa_key)) |> get_compact
     :ok
   end
-  
+
   bench "RS512 token generation" do
-   token |> sign(%Signer{ jws: %{ "alg" => "RS512" }, jwk: Keys.rsa_key }) |> get_compact
+    token |> sign(rs512(Keys.rsa_key)) |> get_compact
     :ok
   end
 
@@ -94,17 +94,17 @@ defmodule Joken.Token.Bench do
   ## ES256, ES384, ES512 benchmarks
   ## ------------------------------
   bench "ES256 token generation" do
-   token |> sign(%Signer{ jws: %{ "alg" => "ES256" }, jwk: Keys.ec_p256_key }) |> get_compact
+    token |> sign(es256(Keys.ec_p256_key)) |> get_compact
     :ok
   end
 
   bench "ES384 token generation" do
-   token |> sign(%Signer{ jws: %{ "alg" => "ES384" }, jwk: Keys.ec_p384_key }) |> get_compact
+    token |> sign(es384(Keys.ec_p384_key)) |> get_compact
     :ok
   end
 
   bench "ES512 token generation" do
-   token |> sign(%Signer{ jws: %{ "alg" => "ES512" }, jwk: Keys.ec_p521_key }) |> get_compact
+    token |> sign(es512(Keys.ec_p521_key)) |> get_compact
     :ok
   end
 
@@ -112,17 +112,17 @@ defmodule Joken.Token.Bench do
   ## PS256, PS384, PS512 benchmarks
   ## ------------------------------  
   bench "PS256 token generation" do
-   token |> sign(%Signer{ jws: %{ "alg" => "PS256" }, jwk: Keys.rsa_key }) |> get_compact
+    token |> sign(ps256(Keys.rsa_key)) |> get_compact
     :ok
   end
 
   bench "PS384 token generation" do
-   token |> sign(%Signer{ jws: %{ "alg" => "PS384" }, jwk: Keys.rsa_key }) |> get_compact
+    token |> sign(ps384(Keys.rsa_key)) |> get_compact
     :ok
   end
   
   bench "PS512 token generation" do
-   token |> sign(%Signer{ jws: %{ "alg" => "PS512" }, jwk: Keys.rsa_key }) |> get_compact
+    token |> sign(ps512(Keys.rsa_key)) |> get_compact
     :ok
   end
   

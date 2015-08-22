@@ -4,7 +4,21 @@ defmodule Joken do
   import Joken.Helpers
 
   @moduledoc """
+  Joken is the main API for configuring JWT token generation and 
+  validation.
 
+  All you need to generate a token is a `Joken.Token` struct with proper values. 
+  There you can set:
+  - json_module: choose your JSON library (currently supports Poison | JSX)
+  - signer: a map that tells the underlying system how to sign and verify your 
+  tokens
+  - validations: a map of claims keys to function validations
+  - claims: the map of values you want encoded in a token
+  - token: the compact representation of a JWT token
+  - error: message indicating why a sign/verify operation failed
+
+  To help you fill that configuration struct properly, use the functions in this 
+  module.
   """
 
   @doc """
@@ -32,7 +46,8 @@ defmodule Joken do
   end
 
   @doc """
-  Generates a `Joken.Token` with either a custom payload or a compact token.
+  Generates a `Joken.Token` with either a custom payload or a compact token. 
+  Defaults Poison as the json module.
   """
   @spec token(binary | map) :: Token.t
   def token(payload) when is_map(payload) do
@@ -53,6 +68,14 @@ defmodule Joken do
     %{ token | json_module: module }
   end
 
+  @doc """
+  Sets the given compact token into the given `Joken.Token` struct.
+  """
+  @spec with_compact_token(Token.t, binary) :: Token.t
+  def with_compact_token(token = %Token{}, compact) when is_binary(compact) do
+    %{ token | token: compact }
+  end
+  
   @doc """
   Adds `:exp` claim with a default value of now + 2hs.
   """
@@ -150,15 +173,46 @@ defmodule Joken do
 
   # convenience functions
 
-  @doc "See Joken.Signer.hs256/1"
-  def hs256(secret), do: Signer.hs256(secret)
+  # HMAC SHA functions
+  @doc "See Joken.Signer.hs/2"
+  def hs256(secret), do: Signer.hs("HS256", secret)
 
-  @doc "See Joken.Signer.hs384/1"
-  def hs384(secret), do: Signer.hs384(secret)
+  @doc "See Joken.Signer.hs/2"
+  def hs384(secret), do: Signer.hs("HS384", secret)
 
-  @doc "See Joken.Signer.hs512/1"
-  def hs512(secret), do: Signer.hs512(secret)
+  @doc "See Joken.Signer.hs/2"
+  def hs512(secret), do: Signer.hs("HS512", secret)
 
+  # 
+  @doc "See Joken.Signer.es/2"
+  def es256(key), do: Signer.es("ES256", key)
+
+  @doc "See Joken.Signer.es/2"
+  def es384(key), do: Signer.es("ES384", key)
+
+  @doc "See Joken.Signer.es/2"
+  def es512(key), do: Signer.es("ES512", key)
+
+  # RSASSA-PKCS1-v1_5 SHA
+  @doc "See Joken.Signer.rs/2"
+  def rs256(key), do: Signer.rs("RS256", key)
+
+  @doc "See Joken.Signer.rs/2"
+  def rs384(key), do: Signer.rs("RS384", key)
+
+  @doc "See Joken.Signer.rs/2"
+  def rs512(key), do: Signer.rs("RS512", key)
+
+  #  RSASSA-PSS using SHA and MGF1 with SHA
+  @doc "See Joken.Signer.ps/2"
+  def ps256(key), do: Signer.ps("PS256", key)
+
+  @doc "See Joken.Signer.ps/2"
+  def ps384(key), do: Signer.ps("PS384", key)
+
+  @doc "See Joken.Signer.ps/2"
+  def ps512(key), do: Signer.ps("PS512", key)
+  
   @doc """
   Adds a signer to a token configuration. 
 
@@ -218,6 +272,22 @@ defmodule Joken do
   @spec verify(Token.t) :: Token.t
   def verify(%Token{} = token), do: Signer.verify(token)
 
+  @doc """
+  Same as `verify/1` except that it returns either: 
+  - {:ok, claims}
+  - {:error, message}
+  """
+  @spec verify!(Token.t) :: {:ok, map} | {:error, binary}
+  def verify!(%Token{} = token) do
+    token = Signer.verify(token)
+
+    if token.error do
+      {:error, token.error}
+    else
+      {:ok, token.claims }
+    end
+  end
+  
   @doc """
   Same as `verify/1` but overrides any Signer that was present in the configuration.
   """
