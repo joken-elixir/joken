@@ -21,27 +21,35 @@ defmodule Joken.Signer do
   
   defstruct [:jwk, :jws]
 
-  @doc "Convenience for generating an HS256 Joken.Signer"
-  @spec hs256(binary) :: Signer.t
-  def hs256(secret) when is_binary(secret) do
-    %Signer{jws: %{ "alg" => "HS256" },
+  @doc "Convenience for generating an HS*** Joken.Signer"
+  @spec hs(binary, binary) :: Signer.t
+  def hs(alg, secret) when is_binary(secret)
+    and alg in ["HS256", "HS384", "HS512"] do
+    %Signer{jws: %{ "alg" => alg },
             jwk: %{ "kty" => "oct", "k" => :base64url.encode(secret) }}
   end
 
-  @doc "Convenience for generating an HS384 Joken.Signer"
-  @spec hs384(binary) :: Signer.t
-  def hs384(secret) when is_binary(secret) do
-    %Signer{jws: %{ "alg" => "HS384" },
-            jwk: %{ "kty" => "oct", "k" => :base64url.encode(secret) }}
+  @doc "Convenience for generating an ES*** Joken.Signer"
+  @spec es(binary, map) :: Signer.t
+  def es(alg, key) when is_map(key)
+    and alg in ["ES256", "ES384", "ES512"] do
+    %Signer{jws: %{ "alg" => alg }, jwk: key }
   end
 
-  @doc "Convenience for generating an HS512 Joken.Signer"
-  @spec hs512(binary) :: Signer.t
-  def hs512(secret) when is_binary(secret) do
-    %Signer{jws: %{ "alg" => "HS512" },
-            jwk: %{ "kty" => "oct", "k" => :base64url.encode(secret) }}
-  end
+  @doc "Convenience for generating an RS*** Joken.Signer"
+  @spec rs(binary, map) :: Signer.t
+  def rs(alg, key) when is_map(key)
+    and alg in ["RS256", "RS384", "RS512"] do
+    %Signer{jws: %{ "alg" => alg }, jwk: key }
+  end                                             
 
+  @doc "Convenience for generating an PS*** Joken.Signer"
+  @spec ps(binary, map) :: Signer.t
+  def ps(alg, key) when is_map(key)
+    and alg in ["PS256", "PS384", "PS512"] do
+    %Signer{jws: %{ "alg" => alg }, jwk: key }
+  end
+                                               
   @doc """
   Signs a payload (JOSE header + claims) with the configured signer.
 
