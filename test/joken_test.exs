@@ -39,12 +39,10 @@ defmodule Joken.Test do
     assert Map.has_key? token.claims, :exp
     assert Map.has_key? token.claims, :nbf
     assert Map.has_key? token.claims, :iat
-    assert Map.has_key? token.claims, :iss
 
     assert Map.has_key? token.validations, :exp
     assert Map.has_key? token.validations, :nbf
     assert Map.has_key? token.validations, :iat
-    assert Map.has_key? token.validations, :iss
   end
 
   test "can add custom claim and validation" do
