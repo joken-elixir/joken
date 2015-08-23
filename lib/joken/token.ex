@@ -1,6 +1,6 @@
 defmodule Joken.Token do
 
-  @type json_module :: module
+  @type serializer :: module
   @type claims      :: %{atom => any}
   @type validations :: %{atom => function}
   @type error       :: binary
@@ -8,7 +8,7 @@ defmodule Joken.Token do
   @type signer      :: Joken.Signer.t
 
   @type t :: %__MODULE__{
-    json_module: module,
+    serializer: module,
     claims: claims,
     validations: validations,
     error: error,
@@ -16,7 +16,7 @@ defmodule Joken.Token do
     signer: signer
   }
   
-  defstruct [json_module: nil,
+  defstruct [serializer: nil,
              claims: %{},
              validations: %{},
              error: nil,

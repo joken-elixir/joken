@@ -9,7 +9,7 @@ defmodule Joken do
 
   All you need to generate a token is a `Joken.Token` struct with proper values. 
   There you can set:
-  - json_module: choose your JSON library (currently supports Poison | JSX)
+  - serializer: choose your JSON library (currently supports Poison | JSX)
   - signer: a map that tells the underlying system how to sign and verify your 
   tokens
   - validations: a map of claims keys to function validations
@@ -23,7 +23,7 @@ defmodule Joken do
 
   @doc """
   Generates a `Joken.Token` with the following defaults:
-  - Poison as the json_module
+  - Poison as the serializer
   - claims: exp(now + 2 hours), iat(now), nbf(now - 100ms) and iss ("Joken")
   - validations for default :
     - with_validation(:exp, &(&1 > get_current_time))
@@ -34,7 +34,7 @@ defmodule Joken do
   @spec token() :: Token.t
   def token() do
     %Token{}
-    |> with_json_module(Poison)
+    |> with_serializer(Poison)
     |> with_exp
     |> with_iat
     |> with_nbf
@@ -45,25 +45,25 @@ defmodule Joken do
 
   @doc """
   Generates a `Joken.Token` with either a custom payload or a compact token. 
-  Defaults Poison as the json module.
+  Defaults Poison as the serializer.
   """
   @spec token(binary | map) :: Token.t
   def token(payload) when is_map(payload) do
     %Token{claims: payload}
-    |> with_json_module(Poison)
+    |> with_serializer(Poison)
   end
   def token(token) when is_binary(token) do
     %Token{token: token}
-    |> with_json_module(Poison)
+    |> with_serializer(Poison)
   end
 
   @doc """
-  Configures the default JSON module for Joken.
+  Configures the default serializer for Joken.
   """
-  @spec with_json_module(Token.t, atom) :: Token.t
-  def with_json_module(token = %Token{}, module) when is_atom(module) do
+  @spec with_serializer(Token.t, atom) :: Token.t
+  def with_serializer(token = %Token{}, module) when is_atom(module) do
     JOSE.json_module(module)
-    %{ token | json_module: module }
+    %{ token | serializer: module }
   end
 
   @doc """

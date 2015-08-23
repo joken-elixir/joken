@@ -134,7 +134,7 @@ defmodule Joken.Signer do
 
   ### PRIVATE
   
-  defp decode_payload(%Token{json_module: json}, payload) when is_binary(payload) do
+  defp decode_payload(%Token{serializer: json}, payload) when is_binary(payload) do
     json.decode! payload
   end
 
