@@ -38,11 +38,9 @@ defmodule Joken do
     |> with_exp
     |> with_iat
     |> with_nbf
-    |> with_iss
     |> with_validation(:exp, &(&1 > get_current_time))
     |> with_validation(:iat, &(&1 < get_current_time))
     |> with_validation(:nbf, &(&1 < get_current_time))
-    |> with_validation(:iss, &(&1 == "Joken"))
   end
 
   @doc """
@@ -121,14 +119,6 @@ defmodule Joken do
   @spec with_nbf(Token.t, non_neg_integer) :: Token.t
   def with_nbf(token = %Token{claims: claims}, time_not_before) do
     %{ token | claims: Map.put(claims, :nbf, time_not_before) }
-  end
-
-  @doc """
-  Adds `:iss` claim with a default value of "Joken".
-  """
-  @spec with_iss(Token.t) :: Token.t
-  def with_iss(token = %Token{claims: claims}) do
-    %{ token | claims: Map.put(claims, :iss, "Joken") }
   end
 
   @doc """
