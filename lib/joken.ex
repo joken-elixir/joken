@@ -1,7 +1,6 @@
 defmodule Joken do
   alias Joken.Token
   alias Joken.Signer
-  import Joken.Helpers
 
   @moduledoc """
   Joken is the main API for configuring JWT token generation and 
@@ -29,7 +28,6 @@ defmodule Joken do
     - with_validation(:exp, &(&1 > get_current_time))
     - with_validation(:iat, &(&1 < get_current_time))
     - with_validation(:nbf, &(&1 < get_current_time))
-    - with_validation(:iss, &(&1 == "Joken"))
   """
   @spec token() :: Token.t
   def token() do
@@ -284,4 +282,12 @@ defmodule Joken do
   @spec verify(Token.t, Signer.t) :: Token.t
   def verify(%Token{} = token, %Signer{} = signer), do: Signer.verify(token, signer)
 
+
+  @doc """
+  Helper function to get the current time
+  """
+  def get_current_time() do
+    {mega, secs, _} = :os.timestamp()
+    mega * 1000000 + secs
+  end
 end
