@@ -2,6 +2,7 @@ defmodule Joken.Test do
   use ExUnit.Case, async: true
   alias Joken.Signer
   import Joken
+  import Joken.Fixtures
 
   setup_all do
     JOSE.JWA.crypto_fallback(true)
@@ -106,4 +107,72 @@ defmodule Joken.Test do
     assert claims == @payload
   end
 
+  test "signs/verifies token with ES***" do
+
+    verify_for_dynamic_token(es256_token, es256(ec_p256_key))
+    verify_for_dynamic_token(es384_token, es384(ec_p384_key))
+    verify_for_dynamic_token(es512_token, es512(ec_p521_key))
+
+  end
+
+  test "signs/verifies token with RS***" do
+
+    verify_for_dynamic_token(rs256_token, rs256(rsa_key))
+    verify_for_dynamic_token(rs384_token, rs384(rsa_key))
+    verify_for_dynamic_token(rs512_token, rs512(rsa_key))
+
+    assert_invalid_rsa_signature(rs256_token, rs256(rsa_key2))
+    assert_invalid_rsa_signature(rs384_token, rs384(rsa_key2))
+    assert_invalid_rsa_signature(rs512_token, rs512(rsa_key2))
+    
+  end
+
+  test "signs/verifies token with PS***" do
+
+    verify_for_dynamic_token(ps256_token, ps256(rsa_key))
+    verify_for_dynamic_token(ps384_token, ps384(rsa_key))
+    verify_for_dynamic_token(ps512_token, ps512(rsa_key))
+
+    assert_invalid_rsa_signature(ps256_token, ps256(rsa_key2))
+    assert_invalid_rsa_signature(ps384_token, ps384(rsa_key2))
+    assert_invalid_rsa_signature(ps512_token, ps512(rsa_key2))
+    
+  end
+
+  # utility functions
+  defp assert_invalid_rsa_signature(compact_token, signer) do
+
+    result = token_config()
+    |> with_compact_token(compact_token)
+    |> with_signer(signer) # wrong key
+    |> verify!
+
+    assert result == {:error, "Invalid signature"}
+  end
+  
+  # this is used to verify algorithms that will always produce
+  # different tokens. The strategy is to have a token we are sure
+  # is valid (generated from jwt.io for example) and validate both
+  # results
+  defp verify_for_dynamic_token(compact_token, signer) do
+
+    config = token_config()
+    |> with_signer(signer)
+    |> sign
+
+    compact = config |> get_compact
+
+    {:ok, decoded_claims} = config
+    |> with_compact_token(compact_token)
+    |> verify!
+
+    assert decoded_claims == @payload
+
+    {:ok, claims} = config
+    |> with_compact_token(compact)
+    |> verify!
+
+    assert claims == @payload
+  end
+   
 end
