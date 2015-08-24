@@ -1,7 +1,9 @@
 ## Joken [![Documentation](https://img.shields.io/badge/docs-hexpm-blue.svg)](http://hexdocs.pm/joken/) [![Downloads](https://img.shields.io/hexpm/dt/joken.svg)](https://hex.pm/packages/joken) [![Build](https://travis-ci.org/bryanjos/joken.svg)](https://travis-ci.org/bryanjos/joken.svg)
 
 
-Signs and Verifies JSON Web Tokens. The goal of this library is to provide a convienent way to create JWTs while allowing the flexibility to customize claims, validations, algorithms, and json serializers as well. This library also includes a Plug for checking tokens as well. 
+A JSON Web Token (JWT) Library
+
+The goal of this library is to provide a convienent way to create, sign, verify, and validate JWTs while allowing the flexibility to customize each step along the way. This library also includes a Plug for checking tokens as well. 
 
 Supports the following algorithms:
 
@@ -20,7 +22,7 @@ Supports the following algorithms:
 
 <sup><a name="footnote-1">1</a></sup> Implemented mostly in pure Erlang. May be less performant than other supported signature algorithms. See [jose JWS algorithm support](https://github.com/potatosalad/erlang-jose#json-web-signature-jws-rfc-7515) for more information.
 
-Supports adding and validating claims from the JSON Web Token specification:
+Joken allows you to use any claims you wish, but has convenience methods for the claims listed in the specification. These claims are listed below:
 
 * **exp**: Expiration
 * **nbf**: Not Before
@@ -32,12 +34,21 @@ Supports adding and validating claims from the JSON Web Token specification:
 
 For a more in depth description of each claim, please see the reference specification draft [here](http://self-issued.info/docs/draft-ietf-oauth-json-web-token.html).
 
-
-Also allows for adding and validating custom claims as well.
-
 ### Usage:
 
-Joken allows for customization of tokens, but also provides defaults. Joken works by passing a `Joken.Token` struct to functions, which also return a modified `Joken.Token` struct.
+All you need to generate a token is a `Joken.Token` struct with proper values. 
+There you can set:
+- json_module: choose your JSON library (currently supports Poison | JSX)
+- signer: a map that tells the underlying system how to sign and verify your 
+tokens
+- validations: a map of claims keys to function validations
+- claims: the map of values you want encoded in a token
+- token: the compact representation of a JWT token
+- error: message indicating why a sign/verify operation failed
+
+To help you fill that configuration struct properly, use the functions in the `Joken` module.
+
+Joken allows for customization of tokens, but also provides some defaults.
 
 To create a token with default claims of `exp`, `iaf`, and `nbf`, and to use Poison as the json serializer:
 
@@ -81,7 +92,7 @@ my_token = %{user_id: 1}
 |> get_compact
 ```
 
-Verifying a token works in the same way. First create a token using the compact form and verify it. `verify` will return the `Joken.Token` struct with the `claims` property filled with the claims from the token if verified. Otherwise, the `error` property will have the error:
+Verifying a token works in the same way. First, create a token using the compact form and verify it. `verify` will return the `Joken.Token` struct with the `claims` property filled with the claims from the token if verified. Otherwise, the `error` property will have the error:
 
 ```elixir
 import Joken
@@ -92,3 +103,77 @@ my_verified_token = "some_token"
 |> with_signer(hs256("my_secret"))
 |> verify
 ```
+
+### Plug:
+
+Joken also comes with a Plug for verifying JWTs in web applications.
+
+There are two possible scenarios:
+
+1. Same configuration for all routes
+2. Per route configuration
+
+In the first scenario just add this plug before the dispatch plug.
+
+```elixir
+  defmodule MyRouter do
+    use Plug.Router
+
+    plug Joken.Plug, on_verifying: &verify_function/1
+    plug :match
+    plug :dispatch
+
+    post "/user" do
+      # will only execute here if token is present and valid
+    end
+
+    match _ do
+      # will only execute here if token is present and valid
+    end
+  end
+```
+
+In the second scenario, you will need at least plug ~> 0.14 in your deps. 
+Then you must plug this AFTER :match and BEFORE :dispatch. 
+
+```elixir
+  defmodule MyRouter do
+    use Plug.Router
+
+    # route options
+    @skip_token_verification %{joken_skip: true}
+
+    plug :match
+    plug Joken.Plug, on_verifying: &verify_function/1       
+    plug :dispatch
+
+    post "/user" do
+      # will only execute here if token is present and valid
+    end
+    
+    # see options section below
+    match _, private: @skip_token_verification do
+      # will NOT try to validate a token
+    end
+  end
+```
+## Options
+
+This plug accepts the following options in its initialization:
+
+- `on_verifying`: a function used to verify the token. Receives a Token and must return a Token 
+
+- `on_error` (optional): a function that will be called with `conn` and `message`. Must
+return a tuple containing the conn and a binary representing the 401 response. If it's a map,
+it will be turned into json, otherwise, it will be returned as is.
+
+When using this with per route options you must pass a private map of options
+to the route. The keys that Joken will look for in that map are:
+
+- `joken_skip`: skips token validation
+
+- `joken_on_verifying`: Same as `on_verifying` above. Overrides 
+`on_verifying` if it was defined on the Plug
+
+- `joken_on_error`: Same as `on_error` above. Overrides 
+`on_error` if it was defined on the Plug
