@@ -1,9 +1,9 @@
 ## Joken [![Documentation](https://img.shields.io/badge/docs-hexpm-blue.svg)](http://hexdocs.pm/joken/) [![Downloads](https://img.shields.io/hexpm/dt/joken.svg)](https://hex.pm/packages/joken) [![Build](https://travis-ci.org/bryanjos/joken.svg)](https://travis-ci.org/bryanjos/joken.svg)
 
 
-Encodes and decodes JSON Web Tokens.
+Signs and Verifies JSON Web Tokens. The goal of this library is to provide a convienent way to create JWTs while allowing the flexibility to customize claims, validations, algorithms, and json serializers as well. This library also includes a Plug for checking tokens as well. 
 
-Currently supports the following algorithms:
+Supports the following algorithms:
 
 * ES256
 * ES384
@@ -20,7 +20,7 @@ Currently supports the following algorithms:
 
 <sup><a name="footnote-1">1</a></sup> Implemented mostly in pure Erlang. May be less performant than other supported signature algorithms. See [jose JWS algorithm support](https://github.com/potatosalad/erlang-jose#json-web-signature-jws-rfc-7515) for more information.
 
-Currently supports the following claims:
+Supports adding and validating claims from the JSON Web Token specification:
 
 * **exp**: Expiration
 * **nbf**: Not Before
@@ -32,68 +32,63 @@ Currently supports the following claims:
 
 For a more in depth description of each claim, please see the reference specification draft [here](http://self-issued.info/docs/draft-ietf-oauth-json-web-token.html).
 
+
+Also allows for adding and validating custom claims as well.
+
 ### Usage:
 
-Joken only needs an implementation of the `Joken.Config` behaviour to work properly. There is where you tell Joken:
+Joken allows for customization of tokens, but also provides defaults. Joken works by passing a `Joken.Token` struct to functions, which also return a modified `Joken.Token` struct.
 
-* the chosen cryptographic algorithm (i.e.: HS256)
-* the secret used to encode and to verify the payload
-* how should it encode and decode JSON (i.e.: using Poison.encode!)
-* which custom claims it should add
-* how to validate all claims
-
-To do that, you must implement the following callbacks:
-
-* `secret_key` -> should return the key used to encrypt tokens. Remember that if you issue tokens using a secret, you can only verify them with the same secret, so this secret must be a constant and persistent value! Also, it seems obvious but does not hurt to mention: this should be a secret value. If it is somehow stolen it will be possible to create tokens that will pass your signing verification process.
-* `algorithm` -> return one of the supported algorithms
-* `encode(map_or_struct)` -> how Joken will encode claims into JSON
-* `decode(binary)` -> how Joken will decode binaries into a valid structure
-* `claim(claim, payload)` -> for adding claims to a token. If it returns `nil` then that claim will not be added to the token.
-* `validate_claim(claim, payload, options)` -> the logic to validate a specific claim.
- 
-Here is a full example of a module that would add and validate the `exp` claim 
-and not add or validate the others:
+To create a token with default claims of `exp`, `iaf`, and `nbf`, and to use Poison as the json serializer:
 
 ```elixir
-  defmodule My.Config.Module do
-    @behaviour Joken.Config
-
-    def secret_key(), do: Application.get_env(:app, :secret_key) 
-    
-    def algorithm(), do: :HS256
-    
-    def encode(map), do: Poison.encode!(map)
-    
-    def decode(binary), do: Poison.decode!(binary)
-
-    def claim(:exp, payload) do
-      Joken.Helpers.get_current_time() + 300
-    end
-
-    def claim(_, _), do: nil
-
-    def validate_claim(:exp, payload, options) do
-      Joken.Helpers.validate_time_claim(payload, "exp", "Token expired", fn(expires_at, now) -> expires_at > now end)
-    end
-
-    def validate_claim(_, _, _), do: :ok
-  end
+import Joken
+my_token = token
+|> with_signer(hs256("my_secret"))
 ```
 
-Once you have implemented the behaviour module, you must add a configuration for `joken` with a property `config_module` with your behaviour module. Ex:
+To create a function with an inital map of claims:
 
 ```elixir
-config :joken,
-  config_module: My.Config.Module
+import Joken
+
+my_token = %{user_id: 1}
+|> token
+|> with_signer(hs256("my_secret"))
 ```
 
-then to encode:
+Here is an example of adding a custom validator for the claim:
 
 ```elixir
-{:ok, token} = Joken.encode(%{username: "johndoe"})
+import Joken
+
+my_token = %{user_id: 1}
+|> token
+|> with_validation(:user_id, &(&1 == 1))
+|> with_signer(hs256("my_secret"))
 ```
 
-and to decode:
+To sign a token, use the `sign` function. The `get_compact` function will return the token in its binary form:
+
 ```elixir
-{:ok, decoded_payload} = Joken.decode(jwt)
+import Joken
+
+my_token = %{user_id: 1}
+|> token
+|> with_validation(:user_id, &(&1 == 1))
+|> with_signer(hs256("my_secret"))
+|> sign
+|> get_compact
+```
+
+Verifying a token works in the same way. First create a token using the compact form and verify it. `verify` will return the `Joken.Token` struct with the `claims` property filled with the claims from the token if verified. Otherwise, the `error` property will have the error:
+
+```elixir
+import Joken
+
+my_verified_token = "some_token"
+|> token
+|> with_validation(:user_id, &(&1 == 1))
+|> with_signer(hs256("my_secret"))
+|> verify
 ```
