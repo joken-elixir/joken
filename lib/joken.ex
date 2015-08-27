@@ -47,7 +47,7 @@ defmodule Joken do
   Generates a `Joken.Token` with either a custom payload or a compact token. 
   Defaults Poison as the json module.
   """
-  @spec token(binary | map | Struct.t) :: Token.t
+  @spec token(binary | map) :: Token.t
   def token(payload) when is_map(payload) do
     %Token{claims: payload}
     |> with_json_module(Poison)
@@ -164,7 +164,7 @@ defmodule Joken do
   @doc """
   Adds the given map or struct as the claims for this token
   """
-  @spec with_claims(Token.t, map | Struct.t) :: Token.t
+  @spec with_claims(Token.t, map) :: Token.t
   def with_claims(token = %Token{}, claims) when is_map(claims) do
     %{ token | claims: claims }
   end
