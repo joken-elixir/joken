@@ -83,7 +83,9 @@ defmodule Joken.Signer do
   end
   def sign(token, signer) do
     token = %{ token | signer: signer }
-    {_, compacted_token} = JOSE.JWS.compact(JOSE.JWT.sign(signer.jwk, signer.jws, token.claims))
+    claims = prepare_claims(token.claims)
+
+    {_, compacted_token} = JOSE.JWS.compact(JOSE.JWT.sign(signer.jwk, signer.jws, claims))
     %{ token | token: compacted_token }
   end
 
@@ -102,12 +104,19 @@ defmodule Joken.Signer do
   @doc """
   Verifies a token signature and decodes its payload. 
   It uses the given signer and sets it on the token.
+  If a module is given as the third argument, the claims
+  will be converted into a struct using the module
   """
-  @spec verify(Token.t, Signer.t) :: Token.t
-  def verify(t = %Token{token: nil}, _signer) do
+  @spec verify(Token.t, Signer.t, module) :: Token.t
+  def verify(t, signer, struct \\ nil) do
+    do_verify(t, signer, struct)
+  end
+
+  ### PRIVATE
+  defp do_verify(t = %Token{token: nil}, _signer, _struct) do
     %{ t | error: "No compact token set for verification"}
   end
-  def verify(t = %Token{token: token}, s = %Signer{jwk: jwk, jws: %{ "alg" => algorithm}}) do
+  defp do_verify(t = %Token{token: token}, s = %Signer{jwk: jwk, jws: %{ "alg" => algorithm}}, struct_name) do
 
     t = %{ t | signer: s }
     
@@ -119,7 +128,7 @@ defmodule Joken.Signer do
           case jws["alg"] do
             ^algorithm_string ->
               map_payload = decode_payload(t, payload)
-              validate_all_claims(t, map_payload)
+              validate_all_claims(t, map_payload, struct_name)
             _ ->
               %{ t | error: "Invalid signature algorithm" }
           end
@@ -131,14 +140,12 @@ defmodule Joken.Signer do
         %{ t | error: "Could not verify token" }
     end
   end
-
-  ### PRIVATE
   
   defp decode_payload(%Token{json_module: json}, payload) when is_binary(payload) do
     json.decode! payload
   end
 
-  defp validate_all_claims(t = %Token{validations: validations}, map_payload)
+  defp validate_all_claims(t = %Token{validations: validations}, map_payload, struct_name)
     when is_map(map_payload) do
 
     try do
@@ -155,11 +162,24 @@ defmodule Joken.Signer do
             end
         end
       end
-      %{ t | claims: Enum.into(claims, %{}) }
+
+      claims = Enum.into(claims, %{})
+      if struct_name do
+        claims = struct(struct_name, claims)
+      end
+
+      %{ t | claims: claims }
     catch
       _,_ ->
         %{ t | error: "Invalid payload" }
     end
+  end
+
+  defp prepare_claims(%{__struct__: _} = claims) do
+    Map.from_struct(claims)
+  end
+  defp prepare_claims(claims) when is_map(claims) do
+    claims
   end
   
 end
