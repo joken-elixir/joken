@@ -1,7 +1,6 @@
 defmodule Joken do
   alias Joken.Token
   alias Joken.Signer
-  import Joken.Helpers
 
   @moduledoc """
   Joken is the main API for configuring JWT token generation and 
@@ -26,10 +25,9 @@ defmodule Joken do
   - Poison as the json_module
   - claims: exp(now + 2 hours), iat(now), nbf(now - 100ms) and iss ("Joken")
   - validations for default :
-    - with_validation(:exp, &(&1 > get_current_time))
-    - with_validation(:iat, &(&1 < get_current_time))
-    - with_validation(:nbf, &(&1 < get_current_time))
-    - with_validation(:iss, &(&1 == "Joken"))
+    - with_validation(:exp, &(&1 > current_time))
+    - with_validation(:iat, &(&1 < current_time))
+    - with_validation(:nbf, &(&1 < current_time))
   """
   @spec token() :: Token.t
   def token() do
@@ -38,9 +36,9 @@ defmodule Joken do
     |> with_exp
     |> with_iat
     |> with_nbf
-    |> with_validation(:exp, &(&1 > get_current_time))
-    |> with_validation(:iat, &(&1 < get_current_time))
-    |> with_validation(:nbf, &(&1 < get_current_time))
+    |> with_validation(:exp, &(&1 > current_time))
+    |> with_validation(:iat, &(&1 < current_time))
+    |> with_validation(:nbf, &(&1 < current_time))
   end
 
   @doc """
@@ -79,7 +77,7 @@ defmodule Joken do
   """
   @spec with_exp(Token.t) :: Token.t
   def with_exp(token = %Token{claims: claims}) do
-    %{ token | claims: Map.put(claims, :exp, get_current_time + (2 * 60 * 60 * 1000)) }
+    %{ token | claims: Map.put(claims, :exp, current_time + (2 * 60 * 60 * 1000)) }
   end
 
   @doc """
@@ -95,7 +93,7 @@ defmodule Joken do
   """
   @spec with_iat(Token.t) :: Token.t
   def with_iat(token = %Token{claims: claims}) do
-    %{ token | claims: Map.put(claims, :iat, get_current_time) }
+    %{ token | claims: Map.put(claims, :iat, current_time) }
   end
   @doc """
   Adds `:iat` claim with a given value.
@@ -110,7 +108,7 @@ defmodule Joken do
   """
   @spec with_nbf(Token.t) :: Token.t
   def with_nbf(token = %Token{claims: claims}) do
-    %{ token | claims: Map.put(claims, :nbf, get_current_time - 100) }
+    %{ token | claims: Map.put(claims, :nbf, current_time - 100) }
   end
 
   @doc """
@@ -284,4 +282,12 @@ defmodule Joken do
   @spec verify(Token.t, Signer.t) :: Token.t
   def verify(%Token{} = token, %Signer{} = signer), do: Signer.verify(token, signer)
 
+
+  @doc """
+  Helper function to get the current time
+  """
+  def current_time() do
+    {mega, secs, _} = :os.timestamp()
+    mega * 1000000 + secs
+  end
 end
