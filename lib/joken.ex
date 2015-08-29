@@ -165,8 +165,8 @@ defmodule Joken do
   Adds the given map or struct as the claims for this token
   """
   @spec with_claims(Token.t, map) :: Token.t
-  def with_claims(token = %Token{}, claims) when is_map(claims) do
-    %{ token | claims: claims }
+  def with_claims(token = %Token{}, claims) do
+    %{ token | claims: Joken.Claims.to_claims(claims) }
   end
 
   # convenience functions

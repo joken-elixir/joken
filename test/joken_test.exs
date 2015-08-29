@@ -8,6 +8,12 @@ defmodule Joken.Test do
     defstruct [:a, :b, :c]
   end
 
+  defimpl Joken.Claims, for: TestStruct do
+    def to_claims(%TestStruct{} = test_struct) do
+      Map.from_struct(test_struct)
+    end
+  end
+
   setup_all do
     JOSE.JWA.crypto_fallback(true)
     :ok
@@ -116,7 +122,7 @@ defmodule Joken.Test do
     |> with_claims(%TestStruct{a: 1, b: 2, c: 3})
     |> with_validation(:a, &(&1 == 1))
 
-    assert token.claims == %TestStruct{a: 1, b: 2, c: 3}
+    assert token.claims == %{a: 1, b: 2, c: 3}
 
     compact = token
     |> sign(hs512("test"))
