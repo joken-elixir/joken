@@ -159,6 +159,14 @@ defmodule Joken do
     %{ token | claims: Map.put(claims, claim_key, claim_value) }
   end
 
+  @doc """
+  Adds the given map or struct as the claims for this token
+  """
+  @spec with_claims(Token.t, map) :: Token.t
+  def with_claims(token = %Token{}, claims) do
+    %{ token | claims: Joken.Claims.to_claims(claims) }
+  end
+
   # convenience functions
 
   # HMAC SHA functions
@@ -259,29 +267,74 @@ defmodule Joken do
   """
   @spec verify(Token.t) :: Token.t
   def verify(%Token{} = token), do: Signer.verify(token)
+  
+
+  @doc """
+  Same as `verify/1` except overrides the Signer in the Token struct with the one defined.
+  If the second parameter is not a Signer struct, it will be used to turn the claims into a
+  struct using the `module` given
+  """
+  @spec verify(Token.t, Signer.t) :: Token.t
+  def verify(%Token{} = token, %Signer{} = signer), do: Signer.verify(token, signer)
+
+  @spec verify(Token.t, module) :: Token.t
+  def verify(%Token{} = token, module), do: Signer.verify(token, token.signer, module)
+
+
+  @doc """
+  Verifies the given `token` using the `signer` and turns the validated claims into a struct
+  using the `module`
+  """
+  @spec verify(Token.t, Signer.t, module) :: Token.t
+  def verify(%Token{} = token, %Signer{} = signer, module), do: Signer.verify(token, signer, module)
+
 
   @doc """
   Same as `verify/1` except that it returns either: 
-  - {:ok, claims}
-  - {:error, message}
+  - `{:ok, claims}`
+  - `{:error, message}`
   """
   @spec verify!(Token.t) :: {:ok, map} | {:error, binary}
   def verify!(%Token{} = token) do
-    token = Signer.verify(token)
+    Signer.verify(token)
+    |> do_verify!
+  end
 
+  @doc """
+  Same as `verify/2` except that it returns either: 
+  - `{:ok, claims}`
+  - `{:error, message}`
+  """
+  @spec verify!(Token.t, Signer.t) :: {:ok, map} | {:error, binary}
+  def verify!(%Token{} = token, %Signer{} = signer) do
+    Signer.verify(token, signer)
+    |> do_verify!
+  end
+
+  @spec verify!(Token.t, module) :: {:ok, map} | {:error, binary}
+  def verify!(%Token{} = token, module) do
+    Signer.verify(token, token.signer, module)
+    |> do_verify!
+  end
+
+  @doc """
+  Same as `verify/3` except that it returns either: 
+  - `{:ok, claims}`
+  - `{:error, message}`
+  """
+  @spec verify!(Token.t, Signer.t, module) :: {:ok, map} | {:error, binary}
+  def verify!(%Token{} = token, %Signer{} = signer, module) do
+    Signer.verify(token, signer, module)
+    |> do_verify!
+  end
+
+  defp do_verify!(token) do
     if token.error do
       {:error, token.error}
     else
       {:ok, token.claims }
     end
   end
-  
-  @doc """
-  Same as `verify/1` but overrides any Signer that was present in the configuration.
-  """
-  @spec verify(Token.t, Signer.t) :: Token.t
-  def verify(%Token{} = token, %Signer{} = signer), do: Signer.verify(token, signer)
-
 
   @doc """
   Helper function to get the current time
