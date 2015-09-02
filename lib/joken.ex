@@ -27,7 +27,7 @@ defmodule Joken do
   - validations for default :
     - with_validation("exp", &(&1 > current_time))
     - with_validation("iat", &(&1 < current_time))
-    - with_validation("nbf, &(&1 < current_time))
+    - with_validation("nbf", &(&1 < current_time))
   """
   @spec token() :: Token.t
   def token() do
