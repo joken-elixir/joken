@@ -66,14 +66,14 @@ defmodule JokenPlug.Test do
     def is_subject() do
       %Token{}
       |> with_json_module(Poison)
-      |> with_validation(:sub, &(&1 == 1234567890))
+      |> with_validation("sub", &(&1 == 1234567890))
       |> with_signer(hs256("secret"))
     end
 
     def is_not_subject() do
       %Token{}
       |> with_json_module(Poison)
-      |> with_validation(:sub, &(&1 != 1234567890))
+      |> with_validation("sub", &(&1 != 1234567890))
       |> with_signer(hs256("secret"))
     end
 

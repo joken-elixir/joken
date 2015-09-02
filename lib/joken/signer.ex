@@ -150,13 +150,13 @@ defmodule Joken.Signer do
 
     try do
       claims = Enum.reduce map_payload, [], fn({key, value}, acc) ->
-        case Map.has_key? validations, val_key = String.to_existing_atom(key) do
+        case Map.has_key? validations, key do
           false ->
-            [{val_key, value} | acc]
+            [{key, value} | acc]
           true ->
-            case validations[val_key].(value) do
+            case validations[key].(value) do
               true ->
-                [{val_key, value} | acc]
+                [{key, value} | acc]
               false ->
                 raise ArgumentError 
             end
@@ -165,7 +165,9 @@ defmodule Joken.Signer do
 
       claims = Enum.into(claims, %{})
       if struct_name do
-        claims = struct(struct_name, claims)
+        claims = struct(struct_name, Enum.map(claims, fn({key, value}) ->
+          { String.to_existing_atom(key), value }
+        end))
       end
 
       %{ t | claims: claims }
