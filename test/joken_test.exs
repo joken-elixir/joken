@@ -19,7 +19,7 @@ defmodule Joken.Test do
     :ok
   end
 
-  @payload %{ name: "John Doe" }
+  @payload %{ "name" => "John Doe" }
 
   test "signing token with binary jwk" do
     signed_token = @payload
@@ -47,13 +47,13 @@ defmodule Joken.Test do
 
     token = token()
 
-    assert Map.has_key? token.claims, :exp
-    assert Map.has_key? token.claims, :nbf
-    assert Map.has_key? token.claims, :iat
+    assert Map.has_key? token.claims, "exp"
+    assert Map.has_key? token.claims, "nbf"
+    assert Map.has_key? token.claims, "iat"
 
-    assert Map.has_key? token.validations, :exp
-    assert Map.has_key? token.validations, :nbf
-    assert Map.has_key? token.validations, :iat
+    assert Map.has_key? token.validations, "exp"
+    assert Map.has_key? token.validations, "nbf"
+    assert Map.has_key? token.validations, "iat"
   end
 
   test "can add custom claim and validation" do

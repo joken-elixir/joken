@@ -25,9 +25,9 @@ defmodule Joken do
   - Poison as the json_module
   - claims: exp(now + 2 hours), iat(now), nbf(now - 100ms) and iss ("Joken")
   - validations for default :
-    - with_validation(:exp, &(&1 > current_time))
-    - with_validation(:iat, &(&1 < current_time))
-    - with_validation(:nbf, &(&1 < current_time))
+    - with_validation("exp", &(&1 > current_time))
+    - with_validation("iat", &(&1 < current_time))
+    - with_validation("nbf", &(&1 < current_time))
   """
   @spec token() :: Token.t
   def token() do
@@ -36,9 +36,9 @@ defmodule Joken do
     |> with_exp
     |> with_iat
     |> with_nbf
-    |> with_validation(:exp, &(&1 > current_time))
-    |> with_validation(:iat, &(&1 < current_time))
-    |> with_validation(:nbf, &(&1 < current_time))
+    |> with_validation("exp", &(&1 > current_time))
+    |> with_validation("iat", &(&1 < current_time))
+    |> with_validation("nbf", &(&1 < current_time))
   end
 
   @doc """
@@ -73,50 +73,50 @@ defmodule Joken do
   end
   
   @doc """
-  Adds `:exp` claim with a default value of now + 2hs.
+  Adds `"exp"` claim with a default value of now + 2hs.
   """
   @spec with_exp(Token.t) :: Token.t
   def with_exp(token = %Token{claims: claims}) do
-    %{ token | claims: Map.put(claims, :exp, current_time + (2 * 60 * 60 * 1000)) }
+    %{ token | claims: Map.put(claims, "exp", current_time + (2 * 60 * 60 * 1000)) }
   end
 
   @doc """
-  Adds `:exp` claim with a given value.
+  Adds `"exp"` claim with a given value.
   """
   @spec with_exp(Token.t, non_neg_integer) :: Token.t
   def with_exp(token = %Token{claims: claims}, time_to_expire) do
-    %{ token | claims: Map.put(claims, :exp, time_to_expire) }
+    %{ token | claims: Map.put(claims, "exp", time_to_expire) }
   end
 
   @doc """
-  Adds `:iat` claim with a default value of now.
+  Adds `"iat"` claim with a default value of now.
   """
   @spec with_iat(Token.t) :: Token.t
   def with_iat(token = %Token{claims: claims}) do
-    %{ token | claims: Map.put(claims, :iat, current_time) }
+    %{ token | claims: Map.put(claims, "iat", current_time) }
   end
   @doc """
-  Adds `:iat` claim with a given value.
+  Adds `"iat"` claim with a given value.
   """
   @spec with_iat(Token.t, non_neg_integer) :: Token.t
   def with_iat(token = %Token{claims: claims}, time_issued_at) do
-    %{ token | claims: Map.put(claims, :iat, time_issued_at) }
+    %{ token | claims: Map.put(claims, "iat", time_issued_at) }
   end
 
   @doc """
-  Adds `:nbf` claim with a default value of now - 100ms.
+  Adds `"nbf"` claim with a default value of now - 100ms.
   """
   @spec with_nbf(Token.t) :: Token.t
   def with_nbf(token = %Token{claims: claims}) do
-    %{ token | claims: Map.put(claims, :nbf, current_time - 100) }
+    %{ token | claims: Map.put(claims, "nbf", current_time - 100) }
   end
 
   @doc """
-  Adds `:nbf` claim with a given value.
+  Adds `"nbf"` claim with a given value.
   """
   @spec with_nbf(Token.t, non_neg_integer) :: Token.t
   def with_nbf(token = %Token{claims: claims}, time_not_before) do
-    %{ token | claims: Map.put(claims, :nbf, time_not_before) }
+    %{ token | claims: Map.put(claims, "nbf", time_not_before) }
   end
 
   @doc """
@@ -128,34 +128,34 @@ defmodule Joken do
   end
 
   @doc """
-  Adds `:sub` claim with a given value.
+  Adds `"sub"` claim with a given value.
   """
   @spec with_sub(Token.t, any) :: Token.t
   def with_sub(token = %Token{claims: claims}, sub) do
-    %{ token | claims: Map.put(claims, :sub, sub) }
+    %{ token | claims: Map.put(claims, "sub", sub) }
   end
 
   @doc """
-  Adds `:aud` claim with a given value.
+  Adds `"aud"` claim with a given value.
   """
   @spec with_aud(Token.t, any) :: Token.t
   def with_aud(token = %Token{claims: claims}, aud) do
-    %{ token | claims: Map.put(claims, :aud, aud) }
+    %{ token | claims: Map.put(claims, "aud", aud) }
   end
 
   @doc """
-  Adds `:jti` claim with a given value.
+  Adds `"jti"` claim with a given value.
   """
   @spec with_jti(Token.t, any) :: Token.t
   def with_jti(token = %Token{claims: claims}, jti) do
-    %{ token | claims: Map.put(claims, :jti, jti) }
+    %{ token | claims: Map.put(claims, "jti", jti) }
   end
 
   @doc """
-  Adds a custom claim with a given value. The key must be an atom.
+  Adds a custom claim with a given value.
   """
-  @spec with_claim(Token.t, atom, any) :: Token.t
-  def with_claim(token = %Token{claims: claims}, claim_key, claim_value) when is_atom(claim_key) do
+  @spec with_claim(Token.t, String.t | atom, any) :: Token.t
+  def with_claim(token = %Token{claims: claims}, claim_key, claim_value) do
     %{ token | claims: Map.put(claims, claim_key, claim_value) }
   end
 
@@ -251,8 +251,8 @@ defmodule Joken do
 
   If a claim in the payload has no validation, then it **WILL BE ADDED** to the claim set.
   """
-  @spec with_validation(Token.t, atom, function) :: Token.t
-  def with_validation(token = %Token{validations: validations}, claim, function) when is_atom(claim) and is_function(function) do
+  @spec with_validation(Token.t, String.t | atom, function) :: Token.t
+  def with_validation(token = %Token{validations: validations}, claim, function) when is_function(function) do
 
     %{ token | validations: Map.put(validations, claim, function) }
   end
