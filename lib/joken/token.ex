@@ -1,16 +1,17 @@
 defmodule Joken.Token do
 
-  @type json_module :: module
-  @type claims      :: %{atom => any}
-  @type validations :: %{atom => function}
-  @type error       :: binary
-  @type token       :: binary
-  @type signer      :: Joken.Signer.t
+  @type json_module        :: module
+  @type claims             :: %{binary => any}
+  @type claim_function_map :: %{binary => function}
+  @type error              :: binary
+  @type token              :: binary
+  @type signer             :: Joken.Signer.t
 
   @type t :: %__MODULE__{
     json_module: module,
     claims: claims,
-    validations: validations,
+    claims_generation: claim_function_map,
+    validations: claim_function_map,
     error: error,
     token: token,
     signer: signer
@@ -18,6 +19,7 @@ defmodule Joken.Token do
   
   defstruct [json_module: nil,
              claims: %{},
+             claims_generation: %{},
              validations: %{},
              error: nil,
              token: nil,

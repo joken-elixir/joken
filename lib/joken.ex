@@ -167,6 +167,15 @@ defmodule Joken do
     %{ token | claims: Joken.Claims.to_claims(claims) }
   end
 
+  @doc """
+  Adds a claim generation function. This is intended for dynamic values.
+  """
+  @spec with_claim_generator(Token.t, binary, function) :: Token.t
+  def with_claim_generator(token = %Token{claims_generation: generators}, claim, fun)
+  when is_binary(claim) and is_function(fun) do
+    %{ token | claims_generation: Map.put(generators, claim, fun) }
+  end
+  
   # convenience functions
 
   # HMAC SHA functions
