@@ -194,7 +194,7 @@ defmodule Joken.Test do
 
     token = %{}
     |> token
-    |> with_claim_generator("my_claim", fn -> "Random: #{inspect :rand.uniform}" end)
+    |> with_claim_generator("my_claim", fn -> "Random: #{inspect :random.uniform}" end)
     
     claims1 = token
     |> sign(hs256("secret"))
