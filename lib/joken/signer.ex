@@ -1,6 +1,7 @@
 defmodule Joken.Signer do
   alias Joken.Token
   alias Joken.Signer
+  require Logger
 
   @moduledoc """
   Signer is the JWK (JSON Web Key) and JWS (JSON Web Signature) configuration of Joken.
@@ -83,8 +84,11 @@ defmodule Joken.Signer do
   end
   def sign(token, signer) do
     token = %{ token | signer: signer }
-    claims = prepare_claims(token)
 
+    Logger.debug fn -> "Signing #{inspect token.claims} with #{inspect signer}" end
+
+    claims = prepare_claims(token)
+    
     {_, compacted_token} = JOSE.JWS.compact(JOSE.JWT.sign(signer.jwk, signer.jws, claims))
     %{ token | token: compacted_token }
   end
@@ -118,6 +122,8 @@ defmodule Joken.Signer do
   end
   defp do_verify(t = %Token{token: token}, s = %Signer{jwk: jwk, jws: %{ "alg" => algorithm}}, struct_name) do
 
+    Logger.debug fn -> "Verifying #{token} using #{inspect s}" end
+    
     t = %{ t | signer: s }
     
     try do
