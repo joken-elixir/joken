@@ -84,10 +84,10 @@ defmodule Joken.Signer do
   end
   def sign(token, signer) do
     token = %{ token | signer: signer }
+
     Logger.debug fn -> "Signing #{inspect token.claims} with #{inspect signer}" end
 
-    claims = prepare_claims(token.claims)
-
+    claims = prepare_claims(token)
     
     {_, compacted_token} = JOSE.JWS.compact(JOSE.JWT.sign(signer.jwk, signer.jws, claims))
     %{ token | token: compacted_token }
@@ -183,11 +183,25 @@ defmodule Joken.Signer do
     end
   end
 
-  defp prepare_claims(%{__struct__: _} = claims) do
+  defp prepare_claims(%Token{claims: claims, claims_generation: generators}) do
+
+    unless Enum.empty? generators do
+      {_, claims} = Enum.map_reduce generators, claims, fn {claim_key, function}, acc ->
+        {[], Map.put(acc, claim_key, function.())}
+      end
+    end
+
+    retrieve_claims(claims)
+  end
+    
+  defp retrieve_claims(%{__struct__: _} = claims) do
     Map.from_struct(claims)
   end
-  defp prepare_claims(claims) when is_map(claims) do
+  defp retrieve_claims(claims) when is_map(claims) do
     claims
+  end
+  defp retrieve_claims(_) do
+    raise ArgumentError, message: "Claims must be a map"
   end
   
 end

@@ -168,6 +168,47 @@ defmodule Joken.Test do
     
   end
 
+  test "can use generators of time" do
+
+    token = %{}
+    |> token
+    |> with_claim_generator("exp", fn -> current_time + 60 * 1000 end)
+    
+    claims1 = token
+    |> sign(hs256("secret"))
+    |> verify(hs256("secret"))
+    |> get_claims()
+
+    :timer.sleep 1000
+    
+    claims2 = token
+    |> sign(hs256("secret"))
+    |> verify(hs256("secret"))
+    |> get_claims()
+
+    assert claims1["exp"] < claims2["exp"]
+    
+  end
+
+  test "can use generator for custom claim" do
+
+    token = %{}
+    |> token
+    |> with_claim_generator("my_claim", fn -> "Random: #{inspect :random.uniform}" end)
+    
+    claims1 = token
+    |> sign(hs256("secret"))
+    |> verify(hs256("secret"))
+    |> get_claims()
+
+    claims2 = token
+    |> sign(hs256("secret"))
+    |> verify(hs256("secret"))
+    |> get_claims()
+
+    assert claims1["my_claim"] != claims2["my_claim"]
+  end
+
   # utility functions
   defp assert_invalid_rsa_signature(compact_token, signer) do
 
