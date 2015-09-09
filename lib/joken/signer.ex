@@ -84,7 +84,7 @@ defmodule Joken.Signer do
   end
   def sign(token, signer) do
     token = %{ token | signer: signer }
-
+    
     Logger.debug fn -> "Signing #{inspect token.claims} with #{inspect signer}" end
 
     claims = prepare_claims(token)
@@ -97,34 +97,28 @@ defmodule Joken.Signer do
   Verifies a token signature and decodes its payload. This assumes a signer was configured. 
   It raises if there was none.
   """
-  @spec verify(Token.t) :: Token.t
-  def verify(%Token{signer: nil}) do
-    raise ArgumentError, message: "Missing Signer"
-  end
-  def verify(token = %Token{signer: signer = %Signer{}}) do
-    verify(token, signer)
-  end
-
-  @doc """
-  Verifies a token signature and decodes its payload. 
-  It uses the given signer and sets it on the token.
-  If a module is given as the third argument, the claims
-  will be converted into a struct using the module
-  """
-  @spec verify(Token.t, Signer.t, module) :: Token.t
-  def verify(t, signer, struct \\ nil) do
-    do_verify(t, signer, struct)
-  end
+  @spec verify(Token.t, Signer.t | nil, atom | nil, Keyword.t) :: Token.t
+  def verify(token, signer \\ nil, module \\ nil, options \\ [])
+  def verify(%Token{signer: nil}, nil, _module, _options),
+    do: raise(ArgumentError, message: "Missing Signer")
+  def verify(token = %Token{signer: signer = %Signer{}}, nil, module, options),
+    do: do_verify(token, signer, module, options)
+  def verify(t, signer, struct, options),
+    do: do_verify(t, signer, struct, options)
 
   ### PRIVATE
-  defp do_verify(t = %Token{token: nil}, _signer, _struct) do
-    %{ t | error: "No compact token set for verification"}
-  end
-  defp do_verify(t = %Token{token: token}, s = %Signer{jwk: jwk, jws: %{ "alg" => algorithm}}, struct_name) do
+  defp do_verify(t = %Token{token: nil}, _signer, _struct, _options),
+    do: %{ t | error: "No compact token set for verification"}
+  defp do_verify(t = %Token{token: token},
+                 s = %Signer{jwk: jwk, jws: %{ "alg" => algorithm}},
+                 struct_name, options) do
 
-    Logger.debug fn -> "Verifying #{token} using #{inspect s}" end
+    Logger.debug fn ->
+      "Verifying #{token} using #{inspect s} with options #{inspect options}" 
+    end
     
     t = %{ t | signer: s }
+    t = %{ t | error: nil }
     
     try do
       case JOSE.JWK.verify(token, jwk) do
@@ -134,7 +128,7 @@ defmodule Joken.Signer do
           case jws["alg"] do
             ^algorithm_string ->
               map_payload = decode_payload(t, payload)
-              validate_all_claims(t, map_payload, struct_name)
+              validate_all_claims(t, map_payload, struct_name, options)
             _ ->
               %{ t | error: "Invalid signature algorithm" }
           end
@@ -142,7 +136,8 @@ defmodule Joken.Signer do
           %{ t | error: "Invalid signature" }
       end
     catch
-      :error, _ ->
+      :error, cause ->
+        Logger.warn fn -> "Error: #{inspect cause}" end
         %{ t | error: "Could not verify token" }
     end
   end
@@ -151,8 +146,13 @@ defmodule Joken.Signer do
     json.decode! payload
   end
 
-  defp validate_all_claims(t = %Token{validations: validations}, map_payload, struct_name)
-    when is_map(map_payload) do
+  defp validate_all_claims(t = %Token{validations: validations},
+                           map_payload,
+                           struct_name,
+                           options) when is_map(map_payload) do
+
+    if options[:skip_claims],
+      do: validations = Map.drop validations, options[:skip_claims]
 
     try do
       claims = Enum.reduce map_payload, [], fn({key, value}, acc) ->
@@ -178,7 +178,8 @@ defmodule Joken.Signer do
 
       %{ t | claims: claims }
     catch
-      _,_ ->
+      _, cause ->
+        Logger.warn fn -> "Error: #{inspect cause}" end
         %{ t | error: "Invalid payload" }
     end
   end

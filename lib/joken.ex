@@ -13,6 +13,7 @@ defmodule Joken do
   tokens
   - validations: a map of claims keys to function validations
   - claims: the map of values you want encoded in a token
+  - claims_generators: a map of functions for generating claims on each call
   - token: the compact representation of a JWT token
   - error: message indicating why a sign/verify operation failed
 
@@ -154,15 +155,16 @@ defmodule Joken do
   @doc """
   Adds a custom claim with a given value.
   """
-  @spec with_claim(Token.t, String.t | atom, any) :: Token.t
-  def with_claim(token = %Token{claims: claims}, claim_key, claim_value) do
+  @spec with_claim(Token.t, String.t, any) :: Token.t
+  def with_claim(token = %Token{claims: claims}, claim_key, claim_value)
+    when is_binary(claim_key) do
     %{ token | claims: Map.put(claims, claim_key, claim_value) }
   end
 
   @doc """
   Adds the given map or struct as the claims for this token
   """
-  @spec with_claims(Token.t, map) :: Token.t
+  @spec with_claims(Token.t, %{String.t => any}) :: Token.t
   def with_claims(token = %Token{}, claims) do
     %{ token | claims: Joken.Claims.to_claims(claims) }
   end
@@ -170,7 +172,7 @@ defmodule Joken do
   @doc """
   Adds a claim generation function. This is intended for dynamic values.
   """
-  @spec with_claim_generator(Token.t, binary, function) :: Token.t
+  @spec with_claim_generator(Token.t, String.t, function) :: Token.t
   def with_claim_generator(token = %Token{claims_generation: generators}, claim, fun)
   when is_binary(claim) and is_function(fun) do
     %{ token | claims_generation: Map.put(generators, claim, fun) }
@@ -221,13 +223,12 @@ defmodule Joken do
   @doc """
   Adds a signer to a token configuration. 
 
-  This **DOES NOT** call `sign/1`, `sign/2`, `verify/1` or `verify/2`. 
+  This **DOES NOT** call `sign/1`, `sign/2` or `verify/4`. 
   It only sets the signer in the token configuration.
   """
   @spec with_signer(Token.t, Signer.t) :: Token.t
-  def with_signer(token = %Token{}, signer = %Signer{}) do
-    %{ token | signer: signer }
-  end
+  def with_signer(token = %Token{}, signer = %Signer{}),
+    do: %{ token | signer: signer }
 
   @doc """
   Signs a given set of claims. If signing is successful it will put the compact token in 
@@ -260,12 +261,19 @@ defmodule Joken do
 
   If a claim in the payload has no validation, then it **WILL BE ADDED** to the claim set.
   """
-  @spec with_validation(Token.t, String.t | atom, function) :: Token.t
-  def with_validation(token = %Token{validations: validations}, claim, function) when is_function(function) do
+  @spec with_validation(Token.t, String.t, function) :: Token.t
+  def with_validation(token = %Token{validations: validations}, claim, function)
+    when is_function(function) and is_binary(claim) do
 
     %{ token | validations: Map.put(validations, claim, function) }
   end
 
+  @spec without_validation(Token.t, String.t) :: Token.t
+  def without_validation(token = %Token{validations: validations}, claim)
+    when is_binary(claim) do
+    %{ token | validations: Map.delete(validations, claim) }
+  end
+  
   @doc """
   Runs verification on the token set in the configuration. 
   
@@ -273,76 +281,24 @@ defmodule Joken do
 
   Then it runs validations on the decoded payload. If everything passes then the configuration
   has all the claims available in the claims map.
+
+  It is possible to pass in a module that will be used to convert the claims back to a struct.
+
+  Also, it can receive options to verification such as claims to be skipped.
   """
-  @spec verify(Token.t) :: Token.t
-  def verify(%Token{} = token), do: Signer.verify(token)
+  @spec verify(Token.t, Signer.t | nil, atom | nil, list) :: Token.t
+  def verify(%Token{} = token, signer \\ nil, module \\ nil, options \\ []),
+    do: Signer.verify(token, signer, module, options)
   
-
   @doc """
-  Same as `verify/1` except overrides the Signer in the Token struct with the one defined.
-  If the second parameter is not a Signer struct, it will be used to turn the claims into a
-  struct using the `module` given
-  """
-  @spec verify(Token.t, Signer.t) :: Token.t
-  def verify(%Token{} = token, %Signer{} = signer), do: Signer.verify(token, signer)
-
-  @spec verify(Token.t, module) :: Token.t
-  def verify(%Token{} = token, module), do: Signer.verify(token, token.signer, module)
-
-
-  @doc """
-  Verifies the given `token` using the `signer` and turns the validated claims into a struct
-  using the `module`
-  """
-  @spec verify(Token.t, Signer.t, module) :: Token.t
-  def verify(%Token{} = token, %Signer{} = signer, module), do: Signer.verify(token, signer, module)
-
-
-  @doc """
-  Same as `verify/1` except that it returns either: 
+  Same as `verify/4` except that it returns either: 
   - `{:ok, claims}`
   - `{:error, message}`
   """
-  @spec verify!(Token.t) :: {:ok, map} | {:error, binary}
-  def verify!(%Token{} = token) do
-    Signer.verify(token)
+  @spec verify(Token.t, Signer.t | nil, atom | nil, list) :: {:ok, map} | {:error, binary}
+  def verify!(%Token{} = token, signer \\ nil, module \\ nil, options \\ []) do
+    Signer.verify(token, signer, module, options)
     |> do_verify!
-  end
-
-  @doc """
-  Same as `verify/2` except that it returns either: 
-  - `{:ok, claims}`
-  - `{:error, message}`
-  """
-  @spec verify!(Token.t, Signer.t) :: {:ok, map} | {:error, binary}
-  def verify!(%Token{} = token, %Signer{} = signer) do
-    Signer.verify(token, signer)
-    |> do_verify!
-  end
-
-  @spec verify!(Token.t, module) :: {:ok, map} | {:error, binary}
-  def verify!(%Token{} = token, module) do
-    Signer.verify(token, token.signer, module)
-    |> do_verify!
-  end
-
-  @doc """
-  Same as `verify/3` except that it returns either: 
-  - `{:ok, claims}`
-  - `{:error, message}`
-  """
-  @spec verify!(Token.t, Signer.t, module) :: {:ok, map} | {:error, binary}
-  def verify!(%Token{} = token, %Signer{} = signer, module) do
-    Signer.verify(token, signer, module)
-    |> do_verify!
-  end
-
-  defp do_verify!(token) do
-    if token.error do
-      {:error, token.error}
-    else
-      {:ok, token.claims }
-    end
   end
 
   @doc """
@@ -352,4 +308,14 @@ defmodule Joken do
     {mega, secs, _} = :os.timestamp()
     mega * 1000000 + secs
   end
+
+  ## PRIVATE
+  defp do_verify!(token) do
+    if token.error do
+      {:error, token.error}
+    else
+      {:ok, token.claims }
+    end
+  end
+    
 end
