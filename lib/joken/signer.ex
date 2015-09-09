@@ -97,21 +97,21 @@ defmodule Joken.Signer do
   Verifies a token signature and decodes its payload. This assumes a signer was configured. 
   It raises if there was none.
   """
-  @spec verify(Token.t, Signer.t | nil, atom | nil, Keyword.t) :: Token.t
-  def verify(token, signer \\ nil, module \\ nil, options \\ [])
-  def verify(%Token{signer: nil}, nil, _module, _options),
+  @spec verify(Token.t, Signer.t | nil, Keyword.t) :: Token.t
+  def verify(token, signer \\ nil, options \\ [])
+  def verify(%Token{signer: nil}, nil, _options),
     do: raise(ArgumentError, message: "Missing Signer")
-  def verify(token = %Token{signer: signer = %Signer{}}, nil, module, options),
-    do: do_verify(token, signer, module, options)
-  def verify(t, signer, struct, options),
-    do: do_verify(t, signer, struct, options)
+  def verify(token = %Token{signer: signer = %Signer{}}, nil, options),
+    do: do_verify(token, signer, options)
+  def verify(t, signer, options),
+    do: do_verify(t, signer, options)
 
   ### PRIVATE
-  defp do_verify(t = %Token{token: nil}, _signer, _struct, _options),
+  defp do_verify(t = %Token{token: nil}, _signer, _options),
     do: %{ t | error: "No compact token set for verification"}
   defp do_verify(t = %Token{token: token},
                  s = %Signer{jwk: jwk, jws: %{ "alg" => algorithm}},
-                 struct_name, options) do
+                 options) do
 
     Logger.debug fn ->
       "Verifying #{token} using #{inspect s} with options #{inspect options}" 
@@ -128,7 +128,7 @@ defmodule Joken.Signer do
           case jws["alg"] do
             ^algorithm_string ->
               map_payload = decode_payload(t, payload)
-              validate_all_claims(t, map_payload, struct_name, options)
+              validate_all_claims(t, map_payload, options)
             _ ->
               %{ t | error: "Invalid signature algorithm" }
           end
@@ -148,7 +148,6 @@ defmodule Joken.Signer do
 
   defp validate_all_claims(t = %Token{validations: validations},
                            map_payload,
-                           struct_name,
                            options) when is_map(map_payload) do
 
     if options[:skip_claims],
@@ -170,7 +169,7 @@ defmodule Joken.Signer do
       end
 
       claims = Enum.into(claims, %{})
-      if struct_name do
+      if struct_name = options[:as] do
         claims = struct(struct_name, Enum.map(claims, fn({key, value}) ->
           { String.to_existing_atom(key), value }
         end))

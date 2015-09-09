@@ -129,7 +129,7 @@ defmodule Joken.Test do
     claims = compact
     |> token
     |> with_validation("name", &(&1 == "Must fail if validation is not skipped"))
-    |> verify(hs512("test"), nil, [skip_claims: ["name"]])
+    |> verify(hs512("test"), [skip_claims: ["name"]])
     |> get_claims
 
     assert claims == @payload
@@ -148,7 +148,7 @@ defmodule Joken.Test do
 
     test_struct = compact
     |> token
-    |> verify(hs512("test"), TestStruct)
+    |> verify(hs512("test"), as: TestStruct)
     |> get_claims
 
     assert test_struct == %TestStruct{a: 1, b: 2, c: 3}

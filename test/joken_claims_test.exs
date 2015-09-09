@@ -36,7 +36,7 @@ defmodule Joken.Claims.Test do
 
     test_struct = compact
     |> token
-    |> verify(hs512("test"), FullDerive)
+    |> verify(hs512("test"), as: FullDerive)
     |> get_claims
 
     assert test_struct == %FullDerive{a: 1, b: 2, c: 3}
@@ -56,7 +56,7 @@ defmodule Joken.Claims.Test do
 
     test_struct = compact
     |> token
-    |> verify(hs512("test"), OnlyDerive)
+    |> verify(hs512("test"), as: OnlyDerive)
     |> get_claims
 
     assert test_struct == %OnlyDerive{a: 1}
@@ -77,7 +77,7 @@ defmodule Joken.Claims.Test do
 
     test_struct = compact
     |> token
-    |> verify(hs512("test"), ExcludeDerive)
+    |> verify(hs512("test"), as: ExcludeDerive)
     |> get_claims
 
     assert test_struct == %ExcludeDerive{a: 1, c: 3}
