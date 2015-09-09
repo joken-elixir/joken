@@ -59,11 +59,11 @@ defmodule Joken.Test do
   test "can add custom claim and validation" do
 
     token = token()
-    |> with_claim(:custom, "custom")
-    |> with_validation(:custom, &(&1 == "custom"))
+    |> with_claim("custom", "custom")
+    |> with_validation("custom", &(&1 == "custom"))
 
-    assert Map.has_key? token.claims, :custom
-    assert Map.has_key? token.validations, :custom
+    assert Map.has_key? token.claims, "custom"
+    assert Map.has_key? token.validations, "custom"
   end
 
   test "signs/verifies token/claims with HS256 convenience" do
@@ -117,10 +117,28 @@ defmodule Joken.Test do
     assert claims == @payload
   end
 
+  test "can skip claims" do
+
+    compact = @payload
+    |> token
+    |> sign(hs512("test"))
+    |> get_compact
+
+    assert compact == "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.zi1zohSNwRdHftnWKE16vE3VmbGFtG27LxbYDXAodVlX7T3ATgmJJPjluwf2SPKJND2-O7alOq8NWv6EAnWWyg"
+
+    claims = compact
+    |> token
+    |> with_validation("name", &(&1 == "Must fail if validation is not skipped"))
+    |> verify(hs512("test"), nil, [skip_claims: ["name"]])
+    |> get_claims
+
+    assert claims == @payload
+  end
+  
   test "using a struct for claims" do
     token = token()
     |> with_claims(%TestStruct{a: 1, b: 2, c: 3})
-    |> with_validation(:a, &(&1 == 1))
+    |> with_validation("a", &(&1 == 1))
 
     assert token.claims == %{a: 1, b: 2, c: 3}
 
@@ -153,7 +171,6 @@ defmodule Joken.Test do
     assert_invalid_rsa_signature(rs256_token, rs256(rsa_key2))
     assert_invalid_rsa_signature(rs384_token, rs384(rsa_key2))
     assert_invalid_rsa_signature(rs512_token, rs512(rsa_key2))
-    
   end
 
   test "signs/verifies token with PS***" do
@@ -165,7 +182,6 @@ defmodule Joken.Test do
     assert_invalid_rsa_signature(ps256_token, ps256(rsa_key2))
     assert_invalid_rsa_signature(ps384_token, ps384(rsa_key2))
     assert_invalid_rsa_signature(ps512_token, ps512(rsa_key2))
-    
   end
 
   test "can use generators of time" do
@@ -209,6 +225,23 @@ defmodule Joken.Test do
     assert claims1["my_claim"] != claims2["my_claim"]
   end
 
+  test "can remove validations" do
+
+    token = token()
+    |> with_claims(%TestStruct{a: 2, b: 2, c: 3})
+    |> with_validation("a", &(&1 == 1))
+    |> sign(hs256("test"))
+    |> verify(hs256("test"))
+
+    assert token.error == "Invalid payload"
+
+    token = token
+    |> without_validation("a")
+    |> verify(hs256("test"))
+
+    assert token.error == nil
+  end
+  
   # utility functions
   defp assert_invalid_rsa_signature(compact_token, signer) do
 

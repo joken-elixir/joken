@@ -1,6 +1,5 @@
 defmodule Joken.Claims.Test do
   use ExUnit.Case, async: true
-  import Joken.Fixtures
   import Joken
 
   defmodule FullDerive do
@@ -27,7 +26,7 @@ defmodule Joken.Claims.Test do
 
     token = token
     |> with_claims(%FullDerive{a: 1, b: 2, c: 3})
-    |> with_validation(:a, &(&1 == 1))
+    |> with_validation("a", &(&1 == 1))
 
     assert token.claims == %{a: 1, b: 2, c: 3}
 
@@ -47,7 +46,7 @@ defmodule Joken.Claims.Test do
 
     token = token
     |> with_claims(%OnlyDerive{a: 1, b: 2, c: 3})
-    |> with_validation(:a, &(&1 == 1))
+    |> with_validation("a", &(&1 == 1))
 
     assert token.claims == %{a: 1}
 
@@ -61,15 +60,14 @@ defmodule Joken.Claims.Test do
     |> get_claims
 
     assert test_struct == %OnlyDerive{a: 1}
-    
   end
 
   test "can derive protocol with `exclude` option" do
     
     token = token
     |> with_claims(%ExcludeDerive{a: 1, b: 2, c: 3})
-    |> with_validation(:a, &(&1 == 1))
-    |> with_validation(:c, &(&1 == 3))
+    |> with_validation("a", &(&1 == 1))
+    |> with_validation("c", &(&1 == 3))
 
     assert token.claims == %{a: 1, c: 3}
 

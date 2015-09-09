@@ -8,7 +8,7 @@ defmodule Joken.Fixtures do
   def token_config do
     payload
     |> token
-    |> with_validation(:name, &(&1 == "John Doe"))
+    |> with_validation("name", &(&1 == "John Doe"))
   end
 
   # key taken from Appendix A.2.3 of JWE (Json Web Encryption) RFC
