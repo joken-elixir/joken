@@ -282,22 +282,23 @@ defmodule Joken do
   Then it runs validations on the decoded payload. If everything passes then the configuration
   has all the claims available in the claims map.
 
-  It is possible to pass in a module that will be used to convert the claims back to a struct.
+  It can receive options to verification. Acceptable options are:
 
-  Also, it can receive options to verification such as claims to be skipped.
+  - `skip_claims`: list of claim keys to skip validation
+  - `as`: a module that Joken will use to convert the validated paylod into a sturct
   """
-  @spec verify(Token.t, Signer.t | nil, atom | nil, list) :: Token.t
-  def verify(%Token{} = token, signer \\ nil, module \\ nil, options \\ []),
-    do: Signer.verify(token, signer, module, options)
+  @spec verify(Token.t, Signer.t | nil, list) :: Token.t
+  def verify(%Token{} = token, signer \\ nil, options \\ []),
+    do: Signer.verify(token, signer, options)
   
   @doc """
-  Same as `verify/4` except that it returns either: 
+  Same as `verify/3` except that it returns either: 
   - `{:ok, claims}`
   - `{:error, message}`
   """
-  @spec verify(Token.t, Signer.t | nil, atom | nil, list) :: {:ok, map} | {:error, binary}
-  def verify!(%Token{} = token, signer \\ nil, module \\ nil, options \\ []) do
-    Signer.verify(token, signer, module, options)
+  @spec verify(Token.t, Signer.t | nil, list) :: {:ok, map} | {:error, binary}
+  def verify!(%Token{} = token, signer \\ nil, options \\ []) do
+    Signer.verify(token, signer, options)
     |> do_verify!
   end
 
