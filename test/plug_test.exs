@@ -1,41 +1,37 @@
 defmodule JokenPlug.Test do
   use ExUnit.Case, async: true
   use Plug.Test
+  import Joken
+  alias Joken.Token
 
   setup_all do
     JOSE.JWA.crypto_fallback(true)
     :ok
   end
 
-  defmodule MyConfig do
-    @behaviour Joken.Config
-
-    def secret_key(), do: "secret"
-    def algorithm(), do: :HS256
-    def encode(map), do: Poison.encode!(map)
-    def decode(binary), do: Poison.decode!(binary, keys: :atoms!)
-    def claim(:sub, _), do: 1234567890
-    def claim(_, _), do: nil
-    def validate_claim(_, _, _), do: :ok
-  end
-
   defmodule MyPlugRouter do
     use Plug.Router
 
     @skip_auth %{joken_skip: true}
-    @is_subject %{joken_evaluate: &MyPlugRouter.is_subject/1 }
-    @is_not_subject %{joken_evaluate: &MyPlugRouter.is_not_subject/1 }
+    @is_subject %{joken_on_verifying: &MyPlugRouter.is_subject/0 }
+    @is_not_subject %{joken_on_verifying: &MyPlugRouter.is_not_subject/0 }
 
     plug :match
     plug Joken.Plug,
-      config_module: MyConfig,
+      on_verifying: &MyPlugRouter.on_verifying/0,
       on_error: &MyPlugRouter.error_logging/2
     plug :dispatch
 
     post "/generate_token", private: @skip_auth do
+
+      compact = token()
+      |> with_sub(1234567890)
+      |> sign(hs256("secret"))
+      |> get_compact
+
       conn
       |> put_resp_content_type("text/plain")
-      |> send_resp(200, Joken.Plug.encode(conn, %{}))      
+      |> send_resp(200, compact)
     end
       
     get "/verify_token" do
@@ -67,15 +63,38 @@ defmodule JokenPlug.Test do
       |> send_resp(404, "Not found")
     end
 
-    def is_subject(payload), do: payload.sub == 1234567890
-    def is_not_subject(payload), do: payload.sub != 1234567890
-    def error_logging(_conn, message), do: IO.puts "Message: #{message}"
+    def is_subject() do
+      %Token{}
+      |> with_json_module(Poison)
+      |> with_validation("sub", &(&1 == 1234567890))
+      |> with_signer(hs256("secret"))
+    end
+
+    def is_not_subject() do
+      %Token{}
+      |> with_json_module(Poison)
+      |> with_validation("sub", &(&1 != 1234567890))
+      |> with_signer(hs256("secret"))
+    end
+
+    def error_logging(conn, message) do
+      {conn, message}
+    end
+
+    def on_verifying() do
+      %Token{}
+      |> with_json_module(Poison)
+      |> with_signer(hs256("secret"))
+      |> with_sub(1234567890)
+    end
   end
 
   defmodule CustomErrorBodyRouter do
     use Plug.Router
 
-    plug Joken.Plug, config_module: MyConfig, on_error: &CustomErrorBodyRouter.on_error/2
+    plug Joken.Plug, on_verifying: &CustomErrorBodyRouter.on_verifying/1, 
+    on_error: &CustomErrorBodyRouter.on_error/2
+
     plug :match
     plug :dispatch
 
@@ -85,15 +104,21 @@ defmodule JokenPlug.Test do
     end
 
     match _ do
-      conn
-      |> send_resp(404, "Not found")
+      conn |> send_resp(404, "Not found")
     end
 
-    def on_error(_conn, message) do
-      body = %{status: 401,
-               message: message}
-      {:body, body}
+    def on_error(conn, message) do
+      body = %{status: 401, message: message}
+      {conn, body}
     end
+
+    def on_verifying() do
+      %Token{}
+      |> with_json_module(Poison)
+      |> with_signer(hs256("secret"))
+      |> with_sub(1234567890)
+    end
+
   end
 
   test "generates token properly" do
@@ -113,7 +138,7 @@ defmodule JokenPlug.Test do
   test "sends 401 when credentials are missing" do
     conn = conn(:get, "/verify_token") |> MyPlugRouter.call([])
     assert conn.status == 401
-    assert conn.resp_body == ""
+    assert conn.resp_body == "Unauthorized"
   end
 
   test "skips verification properly" do
@@ -147,7 +172,7 @@ defmodule JokenPlug.Test do
     |> MyPlugRouter.call([])
 
     assert conn.status == 401
-    assert conn.resp_body == ""
+    assert conn.resp_body == "Invalid payload"
   end
 
   test "generates custom error body" do

@@ -1,4 +1,6 @@
 defmodule Joken.Plug do
+  import Joken
+  alias Joken.Token
 
   @moduledoc """
   A Plug for signing and verifying authentication tokens.
@@ -15,7 +17,7 @@ defmodule Joken.Plug do
       defmodule MyRouter do
         use Plug.Router
 
-        plug Joken.Plug, config_module: MyJWTConfig
+        plug Joken.Plug, on_verifying: &verify_function/1
         plug :match
         plug :dispatch
 
@@ -55,35 +57,42 @@ defmodule Joken.Plug do
 
   This plug accepts the following options in its initialization:
 
-  - `config_module`: the `Joken.Config` implementation
-  - `on_error` (optional): a function that will be called with `conn` and `message`. If it 
-  returns {:body, body_map} then body_map will be serialized to JSON and put in the body
-  of all 401 responses.
+  - `on_verifying`: a function used to verify the token. Receives a Token and must return a Token 
+
+  - `on_error` (optional): a function that will be called with `conn` and `message`. Must
+  return a tuple containing the conn and a binary representing the 401 response. If it's a map,
+  it will be turned into json, otherwise, it will be returned as is.
 
   When using this with per route options you must pass a private map of options
   to the route. The keys that Joken will look for in that map are:
 
   - `joken_skip`: skips token validation
-  - `joken_opts`: pass this as a third parameter to `Joken.Token.decode/3`
-  - `joken_evaluate`: a custom function that will be called if token is valid. 
-  It will be passed the payload as the only argument and if its return is falsy, a 401 
-  reply will be sent and execution is halted.
+
+  - `joken_on_verifying`: Same as `on_verifying` above. Overrides 
+  `on_verifying` if it was defined on the Plug
+
+  - `joken_on_error`: Same as `on_error` above. Overrides 
+  `on_error` if it was defined on the Plug
   """
   import Plug.Conn
   
   @doc false
   def init(opts) do
-    config_module = Keyword.get(opts, :config_module, Application.get_env(:joken, :config_module))
-    on_error = Keyword.get(opts, :on_error)
-    {config_module, on_error}
+    on_verifying = Keyword.get(opts, :on_verifying)
+    on_error = Keyword.get(opts, :on_error, &default_on_error/2)
+    {on_verifying, on_error}
   end
 
   @doc false
-  def call(conn, {config_module, on_error}) do
+  def call(conn, { on_verifying, on_error }) do
 
-    conn = conn
-    |> put_private(:joken_config_module, config_module)
-    |> put_private(:joken_on_error, on_error)
+    unless Map.has_key?(conn.private, :joken_on_verifying) do
+      conn = put_private(conn, :joken_on_verifying, on_verifying)
+    end
+
+    unless Map.has_key?(conn.private, :joken_on_error) do
+      conn = put_private(conn, :joken_on_error, on_error)
+    end
     
     if Map.get(conn.private, :joken_skip, false) do
       conn
@@ -92,57 +101,49 @@ defmodule Joken.Plug do
     end
   end
 
-  def encode(conn, claims) do
-    {:ok, token} = Joken.Token.encode(conn.private[:joken_config_module], claims)
-    token
-  end
+  defp parse_auth(conn, ["Bearer " <> incoming_token]) do
+    payload_fun = Map.get(conn.private, :joken_on_verifying)
 
-  def error_map(description, status) do
-    %{error: "Unauthorized",
-      description: description,
-      status_code: status}
-  end
+    verified_token = payload_fun.()
+    |> with_compact_token(incoming_token)
+    |> verify
 
-  defp parse_auth(conn, ["Bearer " <> token]) do
-    options = Map.get(conn.private, :joken_opts, [])
-    decoded = Joken.Token.decode(conn.private[:joken_config_module], token, options)
-    evaluate(conn, decoded)
+    evaluate(conn, verified_token)
   end
   defp parse_auth(conn, _header) do
     send_401(conn, "Unauthorized")
   end
 
-  defp evaluate(conn, {:ok, payload}) do
-
-    conn = assign(conn, :joken_payload, payload)
-    
-    unless payload_fun = Map.get(conn.private, :joken_evaluate) do
-      conn
-    else
-      if payload_fun.(payload), do: conn, else: send_401(conn, "Unauthorized")
-    end
+  defp evaluate(conn, %Token{ error: nil } = token) do
+    assign(conn, :joken_claims, get_claims(token))
   end
-  defp evaluate(conn, {:error, message}) do
+  defp evaluate(conn, %Token{ error: message }) do
     send_401(conn, message)
   end
 
   defp send_401(conn, message) do
-
-    config_module = conn.private[:joken_config_module]
     on_error = conn.private[:joken_on_error]
-    body = ""
-    
-    if on_error do
-      case on_error.(conn, message) do
-        {:body, body_map} ->
-          body = config_module.encode(body_map)
-          conn = put_resp_content_type(conn, "application/json")
-        _ ->
-          :ok
-      end
+
+    {conn, message } = case on_error.(conn, message) do
+      {conn, map} when is_map(map) ->
+        create_json_response(conn, map)
+      response ->
+        response
     end
 
-    conn |> send_resp(401, body) |> halt
+    conn
+    |> send_resp(401, message)
+    |> halt
+  end
+
+  defp create_json_response(conn, map) do
+    conn = put_resp_content_type(conn, "application/json")
+    json = Poison.encode!(map)
+    {conn, json}
   end
   
+  @doc false
+  def default_on_error(conn, message) do
+    { conn, message }
+  end
 end
