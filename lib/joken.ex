@@ -74,11 +74,12 @@ defmodule Joken do
   end
   
   @doc """
-  Adds `"exp"` claim with a default value of now + 2hs.
+  Adds `"exp"` claim with a default generated value of now + 2hs.
   """
   @spec with_exp(Token.t) :: Token.t
-  def with_exp(token = %Token{claims: claims}) do
-    %{ token | claims: Map.put(claims, "exp", current_time + (2 * 60 * 60 * 1000)) }
+  def with_exp(token = %Token{}) do
+    token
+    |> with_claim_generator("exp", fn -> current_time + (2 * 60 * 60 * 1000) end)
   end
 
   @doc """
@@ -90,11 +91,12 @@ defmodule Joken do
   end
 
   @doc """
-  Adds `"iat"` claim with a default value of now.
+  Adds `"iat"` claim with a default generated value of now.
   """
   @spec with_iat(Token.t) :: Token.t
-  def with_iat(token = %Token{claims: claims}) do
-    %{ token | claims: Map.put(claims, "iat", current_time) }
+  def with_iat(token = %Token{}) do
+    token
+    |> with_claim_generator("iat", fn -> current_time end)
   end
   @doc """
   Adds `"iat"` claim with a given value.
@@ -105,11 +107,12 @@ defmodule Joken do
   end
 
   @doc """
-  Adds `"nbf"` claim with a default value of now - 100ms.
+  Adds `"nbf"` claim with a default generated value of now - 100ms.
   """
   @spec with_nbf(Token.t) :: Token.t
-  def with_nbf(token = %Token{claims: claims}) do
-    %{ token | claims: Map.put(claims, "nbf", current_time - 100) }
+  def with_nbf(token = %Token{}) do
+    token
+    |> with_claim_generator("nbf", fn -> current_time - 100 end)
   end
 
   @doc """

@@ -24,11 +24,12 @@ defmodule Joken.Claims.Test do
   
   test "can derive protocol implementation" do
 
-    token = token
+    token = %Joken.Token{}
+    |> with_json_module(Poison)
     |> with_claims(%FullDerive{a: 1, b: 2, c: 3})
     |> with_validation("a", &(&1 == 1))
 
-    assert token.claims == %{a: 1, b: 2, c: 3}
+    assert token.claims == %{"a" => 1, "b" => 2, "c" => 3}
 
     compact = token
     |> sign(hs512("test"))
@@ -44,11 +45,12 @@ defmodule Joken.Claims.Test do
 
   test "can derive protocol with `only` option" do
 
-    token = token
+    token = %Joken.Token{}
+    |> with_json_module(Poison)
     |> with_claims(%OnlyDerive{a: 1, b: 2, c: 3})
     |> with_validation("a", &(&1 == 1))
 
-    assert token.claims == %{a: 1}
+    assert token.claims == %{"a" => 1}
 
     compact = token
     |> sign(hs512("test"))
@@ -64,12 +66,13 @@ defmodule Joken.Claims.Test do
 
   test "can derive protocol with `exclude` option" do
     
-    token = token
+    token = %Joken.Token{}
+    |> with_json_module(Poison)
     |> with_claims(%ExcludeDerive{a: 1, b: 2, c: 3})
     |> with_validation("a", &(&1 == 1))
     |> with_validation("c", &(&1 == 3))
 
-    assert token.claims == %{a: 1, c: 3}
+    assert token.claims == %{"a" => 1, "c" => 3}
 
     compact = token
     |> sign(hs512("test"))

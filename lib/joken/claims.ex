@@ -31,7 +31,16 @@ defimpl Joken.Claims, for: Map do
   end
 
   def to_claims(data) do
-    data
+    Enum.reduce data, %{}, fn({key, value}, acc) ->
+      case key do
+        key when is_atom(key) ->
+          Map.put(acc, Atom.to_string(key), value)
+        key when is_binary(key) ->
+          Map.put(acc, key, value)
+        _ ->
+          raise "Claim keys must be binaries"
+      end
+    end
   end
 end
 
