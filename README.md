@@ -43,7 +43,7 @@ There you can set:
 tokens
 - validations: a map of claims keys to function validations
 - claims: the map of values you want encoded in a token
-- claims_generation: map of functions to be called when signing to generate dynamic values
+- claims_generation: a map of functions called when signing to generate dynamic values
 - token: the compact representation of a JWT token
 - error: message indicating why a sign/verify operation failed
 
@@ -105,7 +105,7 @@ my_verified_token = "some_token"
 |> verify
 ```
 
-There are many other options and helper functions available. See the docs of the `Joken` module for a complete documentation.
+There are other options and helper functions available. See the docs of the `Joken` module for a complete documentation.
 
 ## Plug:
 
@@ -167,15 +167,15 @@ This plug accepts the following options in its initialization:
 
 - `on_verifying`: a function used to verify the token. Receives a Token and must return a Token 
 
-- `on_error` (optional): a function that will be called with `conn` and `message`. Must
+- `on_error` (optional): a function that accepts `conn` and `message` as parameters. Must
 return a tuple containing the conn and a binary representing the 401 response. If it's a map,
-it will be turned into json, otherwise, it will be returned as is.
+it's turned into json, otherwise, it is returned as is.
 
 When using this with per route options you must pass a private map of options
 to the route. The keys that Joken will look for in that map are:
 
 - `joken_skip`: skips token validation. true or false
 
-- `joken_on_verifying`: Same as `on_verifying` above. Overrides `on_verifying` if it was defined on the Plug
+- `joken_on_verifying`: Same as `on_verifying` above. Overrides `on_verifying` if defined on the Plug
 
-- `joken_on_error`: Same as `on_error` above. Overrides `on_error` if it was defined on the Plug
+- `joken_on_error`: Same as `on_error` above. Overrides `on_error` if defined on the Plug
