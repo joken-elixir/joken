@@ -1,4 +1,4 @@
-## Joken [![Documentation](https://img.shields.io/badge/docs-hexpm-blue.svg)](http://hexdocs.pm/joken/) [![Downloads](https://img.shields.io/hexpm/dt/joken.svg)](https://hex.pm/packages/joken) [![Build](https://travis-ci.org/bryanjos/joken.svg)](https://travis-ci.org/bryanjos/joken.svg)
+# Joken [![Documentation](https://img.shields.io/badge/docs-hexpm-blue.svg)](http://hexdocs.pm/joken/) [![Downloads](https://img.shields.io/hexpm/dt/joken.svg)](https://hex.pm/packages/joken) [![Build](https://travis-ci.org/bryanjos/joken.svg)](https://travis-ci.org/bryanjos/joken.svg)
 
 
 A JSON Web Token (JWT) Library
@@ -32,9 +32,9 @@ Joken allows you to use any claims you wish, but has convenience methods for the
 * **iat**: Issued At
 * **jti**: JSON Token ID
 
-For a more in depth description of each claim, please see the reference specification draft [here](http://self-issued.info/docs/draft-ietf-oauth-json-web-token.html).
+For a more in depth description of each claim, please see the reference specification [here](https://tools.ietf.org/html/rfc7519).
 
-### Usage:
+## Usage:
 
 All you need to generate a token is a `Joken.Token` struct with proper values. 
 There you can set:
@@ -43,6 +43,7 @@ There you can set:
 tokens
 - validations: a map of claims keys to function validations
 - claims: the map of values you want encoded in a token
+- claims_generation: map of functions to be called when signing to generate dynamic values
 - token: the compact representation of a JWT token
 - error: message indicating why a sign/verify operation failed
 
@@ -50,10 +51,11 @@ To help you fill that configuration struct properly, use the functions in the `J
 
 Joken allows for customization of tokens, but also provides some defaults.
 
-To create a token with default claims of `exp`, `iaf`, and `nbf`, and to use Poison as the json serializer:
+To create a token with default generator for claims `exp`, `iaf`, and `nbf`, and to use Poison as the json serializer:
 
 ```elixir
 import Joken
+
 my_token = token
 |> with_signer(hs256("my_secret"))
 ```
@@ -75,8 +77,7 @@ import Joken
 
 my_token = %{user_id: 1}
 |> token
-|> with_validation(:user_id, &(&1 == 1))
-|> with_signer(hs256("my_secret"))
+|> with_validation("user_id", &(&1 == 1))
 ```
 
 To sign a token, use the `sign` function. The `get_compact` function will return the token in its binary form:
@@ -86,7 +87,7 @@ import Joken
 
 my_token = %{user_id: 1}
 |> token
-|> with_validation(:user_id, &(&1 == 1))
+|> with_validation("user_id", &(&1 == 1))
 |> with_signer(hs256("my_secret"))
 |> sign
 |> get_compact
@@ -99,12 +100,14 @@ import Joken
 
 my_verified_token = "some_token"
 |> token
-|> with_validation(:user_id, &(&1 == 1))
+|> with_validation("user_id", &(&1 == 1))
 |> with_signer(hs256("my_secret"))
 |> verify
 ```
 
-### Plug:
+There are many other options and helper functions available. See the docs of the `Joken` module for a complete documentation.
+
+## Plug:
 
 Joken also comes with a Plug for verifying JWTs in web applications.
 
@@ -157,7 +160,8 @@ Then you must plug this AFTER :match and BEFORE :dispatch.
     end
   end
 ```
-## Options
+
+### Options
 
 This plug accepts the following options in its initialization:
 
@@ -170,10 +174,8 @@ it will be turned into json, otherwise, it will be returned as is.
 When using this with per route options you must pass a private map of options
 to the route. The keys that Joken will look for in that map are:
 
-- `joken_skip`: skips token validation
+- `joken_skip`: skips token validation. true or false
 
-- `joken_on_verifying`: Same as `on_verifying` above. Overrides 
-`on_verifying` if it was defined on the Plug
+- `joken_on_verifying`: Same as `on_verifying` above. Overrides `on_verifying` if it was defined on the Plug
 
-- `joken_on_error`: Same as `on_error` above. Overrides 
-`on_error` if it was defined on the Plug
+- `joken_on_error`: Same as `on_error` above. Overrides `on_error` if it was defined on the Plug

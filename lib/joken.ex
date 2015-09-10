@@ -268,6 +268,9 @@ defmodule Joken do
     %{ token | validations: Map.put(validations, claim, function) }
   end
 
+  @doc """
+  Removes a validation for this token.
+  """
   @spec without_validation(Token.t, String.t) :: Token.t
   def without_validation(token = %Token{validations: validations}, claim)
     when is_binary(claim) do

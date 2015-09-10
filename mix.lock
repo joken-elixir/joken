@@ -5,4 +5,4 @@
   "jose": {:hex, :jose, "1.2.0"},
   "jsx": {:hex, :jsx, "2.7.0"},
   "plug": {:hex, :plug, "1.0.0"},
-  "poison": {:hex, :poison, "1.4.0"}}
+  "poison": {:hex, :poison, "1.5.0"}}
