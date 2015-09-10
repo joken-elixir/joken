@@ -1,5 +1,6 @@
 # Joken [![Documentation](https://img.shields.io/badge/docs-hexpm-blue.svg)](http://hexdocs.pm/joken/) [![Downloads](https://img.shields.io/hexpm/dt/joken.svg)](https://hex.pm/packages/joken) [![Build](https://travis-ci.org/bryanjos/joken.svg)](https://travis-ci.org/bryanjos/joken.svg)
 
+[Documentation](http://hexdocs.pm/joken/)
 
 A JSON Web Token (JWT) Library
 
