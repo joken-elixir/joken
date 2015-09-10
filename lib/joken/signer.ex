@@ -142,6 +142,8 @@ defmodule Joken.Signer do
     end
   end
   
+  defp decode_payload(%Token{json_module: nil}, _),
+    do: raise(ArgumentError, message: "No JSON module defined")
   defp decode_payload(%Token{json_module: json}, payload) when is_binary(payload) do
     json.decode! payload
   end
@@ -168,11 +170,12 @@ defmodule Joken.Signer do
         end
       end
 
-      claims = Enum.into(claims, %{})
       if struct_name = options[:as] do
         claims = struct(struct_name, Enum.map(claims, fn({key, value}) ->
           { String.to_existing_atom(key), value }
         end))
+      else
+        claims = Enum.into(claims, %{})
       end
 
       %{ t | claims: claims }

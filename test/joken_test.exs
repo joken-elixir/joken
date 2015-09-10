@@ -47,9 +47,9 @@ defmodule Joken.Test do
 
     token = token()
 
-    assert Map.has_key? token.claims, "exp"
-    assert Map.has_key? token.claims, "nbf"
-    assert Map.has_key? token.claims, "iat"
+    assert Map.has_key? token.claims_generation, "exp"
+    assert Map.has_key? token.claims_generation, "nbf"
+    assert Map.has_key? token.claims_generation, "iat"
 
     assert Map.has_key? token.validations, "exp"
     assert Map.has_key? token.validations, "nbf"
@@ -136,7 +136,7 @@ defmodule Joken.Test do
   end
   
   test "using a struct for claims" do
-    token = token()
+    token = %Joken.Token{}
     |> with_claims(%TestStruct{a: 1, b: 2, c: 3})
     |> with_validation("a", &(&1 == 1))
 
@@ -227,7 +227,8 @@ defmodule Joken.Test do
 
   test "can remove validations" do
 
-    token = token()
+    token = %Joken.Token{}
+    |> with_json_module(Poison)
     |> with_claims(%TestStruct{a: 2, b: 2, c: 3})
     |> with_validation("a", &(&1 == 1))
     |> sign(hs256("test"))
@@ -241,7 +242,7 @@ defmodule Joken.Test do
 
     assert token.error == nil
   end
-  
+
   # utility functions
   defp assert_invalid_rsa_signature(compact_token, signer) do
 
