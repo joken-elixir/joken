@@ -2,8 +2,7 @@ defprotocol Joken.Claims do
   def to_claims(data)
 end
 
-defimpl Joken.Claims, for: Map do
-
+defimpl Joken.Claims, for: Any do
   defmacro __deriving__(module, struct, options) do
     deriving(module, struct, options)
   end
@@ -28,6 +27,13 @@ defimpl Joken.Claims, for: Map do
         end
       end
     end
+  end
+end
+
+defimpl Joken.Claims, for: Map do
+
+  defmacro __deriving__(module, struct, options) do
+    Joken.Claims.Any.deriving(module, struct, options)
   end
 
   def to_claims(data) do
