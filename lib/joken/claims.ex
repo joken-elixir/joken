@@ -1,4 +1,22 @@
 defprotocol Joken.Claims do
+  @moduledoc """
+  Handles turning data into claims when using the `with_claims` function in the `Joken` module.
+
+  There is a default implementation for maps.
+
+  Implementing `to_claims` expects a map to be returned.
+
+  Structs can derive from `Joken.Claims` to be used as claims
+
+      defmodule FullDerive do
+        @derive Joken.Claims
+        defstruct [:a, :b, :c]
+      end
+
+  derive supports using the `only` or `exclude` option as well
+  """
+
+  @spec to_claims(any) :: map
   def to_claims(data)
 end
 

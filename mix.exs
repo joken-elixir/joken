@@ -20,7 +20,7 @@ defmodule Joken.Mixfile do
       {:plug, "~> 1.0", optional: true},
       {:poison, "~> 1.5", optional: true},
       {:earmark, "~> 0.1", only: :docs},
-      {:ex_doc, "~> 0.8", only: :docs},
+      {:ex_doc, "~> 0.9", only: :docs},
       {:jsx, "~> 2.0", only: :test},
       {:benchfella, "~> 0.2", only: :test}      
     ]

@@ -1,5 +1,23 @@
 # v0.16.0-dev
 * Enhancements
+  * Updated API to allow for more flexibility for signing and verifying tokens
+  * Joken.Plug has been added.
+  * Small fixes to make sure Joken works with Elixir 1.1
+  * Added support for the following signing algorithms:
+    * ES256
+    * ES384
+    * ES512
+    * PS256
+    * PS384
+    * PS512
+    * RS256
+    * RS384
+    * RS512
+
+* Breaking
+  * The new API is completely different than the old one. Take a look [here to find out how to go from 0.15 to 0.16](https://github.com/bryanjos/joken/wiki/Moving-from-0.15-to-0.16)
+  * `encode` and `decode` in the Joken module have been renamed to `sign` and `verify`.
+  * This release also deprecates [plugJWT](https://hex.pm/packages/plug_jwt). Use `Joken.Plug` instead
 
 # v0.15.0
 * Enhancements
