@@ -302,7 +302,7 @@ defmodule Joken do
   - `{:ok, claims}`
   - `{:error, message}`
   """
-  @spec verify(Token.t, Signer.t | nil, list) :: {:ok, map} | {:error, binary}
+  @spec verify!(Token.t, Signer.t | nil, list) :: {:ok, map} | {:error, binary}
   def verify!(%Token{} = token, signer \\ nil, options \\ []) do
     Signer.verify(token, signer, options)
     |> do_verify!
