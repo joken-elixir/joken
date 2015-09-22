@@ -154,6 +154,16 @@ defmodule Joken.Test do
     assert test_struct == %TestStruct{a: 1, b: 2, c: 3}
   end
 
+  test "can retrieve error" do
+
+    error = token
+    |> sign(hs256("test"))
+    |> verify(hs256("TEST"))
+    |> get_error
+
+    assert error == "Invalid signature"
+  end
+  
   test "signs/verifies token with ES***" do
 
     verify_for_dynamic_token(es256_token, es256(ec_p256_key))

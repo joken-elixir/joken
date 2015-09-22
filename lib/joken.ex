@@ -254,6 +254,10 @@ defmodule Joken do
   @spec get_claims(Token.t) :: map
   def get_claims(%Token{claims: claims}), do: claims 
 
+  @doc "Convenience function to retrieve the error"
+  @spec get_error(Token.t) :: binary | nil
+  def get_error(%Token{error: error}), do: error
+  
   @doc """
   Adds a validation for a given claim key.
 
