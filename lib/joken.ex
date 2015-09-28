@@ -79,7 +79,7 @@ defmodule Joken do
   @spec with_exp(Token.t) :: Token.t
   def with_exp(token = %Token{}) do
     token
-    |> with_claim_generator("exp", fn -> current_time + (2 * 60 * 60 * 1000) end)
+    |> with_claim_generator("exp", fn -> current_time + (2 * 60 * 60) end)
   end
 
   @doc """
@@ -107,12 +107,12 @@ defmodule Joken do
   end
 
   @doc """
-  Adds `"nbf"` claim with a default generated value of now - 100ms.
+  Adds `"nbf"` claim with a default generated value of now - 1s.
   """
   @spec with_nbf(Token.t) :: Token.t
   def with_nbf(token = %Token{}) do
     token
-    |> with_claim_generator("nbf", fn -> current_time - 100 end)
+    |> with_claim_generator("nbf", fn -> current_time - 1 end)
   end
 
   @doc """
