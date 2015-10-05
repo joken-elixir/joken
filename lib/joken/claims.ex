@@ -46,6 +46,11 @@ defimpl Joken.Claims, for: Any do
       end
     end
   end
+
+  def to_claims(data) do
+    raise Protocol.UndefinedError, value: data
+  end
+
 end
 
 defimpl Joken.Claims, for: Map do
