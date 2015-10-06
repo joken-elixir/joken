@@ -143,8 +143,7 @@ defmodule Joken.Signer do
             _ ->
               %{ t | error: "Invalid signature algorithm" }
           end
-        a ->
-          IO.inspect(a)
+        _ ->
           %{ t | error: "Invalid signature" }
       end
     catch
