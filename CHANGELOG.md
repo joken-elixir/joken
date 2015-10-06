@@ -1,3 +1,6 @@
+# v1.0.0-dev
+
+
 # v0.16.0
 * Enhancements
   * Updated API to allow for more flexibility for signing and verifying tokens

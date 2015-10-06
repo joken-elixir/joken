@@ -257,6 +257,17 @@ defmodule Joken do
   @doc "Convenience function to retrieve the error"
   @spec get_error(Token.t) :: binary | nil
   def get_error(%Token{error: error}), do: error
+
+  @doc "Returns either the claims or the error"
+  @spec get_data(Token.t) :: {:ok, map} | { :error, binary }
+  def get_data(%Token{} = token) do
+    case token.error do
+      nil ->
+        { :ok, token.claims }
+      _ ->
+        { :error, token.error }
+    end
+  end
   
   @doc """
   Adds a validation for a given claim key.
@@ -311,6 +322,15 @@ defmodule Joken do
     Signer.verify(token, signer, options)
     |> do_verify!
   end
+
+  @doc """
+  Returns the claims without verifying. This is useful if
+  verification and/or validation depends on data contained within
+  the claim
+  """
+  @spec peek(Token.t, list) :: map
+  def peek(%Token{} = token, options \\ []),
+    do: Signer.peek(token, options)
 
   @doc """
   Helper function to get the current time

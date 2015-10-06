@@ -106,6 +106,17 @@ defmodule Joken.Signer do
   def verify(t, signer, options),
     do: do_verify(t, signer, options)
 
+
+  @doc """
+  Returns the token payload without validating or verifying
+  """
+  @spec peek(Token.t, Keyword.t) :: Token.t
+  def peek(%Token{token: token} = t, options \\ []) do
+    payload = JOSE.JWS.peek(token)
+    decode_payload(t, payload)
+    |> process_claims(options)
+  end
+
   ### PRIVATE
   defp do_verify(t = %Token{token: nil}, _signer, _options),
     do: %{ t | error: "No compact token set for verification"}
@@ -132,7 +143,8 @@ defmodule Joken.Signer do
             _ ->
               %{ t | error: "Invalid signature algorithm" }
           end
-        _ ->
+        a ->
+          IO.inspect(a)
           %{ t | error: "Invalid signature" }
       end
     catch
@@ -173,19 +185,21 @@ defmodule Joken.Signer do
         end
       end
 
-      if struct_name = options[:as] do
-        claims = struct(struct_name, Enum.map(claims, fn({key, value}) ->
-          { String.to_existing_atom(key), value }
-        end))
-      else
-        claims = Enum.into(claims, %{})
-      end
-
-      %{ t | claims: claims }
+      %{ t | claims: process_claims(claims, options) }
     catch
       _, cause ->
         Logger.warn fn -> "Error: #{inspect cause}" end
         %{ t | error: "Invalid payload" }
+    end
+  end
+
+  def process_claims(claims, options) do
+    if struct_name = options[:as] do
+      struct(struct_name, Enum.map(claims, fn({key, value}) ->
+        { String.to_existing_atom(key), value }
+      end))
+    else
+      Enum.into(claims, %{})
     end
   end
 
