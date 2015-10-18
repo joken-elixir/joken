@@ -79,7 +79,7 @@ defmodule Joken.Plug do
   @doc false
   def init(opts) do
     on_verifying = Keyword.get(opts, :on_verifying)
-    on_error = Keyword.get(opts, :on_error, &default_on_error/2)
+    on_error = Keyword.get(opts, :on_error, &Joken.Plug.default_on_error/2)
     {on_verifying, on_error}
   end
 
