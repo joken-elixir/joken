@@ -1,3 +1,7 @@
+# v0.16.1
+* Bug Fixes
+  * `Joken.Plug` - Fixed capture of default `on_error` function causing compilation errors
+
 # v0.16.0
 * Enhancements
   * Updated API to allow for more flexibility for signing and verifying tokens
