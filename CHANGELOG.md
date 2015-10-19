@@ -1,3 +1,5 @@
+# v1.0.0-dev
+
 # v0.16.1
 * Bug Fixes
   * `Joken.Plug` - Fixed capture of default `on_error` function causing compilation errors

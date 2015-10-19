@@ -134,6 +134,20 @@ defmodule Joken.Test do
 
     assert claims == @payload
   end
+
+  test "peek" do
+
+    compact = @payload
+    |> token
+    |> sign(hs384("test"))
+    |> get_compact
+
+    claims = compact
+    |> token
+    |> peek
+
+    assert claims == @payload
+  end
   
   test "using a struct for claims" do
     token = %Joken.Token{}

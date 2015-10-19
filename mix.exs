@@ -3,7 +3,7 @@ defmodule Joken.Mixfile do
 
   def project do
     [app: :joken,
-     version: "0.16.1",
+     version: "1.0.0-dev",
      elixir: "~> 1.0",
      description: description,
      package: package,
@@ -16,7 +16,7 @@ defmodule Joken.Mixfile do
 
   defp deps do
     [
-      {:jose, "~> 1.2"},
+      {:jose, "~> 1.3"},
       {:plug, "~> 1.0", optional: true},
       {:poison, "~> 1.5", optional: true},
       {:earmark, "~> 0.1", only: :docs},
