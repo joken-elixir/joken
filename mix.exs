@@ -35,7 +35,7 @@ defmodule Joken.Mixfile do
   defp package do
     [
       files: ["lib", "priv", "mix.exs", "README*", "readme*", "LICENSE*", "license*", "CHANGELOG*"],
-      contributors: ["Bryan Joseph", "Victor Nascimento"],
+      maintainers: ["Bryan Joseph", "Victor Nascimento"],
       licenses: ["Apache 2.0"],
       links: %{"GitHub" => "https://github.com/bryanjos/joken",
                "Docs" => "http://hexdocs.pm/joken"}
