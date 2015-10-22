@@ -285,6 +285,21 @@ defmodule Joken.Test do
     assert token.error == nil
   end
 
+  test "with_header_arg" do
+
+    compact = @payload
+    |> token
+    |> with_header_arg("key", "value")
+    |> sign(hs256("secret"))
+    |> get_compact
+
+    token = compact
+    |> token
+    |> verify(hs256("secret"))
+
+    assert token.header == %{"key" => "value"}
+  end
+
   # utility functions
   defp assert_invalid_rsa_signature(compact_token, signer) do
 
