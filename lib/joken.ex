@@ -180,6 +180,24 @@ defmodule Joken do
   when is_binary(claim) and is_function(fun) do
     %{ token | claims_generation: Map.put(generators, claim, fun) }
   end
+
+  @doc """
+  Adds the specified key and value to the JOSE header
+  """
+  @spec with_header_arg(Token.t, String.t, any) :: Token.t
+  def with_header_arg(token = %Token{header: header}, key, value)
+    when is_binary(key) do
+
+    %{ token | header: Map.put(header, key, value) }
+  end
+
+  @doc """
+  Adds the specified map as the JOSE header.
+  """
+  @spec with_header_args(Token.t, %{String.t => any}) :: Token.t
+  def with_header_args(token = %Token{}, header) do
+    %{ token | headers: header }
+  end
   
   # convenience functions
 

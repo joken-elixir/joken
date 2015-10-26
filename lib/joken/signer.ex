@@ -83,6 +83,8 @@ defmodule Joken.Signer do
     sign(token, %Signer{ jwk: jwk, jws: jws})
   end
   def sign(token, signer) do
+    header = token.header
+    signer = %{ signer | jws: Map.merge( signer.jws, header ) }
     token = %{ token | signer: signer }
     
     Logger.debug fn -> "Signing #{inspect token.claims} with #{inspect signer}" end
@@ -139,7 +141,8 @@ defmodule Joken.Signer do
           case jws["alg"] do
             ^algorithm_string ->
               map_payload = decode_payload(t, payload)
-              validate_all_claims(t, map_payload, options)
+              header =  Map.delete(jws, "alg") |> Map.delete("typ")
+              validate_all_claims(t, header, map_payload, options)
             _ ->
               %{ t | error: "Invalid signature algorithm" }
           end
@@ -163,6 +166,7 @@ defmodule Joken.Signer do
   end
 
   defp validate_all_claims(t = %Token{validations: validations},
+                           header,
                            map_payload,
                            options) when is_map(map_payload) do
 
@@ -184,7 +188,7 @@ defmodule Joken.Signer do
         end
       end
 
-      %{ t | claims: process_claims(claims, options) }
+      %{ t | claims: process_claims(claims, options), header: header }
     catch
       _, cause ->
         Logger.warn fn -> "Error: #{inspect cause}" end

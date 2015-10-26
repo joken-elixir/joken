@@ -1,6 +1,7 @@
 defmodule Joken.Token do
 
   @type json_module        :: module
+  @type header             :: %{binary => any}
   @type claims             :: %{binary => any}
   @type claim_function_map :: %{binary => function}
   @type error              :: binary
@@ -18,6 +19,7 @@ defmodule Joken.Token do
   }
   
   defstruct [json_module: nil,
+             header: %{}, 
              claims: %{},
              claims_generation: %{},
              validations: %{},
