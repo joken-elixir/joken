@@ -123,7 +123,7 @@ In the first scenario just add this plug before the dispatch plug.
   defmodule MyRouter do
     use Plug.Router
 
-    plug Joken.Plug, on_verifying: &verify_function/1
+    plug Joken.Plug, on_verifying: &MyRouter.verify_function/0
     plug :match
     plug :dispatch
 
@@ -148,7 +148,7 @@ Then you must plug this AFTER :match and BEFORE :dispatch.
     @skip_token_verification %{joken_skip: true}
 
     plug :match
-    plug Joken.Plug, on_verifying: &verify_function/1       
+    plug Joken.Plug, on_verifying: &MyRouter.verify_function/0       
     plug :dispatch
 
     post "/user" do
@@ -166,7 +166,7 @@ Then you must plug this AFTER :match and BEFORE :dispatch.
 
 This plug accepts the following options in its initialization:
 
-- `on_verifying`: a function used to verify the token. Receives a Token and must return a Token 
+- `on_verifying`: a function used to verify the token. Must return a Token
 
 - `on_error` (optional): a function that accepts `conn` and `message` as parameters. Must
 return a tuple containing the conn and a binary representing the 401 response. If it's a map,
