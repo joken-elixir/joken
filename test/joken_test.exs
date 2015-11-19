@@ -24,9 +24,9 @@ defmodule Joken.Test do
   test "signing token with binary jwk" do
     signed_token = @payload
     |> token
-    |> sign(%Signer{ 
-      jws: %{ "alg" => "HS256" }, 
-      jwk: "secret" 
+    |> sign(%Signer{
+      jws: %{ "alg" => "HS256" },
+      jwk: "secret"
     })
 
     assert(signed_token.token == "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.xuEv8qrfXu424LZk8bVgr9MQJUIrp1rHcPyZw_KSsds")
@@ -35,8 +35,8 @@ defmodule Joken.Test do
   test "signing token with jwk map" do
     signed_token = @payload
     |> token
-    |> sign(%Signer{ 
-      jws: %{ "alg" => "HS256" }, 
+    |> sign(%Signer{
+      jws: %{ "alg" => "HS256" },
       jwk: %{ "kty" => "oct", "k" => :base64url.encode(:erlang.iolist_to_binary("secret")) }
     })
 
@@ -73,7 +73,7 @@ defmodule Joken.Test do
     |> sign(hs256("secret"))
     |> get_compact
 
-    assert compact ==  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.xuEv8qrfXu424LZk8bVgr9MQJUIrp1rHcPyZw_KSsds" 
+    assert compact ==  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.xuEv8qrfXu424LZk8bVgr9MQJUIrp1rHcPyZw_KSsds"
 
     claims = compact
     |> token
@@ -148,7 +148,7 @@ defmodule Joken.Test do
 
     assert claims == @payload
   end
-  
+
   test "using a struct for claims" do
     token = %Joken.Token{}
     |> with_claims(%TestStruct{a: 1, b: 2, c: 3})
@@ -177,7 +177,7 @@ defmodule Joken.Test do
 
     assert error == "Invalid signature"
   end
-  
+
   test "signs/verifies token with ES***" do
 
     verify_for_dynamic_token(es256_token, es256(ec_p256_key))
@@ -213,21 +213,21 @@ defmodule Joken.Test do
     token = %{}
     |> token
     |> with_claim_generator("exp", fn -> current_time + 60 * 1000 end)
-    
+
     claims1 = token
     |> sign(hs256("secret"))
     |> verify(hs256("secret"))
     |> get_claims()
 
     :timer.sleep 1000
-    
+
     claims2 = token
     |> sign(hs256("secret"))
     |> verify(hs256("secret"))
     |> get_claims()
 
     assert claims1["exp"] < claims2["exp"]
-    
+
   end
 
   test "can use generator for custom claim" do
@@ -235,7 +235,7 @@ defmodule Joken.Test do
     token = %{}
     |> token
     |> with_claim_generator("my_claim", fn -> "Random: #{inspect :random.uniform}" end)
-    
+
     claims1 = token
     |> sign(hs256("secret"))
     |> verify(hs256("secret"))
@@ -300,6 +300,38 @@ defmodule Joken.Test do
     assert token.header == %{"key" => "value"}
   end
 
+
+  test "none algorithm throws error when disabled" do
+    assert_raise Joken.AlgorithmError, fn ->
+      compact = @payload
+      |> token
+      |> with_header_arg("key", "value")
+      |> sign(none("secret"))
+      |> get_compact
+    end
+  end
+
+
+  test "none algorithm works when enabled" do
+      JOSE.unsecured_signing(true)
+      Application.put_env(:joken, :allow_none_algorithm, true)
+
+      compact = @payload
+      |> token
+      |> with_header_arg("key", "value")
+      |> sign(none("secret"))
+      |> get_compact
+
+      token = compact
+      |> token
+      |> verify(none("secret"))
+
+      assert token.header == %{"key" => "value"}
+
+      Application.put_env(:joken, :allow_none_algorithm, false)
+      JOSE.unsecured_signing(false)
+  end
+
   # utility functions
   defp assert_invalid_rsa_signature(compact_token, signer) do
 
@@ -310,7 +342,7 @@ defmodule Joken.Test do
 
     assert result == {:error, "Invalid signature"}
   end
-  
+
   # this is used to verify algorithms that will always produce
   # different tokens. The strategy is to have a token we are sure
   # is valid (generated from jwt.io for example) and validate both
@@ -335,5 +367,5 @@ defmodule Joken.Test do
 
     assert claims == @payload
   end
-   
+
 end
