@@ -134,18 +134,12 @@ defmodule Joken.Signer do
     t = %{ t | error: nil }
     
     try do
-      case JOSE.JWK.verify(token, jwk) do
+      case JOSE.JWK.verify_strict(token, [algorithm |> to_string], jwk) do
         {true, payload, jws} ->
-          jws = :erlang.element(2, JOSE.JWS.to_map(jws))
-          algorithm_string = algorithm |> to_string
-          case jws["alg"] do
-            ^algorithm_string ->
-              map_payload = decode_payload(t, payload)
-              header =  Map.delete(jws, "alg") |> Map.delete("typ")
-              validate_all_claims(t, header, map_payload, options)
-            _ ->
-              %{ t | error: "Invalid signature algorithm" }
-          end
+          jws = JOSE.JWS.to_map(jws) |> elem(1)
+          map_payload = decode_payload(t, payload)
+          header = jws |> Map.drop(["alg", "typ"])
+          validate_all_claims(t, header, map_payload, options)
         _ ->
           %{ t | error: "Invalid signature" }
       end
