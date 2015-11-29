@@ -3,13 +3,13 @@ defmodule Joken do
   alias Joken.Signer
 
   @moduledoc """
-  Joken is the main API for configuring JWT token generation and 
+  Joken is the main API for configuring JWT token generation and
   validation.
 
-  All you need to generate a token is a `Joken.Token` struct with proper values. 
+  All you need to generate a token is a `Joken.Token` struct with proper values.
   There you can set:
   - json_module: choose your JSON library (currently supports Poison | JSX)
-  - signer: a map that tells the underlying system how to sign and verify your 
+  - signer: a map that tells the underlying system how to sign and verify your
   tokens
   - validations: a map of claims keys to function validations
   - claims: the map of values you want encoded in a token
@@ -17,7 +17,7 @@ defmodule Joken do
   - token: the compact representation of a JWT token
   - error: message indicating why a sign/verify operation failed
 
-  To help you fill that configuration struct properly, use the functions in this 
+  To help you fill that configuration struct properly, use the functions in this
   module.
   """
 
@@ -43,7 +43,7 @@ defmodule Joken do
   end
 
   @doc """
-  Generates a `Joken.Token` with either a custom payload or a compact token. 
+  Generates a `Joken.Token` with either a custom payload or a compact token.
   Defaults Poison as the json module.
   """
   @spec token(binary | map) :: Token.t
@@ -72,7 +72,7 @@ defmodule Joken do
   def with_compact_token(token = %Token{}, compact) when is_binary(compact) do
     %{ token | token: compact }
   end
-  
+
   @doc """
   Adds `"exp"` claim with a default generated value of now + 2hs.
   """
@@ -198,8 +198,12 @@ defmodule Joken do
   def with_header_args(token = %Token{}, header) do
     %{ token | headers: header }
   end
-  
+
   # convenience functions
+
+  # None
+  @doc "See Joken.Signer.hs/2"
+  def none(secret), do: Signer.none(secret)
 
   # HMAC SHA functions
   @doc "See Joken.Signer.hs/2"
@@ -211,7 +215,7 @@ defmodule Joken do
   @doc "See Joken.Signer.hs/2"
   def hs512(secret), do: Signer.hs("HS512", secret)
 
-  # 
+  #
   @doc "See Joken.Signer.es/2"
   def es256(key), do: Signer.es("ES256", key)
 
@@ -240,11 +244,11 @@ defmodule Joken do
 
   @doc "See Joken.Signer.ps/2"
   def ps512(key), do: Signer.ps("PS512", key)
-  
-  @doc """
-  Adds a signer to a token configuration. 
 
-  This **DOES NOT** call `sign/1`, `sign/2` or `verify/4`. 
+  @doc """
+  Adds a signer to a token configuration.
+
+  This **DOES NOT** call `sign/1`, `sign/2` or `verify/4`.
   It only sets the signer in the token configuration.
   """
   @spec with_signer(Token.t, Signer.t) :: Token.t
@@ -252,7 +256,7 @@ defmodule Joken do
     do: %{ token | signer: signer }
 
   @doc """
-  Signs a given set of claims. If signing is successful it will put the compact token in 
+  Signs a given set of claims. If signing is successful it will put the compact token in
   the configuration's token field. Otherwise, it will fill the error field.
   """
   @spec sign(Token.t) :: Token.t
@@ -270,7 +274,7 @@ defmodule Joken do
 
   @doc "Convenience function to retrieve the claim set"
   @spec get_claims(Token.t) :: map
-  def get_claims(%Token{claims: claims}), do: claims 
+  def get_claims(%Token{claims: claims}), do: claims
 
   @doc "Convenience function to retrieve the error"
   @spec get_error(Token.t) :: binary | nil
@@ -286,7 +290,7 @@ defmodule Joken do
         { :error, token.error }
     end
   end
-  
+
   @doc """
   Adds a validation for a given claim key.
 
@@ -312,10 +316,10 @@ defmodule Joken do
     when is_binary(claim) do
     %{ token | validations: Map.delete(validations, claim) }
   end
-  
+
   @doc """
-  Runs verification on the token set in the configuration. 
-  
+  Runs verification on the token set in the configuration.
+
   It first checks the signature comparing the header with the one found in the signer.
 
   Then it runs validations on the decoded payload. If everything passes then the configuration
@@ -329,9 +333,9 @@ defmodule Joken do
   @spec verify(Token.t, Signer.t | nil, list) :: Token.t
   def verify(%Token{} = token, signer \\ nil, options \\ []),
     do: Signer.verify(token, signer, options)
-  
+
   @doc """
-  Same as `verify/3` except that it returns either: 
+  Same as `verify/3` except that it returns either:
   - `{:ok, claims}`
   - `{:error, message}`
   """
@@ -366,5 +370,5 @@ defmodule Joken do
       {:ok, token.claims }
     end
   end
-    
+
 end

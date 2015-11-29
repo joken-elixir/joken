@@ -3,6 +3,8 @@ defmodule Joken.Signer do
   alias Joken.Signer
   require Logger
 
+  @on_load :configure_unsecured_signing
+
   @moduledoc """
   Signer is the JWK (JSON Web Key) and JWS (JSON Web Signature) configuration of Joken.
 
@@ -10,8 +12,11 @@ defmodule Joken.Signer do
   token compact representation.
 
   Joken uses https://hex.pm/packages/jose to do signing and verification.
+
+  Note: By default, the 'none' algorithm is disabled. To enable it, set the
+  'allow_none_algorithm' key on the 'joken' app configuration to true
   """
-  
+
   @type jwk :: %{}
   @type jws :: %{}
 
@@ -19,8 +24,30 @@ defmodule Joken.Signer do
     jwk: jwk,
     jws: jws
   }
-  
+
+  defp none_algorithm_allowed?() do
+    Application.get_env(:joken, :allow_none_algorithm, false)
+  end
+
+  def configure_unsecured_signing() do
+    JOSE.unsecured_signing(none_algorithm_allowed?())
+  end
+
   defstruct [:jwk, :jws]
+
+  @doc "Convenience for generating a Joken.Signer with the none algorithm"
+  @spec none(binary) :: Signer.t
+  def none(secret) do
+    unless none_algorithm_allowed? do
+      raise Joken.AlgorithmError, message: """
+        'none' algorithm is not allowed.
+        In order to use the 'none algorithm', the 'allow_none_algorithm' key on the
+        joken app's configuration must be set to 'true'
+      """
+    end
+
+    %Signer{ jws: %{ "alg" => "none" }, jwk: %{ "kty" => "oct", "k" => :base64url.encode(secret) } }
+  end
 
   @doc "Convenience for generating an HS*** Joken.Signer"
   @spec hs(binary, binary) :: Signer.t
@@ -42,7 +69,7 @@ defmodule Joken.Signer do
   def rs(alg, key) when is_map(key)
     and alg in ["RS256", "RS384", "RS512"] do
     %Signer{jws: %{ "alg" => alg }, jwk: key }
-  end                                             
+  end
 
   @doc "Convenience for generating an PS*** Joken.Signer"
   @spec ps(binary, map) :: Signer.t
@@ -50,7 +77,7 @@ defmodule Joken.Signer do
     and alg in ["PS256", "PS384", "PS512"] do
     %Signer{jws: %{ "alg" => alg }, jwk: key }
   end
-                                               
+
   @doc """
   Signs a payload (JOSE header + claims) with the configured signer.
 
@@ -86,17 +113,17 @@ defmodule Joken.Signer do
     header = token.header
     signer = %{ signer | jws: Map.merge( signer.jws, header ) }
     token = %{ token | signer: signer }
-    
+
     Logger.debug fn -> "Signing #{inspect token.claims} with #{inspect signer}" end
 
     claims = prepare_claims(token)
-    
+
     {_, compacted_token} = JOSE.JWS.compact(JOSE.JWT.sign(signer.jwk, signer.jws, claims))
     %{ token | token: compacted_token }
   end
 
   @doc """
-  Verifies a token signature and decodes its payload. This assumes a signer was configured. 
+  Verifies a token signature and decodes its payload. This assumes a signer was configured.
   It raises if there was none.
   """
   @spec verify(Token.t, Signer.t | nil, Keyword.t) :: Token.t
@@ -127,12 +154,12 @@ defmodule Joken.Signer do
                  options) do
 
     Logger.debug fn ->
-      "Verifying #{token} using #{inspect s} with options #{inspect options}" 
+      "Verifying #{token} using #{inspect s} with options #{inspect options}"
     end
-    
+
     t = %{ t | signer: s }
     t = %{ t | error: nil }
-    
+
     try do
       case JOSE.JWK.verify_strict(token, [algorithm |> to_string], jwk) do
         {true, payload, jws} ->
@@ -149,7 +176,7 @@ defmodule Joken.Signer do
         %{ t | error: "Could not verify token" }
     end
   end
-  
+
   defp decode_payload(%Token{json_module: nil}, _),
     do: raise(ArgumentError, message: "No JSON module defined")
   defp decode_payload(%Token{json_module: :jsx}, payload) when is_binary(payload) do
@@ -177,7 +204,7 @@ defmodule Joken.Signer do
               true ->
                 [{key, value} | acc]
               false ->
-                raise ArgumentError 
+                raise ArgumentError
             end
         end
       end
@@ -210,7 +237,7 @@ defmodule Joken.Signer do
 
     retrieve_claims(claims)
   end
-    
+
   defp retrieve_claims(%{__struct__: _} = claims) do
     Map.from_struct(claims)
   end
@@ -220,5 +247,5 @@ defmodule Joken.Signer do
   defp retrieve_claims(_) do
     raise ArgumentError, message: "Claims must be a map"
   end
-  
+
 end
