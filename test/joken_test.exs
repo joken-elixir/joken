@@ -178,6 +178,15 @@ defmodule Joken.Test do
     assert error == "Invalid signature"
   end
 
+  test "signs/verifies token with EdDSA" do
+
+    verify_for_dynamic_token(ed25519_token, ed25519(ed25519_key))
+    verify_for_dynamic_token(ed25519ph_token, ed25519ph(ed25519ph_key))
+    verify_for_dynamic_token(ed448_token, ed448(ed448_key))
+    verify_for_dynamic_token(ed448ph_token, ed448ph(ed448ph_key))
+
+  end
+
   test "signs/verifies token with ES***" do
 
     verify_for_dynamic_token(es256_token, es256(ec_p256_key))
