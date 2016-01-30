@@ -1,3 +1,7 @@
+# v1.1.0
+* Enhancements
+  * Add EdDSA support: Ed25519, Ed25519ph, Ed448, Ed448ph
+
 # v1.0.0
 * Enhancements
   * The `none` algorithm can be used if and only if `allow_none_algorithm` exists as an application variable
