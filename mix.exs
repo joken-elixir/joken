@@ -3,11 +3,12 @@ defmodule Joken.Mixfile do
 
   def project do
     [app: :joken,
-     version: "1.1.0-dev",
+     version: "1.1.0",
      elixir: "~> 1.0",
      description: description,
      package: package,
-     deps: deps]
+     deps: deps,
+     consolidate_protocols: Mix.env != :test]
   end
 
   def application do
@@ -18,7 +19,7 @@ defmodule Joken.Mixfile do
     [
       {:jose, "~> 1.6"},
       {:plug, "~> 1.0", optional: true},
-      {:poison, "~> 1.5", optional: true},
+      {:poison, "~> 1.5 or ~> 2.0", optional: true},
       {:earmark, "~> 0.1", only: :docs},
       {:ex_doc, "~> 0.10", only: :docs},
       {:jsx, "~> 2.0", only: :test},

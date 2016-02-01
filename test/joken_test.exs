@@ -9,6 +9,7 @@ defmodule Joken.Test do
   end
 
   defimpl Joken.Claims, for: TestStruct do
+    IO.inspect("here")
     def to_claims(%TestStruct{} = test_struct) do
       Map.from_struct(test_struct)
     end
