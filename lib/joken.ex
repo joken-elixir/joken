@@ -269,8 +269,9 @@ defmodule Joken do
     do: %{ token | signer: signer }
 
   @doc """
-  Signs a given set of claims. If signing is successful it will put the compact token in
-  the configuration's token field. Otherwise, it will fill the error field.
+  Signs a given set of claims. If signing is successful it will put the compact
+  token in the configuration's token field and move generated claims into the
+  claims set. Otherwise, it will fill the error field.
   """
   @spec sign(Token.t) :: Token.t
   def sign(token), do: Signer.sign(token)
@@ -285,7 +286,10 @@ defmodule Joken do
   @spec get_compact(Token.t) :: binary | nil
   def get_compact(%Token{token: token}), do: token
 
-  @doc "Convenience function to retrieve the claim set"
+  @doc """
+  Convenience function to retrieve the claim set. Generated claims will only
+  become available after signing the token.
+  """
   @spec get_claims(Token.t) :: map
   def get_claims(%Token{claims: claims}), do: claims
 

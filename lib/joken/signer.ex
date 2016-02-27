@@ -126,7 +126,7 @@ defmodule Joken.Signer do
     claims = prepare_claims(token)
 
     {_, compacted_token} = JOSE.JWS.compact(JOSE.JWT.sign(signer.jwk, signer.jws, claims))
-    %{ token | token: compacted_token }
+    %{ token | token: compacted_token, claims: claims, claims_generation: %{} }
   end
 
   @doc """
