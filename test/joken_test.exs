@@ -67,6 +67,22 @@ defmodule Joken.Test do
     assert Map.has_key? token.validations, "custom"
   end
 
+  test "generated claims become static after signing" do
+    token = token()
+    |> with_claim("static", "static")
+    |> with_claim_generator("dynamic", fn -> "dynamic" end)
+
+    assert Map.has_key? token.claims, "static"
+    assert Map.has_key? token.claims_generation, "dynamic"
+
+    signed = sign(token, hs256("secret"))
+
+    assert Map.has_key? signed.claims, "static"
+    assert Map.has_key? signed.claims, "dynamic"
+
+    assert signed.claims_generation == %{}
+  end
+
   test "signs/verifies token/claims with HS256 convenience" do
 
     compact = @payload
