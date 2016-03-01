@@ -57,6 +57,15 @@ defmodule Joken.Test do
     assert Map.has_key? token.validations, "iat"
   end
 
+  test "default validations pass" do
+    signer = hs256("secret")
+
+    assert {:ok, _} =
+      token()
+      |> sign(signer)
+      |> verify!(signer)
+  end
+
   test "can add custom claim and validation" do
 
     token = token()

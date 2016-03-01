@@ -27,7 +27,7 @@ defmodule Joken do
   - claims: exp(now + 2 hours), iat(now), nbf(now - 100ms) and iss ("Joken")
   - validations for default :
     - with_validation("exp", &(&1 > current_time))
-    - with_validation("iat", &(&1 < current_time))
+    - with_validation("iat", &(&1 <= current_time))
     - with_validation("nbf", &(&1 < current_time))
   """
   @spec token() :: Token.t
@@ -38,7 +38,7 @@ defmodule Joken do
     |> with_iat
     |> with_nbf
     |> with_validation("exp", &(&1 > current_time))
-    |> with_validation("iat", &(&1 < current_time))
+    |> with_validation("iat", &(&1 <= current_time))
     |> with_validation("nbf", &(&1 < current_time))
   end
 
