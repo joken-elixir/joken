@@ -66,6 +66,18 @@ defmodule Joken.Test do
       |> verify!(signer)
   end
 
+  test "ensure iat validation passes for same second" do
+
+      now = current_time()
+
+      assert {:ok, _} = @payload
+      |> token
+      |> with_iat(now)
+      |> with_validation("iat", &(&1 <= now))
+      |> sign(hs256("secret"))
+      |> verify!
+  end
+
   test "can add custom claim and validation" do
 
     token = token()
