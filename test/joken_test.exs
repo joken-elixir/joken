@@ -57,6 +57,27 @@ defmodule Joken.Test do
     assert Map.has_key? token.validations, "iat"
   end
 
+  test "default validations pass" do
+    signer = hs256("secret")
+
+    assert {:ok, _} =
+      token()
+      |> sign(signer)
+      |> verify!(signer)
+  end
+
+  test "ensure iat validation passes for same second" do
+
+      now = current_time()
+
+      assert {:ok, _} = @payload
+      |> token
+      |> with_iat(now)
+      |> with_validation("iat", &(&1 <= now))
+      |> sign(hs256("secret"))
+      |> verify!
+  end
+
   test "can add custom claim and validation" do
 
     token = token()
