@@ -1,4 +1,6 @@
-# Joken [![Documentation](https://img.shields.io/badge/docs-hexpm-blue.svg)](http://hexdocs.pm/joken/) [![Downloads](https://img.shields.io/hexpm/dt/joken.svg)](https://hex.pm/packages/joken) [![Build](https://travis-ci.org/bryanjos/joken.svg?branch=master)](https://travis-ci.org/bryanjos/joken)
+# Joken
+
+[![Documentation](https://img.shields.io/badge/docs-hexpm-blue.svg)](http://hexdocs.pm/joken/) [![Downloads](https://img.shields.io/hexpm/dt/joken.svg)](https://hex.pm/packages/joken) [![Build](https://travis-ci.org/bryanjos/joken.svg?branch=master)](https://travis-ci.org/bryanjos/joken)
 
 [Documentation](http://hexdocs.pm/joken/)
 
@@ -39,7 +41,10 @@ Joken allows you to use any claims you wish, but has convenience methods for the
 
 For a more in depth description of each claim, please see the reference specification [here](https://tools.ietf.org/html/rfc7519).
 
-## Usage:
+You can view the changelog [here](https://github.com/bryanjos/joken/blob/master/CHANGELOG.md) or on the official documentation in the "Pages" section.
+
+
+## Usage
 
 All you need to generate a token is a `Joken.Token` struct with proper values. 
 There you can set:
@@ -112,7 +117,7 @@ my_verified_token = "some_token"
 
 There are other options and helper functions available. See the docs of the `Joken` module for a complete documentation.
 
-## Plug:
+## Plug
 
 Joken also comes with a Plug for verifying JWTs in web applications.
 
@@ -185,27 +190,26 @@ to the route. The keys that Joken will look for in that map are:
 
 - `joken_on_error`: Same as `on_error` above. Overrides `on_error` if defined on the Plug
 
-### EdDSA
+## Native crypto
 
-Native C support for Ed25519 and Ed25519ph can be provided by the libsodium asynchronous port driver by adding it as a dependency to a project's Mix file:
+Joken is based on cryptography implemented by the [erlang-jose](https://github.com/potatosalad/erlang-jose) project. One of the features it provides is the ability to auto detect the presence of native crypto libraries with a NIF (Erlang's Native Implemented Function) interface. Some of these libraries are:
 
-```elixir
-defp deps do
-  [
-    {:joken, "~> 1.1"},
-    {:libsodium, "~> 0.0.2"}
-  ]
-end
-```
+- [erlang-libsodium](https://github.com/potatosalad/erlang-libsodium): provides native implemented crypto for Ed25519 and Ed25519ph
+- [erlang-keccakf1600](https://github.com/potatosalad/erlang-keccakf1600): provides SHA-3 NIFs
+- [erlang-libdecaf](https://github.com/potatosalad/erlang-libdecaf): provides ed448goldilocks NIFs
 
-While there isn't native C support for Ed448 and Ed448ph yet, there is a notable performance improvement by using a native C driver the SHA-3 related functions used by these signature algorithms by adding the [keccakf1600](https://github.com/potatosalad/erlang-keccakf1600) asynchronous port driver as a dependency to a project's Mix file:
+Joken inherits that auto discovery feature. So, in order to increase speed in scenarios that you are using these crypto libraries, all you need to do is add them as dependencies:
 
 ```elixir
 defp deps do
   [
     {:joken, "~> 1.1"},
-    {:keccakf1600, "~> 0.0.1"}
+    {:libsodium, "~> 0.0.3"},
+    {:keccakf1600, "~> 0.0.1"},
+    {:libdecaf, "~> 0.0.1"}
   ]
 end
 ```
+
+Be advised though that this is a work in progress by [@potatosalad](https://github.com/potatosalad).
 

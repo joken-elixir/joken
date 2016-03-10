@@ -59,14 +59,16 @@ if Code.ensure_loaded?(Plug.Conn) do
 
     This plug accepts the following options in its initialization:
 
-    - `on_verifying`: a function used to verify the token. Receives a Token and must return a Token
+    - `on_verifying`: a function used to verify the token. Receives a Token and
+    must return a Token
 
-    - `on_error` (optional): a function that will be called with `conn` and `message`. Must
-    return a tuple containing the conn and a binary representing the 401 response. If it's a map,
-    it will be turned into json, otherwise, it will be returned as is.
+    - `on_error` (optional): a function that will be called with `conn` and
+    `message`. Must return a tuple containing the conn and a binary representing
+    the 401 response. If it's a map, it will be turned into json, otherwise, it
+    will be returned as is.
 
-    When using this with per route options you must pass a private map of options
-    to the route. The keys that Joken will look for in that map are:
+    When using this with per route options you must pass a private map of
+    options to the route. The keys that Joken will look for in that map are:
 
     - `joken_skip`: skips token validation
 
@@ -78,6 +80,7 @@ if Code.ensure_loaded?(Plug.Conn) do
     """
     import Plug.Conn
 
+    @lint {Credo.Check.Design.AliasUsage, false}
     @doc false
     def init(opts) do
       on_verifying = Keyword.get(opts, :on_verifying)
@@ -86,7 +89,7 @@ if Code.ensure_loaded?(Plug.Conn) do
     end
 
     @doc false
-    def call(conn, { on_verifying, on_error }) do
+    def call(conn, {on_verifying, on_error}) do
 
       unless Map.has_key?(conn.private, :joken_on_verifying) do
         conn = put_private(conn, :joken_on_verifying, on_verifying)
@@ -116,17 +119,17 @@ if Code.ensure_loaded?(Plug.Conn) do
       send_401(conn, "Unauthorized")
     end
 
-    defp evaluate(conn, %Token{ error: nil } = token) do
+    defp evaluate(conn, %Token{error: nil} = token) do
       assign(conn, :joken_claims, get_claims(token))
     end
-    defp evaluate(conn, %Token{ error: message }) do
+    defp evaluate(conn, %Token{error: message}) do
       send_401(conn, message)
     end
 
     defp send_401(conn, message) do
       on_error = conn.private[:joken_on_error]
 
-      {conn, message } = case on_error.(conn, message) do
+      {conn, message} = case on_error.(conn, message) do
         {conn, map} when is_map(map) ->
           create_json_response(conn, map)
         response ->
@@ -146,7 +149,7 @@ if Code.ensure_loaded?(Plug.Conn) do
 
     @doc false
     def default_on_error(conn, message) do
-      { conn, message }
+      {conn, message}
     end
   end
 end

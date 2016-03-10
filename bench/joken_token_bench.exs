@@ -4,7 +4,6 @@ defmodule Joken.Token.Bench do
   use Benchfella
   import Joken
   import Joken.Fixtures
-  alias Joken.Signer
 
   @secret "test"
 
@@ -23,17 +22,17 @@ defmodule Joken.Token.Bench do
   ## ------------------------------
   ## HS256, HS384, HS512 benchmarks
   ## ------------------------------
-  
+
   bench "HS256 token generation" do
     token |> sign(hs256(@secret)) |> get_compact
     :ok
   end
-  
+
   bench "HS384 token generation" do
     token |> sign(hs384(@secret)) |> get_compact
     :ok
   end
-  
+
   bench "HS512 token generation" do
     token |> sign(hs512(@secret)) |> get_compact
     :ok
@@ -41,7 +40,7 @@ defmodule Joken.Token.Bench do
 
   ## ------------------------------
   ## RS256, RS384, RS512 benchmarks
-  ## ------------------------------  
+  ## ------------------------------
   bench "RS256 token generation" do
     token |> sign(rs256(rsa_key)) |> get_compact
     :ok
@@ -77,7 +76,7 @@ defmodule Joken.Token.Bench do
 
   ## ------------------------------
   ## PS256, PS384, PS512 benchmarks
-  ## ------------------------------  
+  ## ------------------------------
   bench "PS256 token generation" do
     token |> sign(ps256(rsa_key)) |> get_compact
     :ok
@@ -87,7 +86,7 @@ defmodule Joken.Token.Bench do
     token |> sign(ps384(rsa_key)) |> get_compact
     :ok
   end
-  
+
   bench "PS512 token generation" do
     token |> sign(ps512(rsa_key)) |> get_compact
     :ok
@@ -115,5 +114,5 @@ defmodule Joken.Token.Bench do
     token |> sign(ed448ph(ed448ph_key)) |> get_compact
     :ok
   end
-  
+
 end
