@@ -375,8 +375,7 @@ defmodule Joken do
   Helper function to get the current time
   """
   def current_time() do
-    {mega, secs, _} = :os.timestamp()
-    mega * 1000000 + secs
+    :os.system_time(:seconds)
   end
 
   ## PRIVATE
