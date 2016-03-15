@@ -170,7 +170,7 @@ Then you must plug this AFTER :match and BEFORE :dispatch.
 
 This plug accepts the following options in its initialization:
 
-- `on_verifying`: a function used to verify the token. Must return a Token
+- `on_verifying` (required): a function used to verify the token. The function must at least specify algorithm used and your secret using the `with_signer` function (see above). Must return a Token.
 
 - `on_error` (optional): a function that accepts `conn` and `message` as parameters. Must
 return a tuple containing the conn and a binary representing the 401 response. If it's a map,
