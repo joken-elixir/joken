@@ -20,7 +20,7 @@ if Code.ensure_loaded?(Plug.Conn) do
         defmodule MyRouter do
           use Plug.Router
 
-          plug Joken.Plug, verify: &verify_function/1
+          plug Joken.Plug, verify: &MyRouter.verify_function/0
           plug :match
           plug :dispatch
 
@@ -30,6 +30,12 @@ if Code.ensure_loaded?(Plug.Conn) do
 
           match _ do
             # will only execute here if token is present and valid
+          end
+
+          def verify_function() do
+            %Joken.Token{}
+            |> Joken.with_signer(hs256("secret"))
+            |> Joken.with_sub(1234567890)
           end
         end
 
@@ -43,7 +49,7 @@ if Code.ensure_loaded?(Plug.Conn) do
           @skip_token_verification %{joken_skip: true}
 
           plug :match
-          plug Joken.Plug, config_module: MyJWTConfig
+          plug Joken.Plug, verify: &MyRouter.verify_function/0
           plug :dispatch
 
           post "/user" do
@@ -54,13 +60,19 @@ if Code.ensure_loaded?(Plug.Conn) do
           match _, private: @skip_token_verification do
             # will NOT try to validate a token
           end
+
+          def verify_function() do
+            %Joken.Token{}
+            |> Joken.with_signer(hs256("secret"))
+            |> Joken.with_sub(1234567890)
+          end
         end
 
     ## Options
 
     This plug accepts the following options in its initialization:
 
-    - `verify`: a function used to verify the token. Receives a Token and must return a Token
+    - `verify` (required): a function used to verify the token. The function must at least specify algorithm used and your secret using the `with_signer` function (see above). Must return a Token.
 
     - `on_error` (optional): a function that will be called with `conn` and `message`. Must
     return a tuple containing the conn and a binary representing the 401 response. If it's a map,

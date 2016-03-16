@@ -4,7 +4,7 @@
 
 A JSON Web Token (JWT) Library
 
-The goal of this library is to provide a convienent way to create, sign, verify, and validate JWTs while allowing the flexibility to customize each step along the way. This library also includes a Plug for checking tokens as well. 
+The goal of this library is to provide a convienent way to create, sign, verify, and validate JWTs while allowing the flexibility to customize each step along the way. This library also includes a Plug for checking tokens as well.
 
 Supports the following algorithms:
 
@@ -41,10 +41,10 @@ For a more in depth description of each claim, please see the reference specific
 
 ## Usage:
 
-All you need to generate a token is a `Joken.Token` struct with proper values. 
+All you need to generate a token is a `Joken.Token` struct with proper values.
 There you can set:
 - json_module: choose your JSON library (currently supports Poison | JSX)
-- signer: a map that tells the underlying system how to sign and verify your 
+- signer: a map that tells the underlying system how to sign and verify your
 tokens
 - validations: a map of claims keys to function validations
 - claims: the map of values you want encoded in a token
@@ -127,7 +127,7 @@ In the first scenario just add this plug before the dispatch plug.
   defmodule MyRouter do
     use Plug.Router
 
-    plug Joken.Plug, on_verifying: &MyRouter.verify_function/0
+    plug Joken.Plug, verify: &MyRouter.verify_function/0
     plug :match
     plug :dispatch
 
@@ -138,11 +138,17 @@ In the first scenario just add this plug before the dispatch plug.
     match _ do
       # will only execute here if token is present and valid
     end
+
+    def verify_function() do
+      %Joken.Token{}
+      |> Joken.with_signer(hs256("secret"))
+      |> Joken.with_sub(1234567890)
+    end
   end
 ```
 
-In the second scenario, you will need at least plug ~> 0.14 in your deps. 
-Then you must plug this AFTER :match and BEFORE :dispatch. 
+In the second scenario, you will need at least plug ~> 0.14 in your deps.
+Then you must plug this AFTER :match and BEFORE :dispatch.
 
 ```elixir
   defmodule MyRouter do
@@ -152,13 +158,13 @@ Then you must plug this AFTER :match and BEFORE :dispatch.
     @skip_token_verification %{joken_skip: true}
 
     plug :match
-    plug Joken.Plug, on_verifying: &MyRouter.verify_function/0       
+    plug Joken.Plug, verify: &MyRouter.verify_function/0       
     plug :dispatch
 
     post "/user" do
       # will only execute here if token is present and valid
     end
-    
+
     # see options section below
     match _, private: @skip_token_verification do
       # will NOT try to validate a token
@@ -170,7 +176,7 @@ Then you must plug this AFTER :match and BEFORE :dispatch.
 
 This plug accepts the following options in its initialization:
 
-- `on_verifying` (required): a function used to verify the token. The function must at least specify algorithm used and your secret using the `with_signer` function (see above). Must return a Token.
+- `verify` (required): a function used to verify the token. The function must at least specify algorithm used and your secret using the `with_signer` function (see above). Must return a Token.
 
 - `on_error` (optional): a function that accepts `conn` and `message` as parameters. Must
 return a tuple containing the conn and a binary representing the 401 response. If it's a map,
@@ -181,7 +187,7 @@ to the route. The keys that Joken will look for in that map are:
 
 - `joken_skip`: skips token validation. true or false
 
-- `joken_on_verifying`: Same as `on_verifying` above. Overrides `on_verifying` if defined on the Plug
+- `joken_verify`: Same as `verify` above. Overrides `verify` if defined on the Plug
 
 - `joken_on_error`: Same as `on_error` above. Overrides `on_error` if defined on the Plug
 
@@ -208,4 +214,3 @@ defp deps do
   ]
 end
 ```
-
