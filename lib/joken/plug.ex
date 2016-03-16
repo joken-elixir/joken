@@ -3,6 +3,7 @@ if Code.ensure_loaded?(Plug.Conn) do
   defmodule Joken.Plug do
     import Joken
     alias Joken.Token
+    require Logger
 
     @moduledoc """
     A Plug for signing and verifying authentication tokens.
@@ -19,7 +20,7 @@ if Code.ensure_loaded?(Plug.Conn) do
         defmodule MyRouter do
           use Plug.Router
 
-          plug Joken.Plug, on_verifying: &verify_function/1
+          plug Joken.Plug, verify: &verify_function/1
           plug :match
           plug :dispatch
 
@@ -59,7 +60,7 @@ if Code.ensure_loaded?(Plug.Conn) do
 
     This plug accepts the following options in its initialization:
 
-    - `on_verifying`: a function used to verify the token. Receives a Token and must return a Token
+    - `verify`: a function used to verify the token. Receives a Token and must return a Token
 
     - `on_error` (optional): a function that will be called with `conn` and `message`. Must
     return a tuple containing the conn and a binary representing the 401 response. If it's a map,
@@ -70,8 +71,8 @@ if Code.ensure_loaded?(Plug.Conn) do
 
     - `joken_skip`: skips token validation
 
-    - `joken_on_verifying`: Same as `on_verifying` above. Overrides
-    `on_verifying` if it was defined on the Plug
+    - `joken_verify`: Same as `verify` above. Overrides
+    `verify` if it was defined on the Plug
 
     - `joken_on_error`: Same as `on_error` above. Overrides
     `on_error` if it was defined on the Plug
@@ -80,16 +81,16 @@ if Code.ensure_loaded?(Plug.Conn) do
 
     @doc false
     def init(opts) do
-      on_verifying = Keyword.get(opts, :on_verifying)
+      verify   = get_verify(opts)
       on_error = Keyword.get(opts, :on_error, &Joken.Plug.default_on_error/2)
-      {on_verifying, on_error}
+      {verify, on_error}
     end
 
     @doc false
-    def call(conn, { on_verifying, on_error }) do
+    def call(conn, { verify, on_error }) do
 
-      unless Map.has_key?(conn.private, :joken_on_verifying) do
-        conn = put_private(conn, :joken_on_verifying, on_verifying)
+      unless Map.has_key?(conn.private, :joken_verify) do
+        conn = set_joken_verify(conn, verify)
       end
 
       unless Map.has_key?(conn.private, :joken_on_error) do
@@ -103,8 +104,41 @@ if Code.ensure_loaded?(Plug.Conn) do
       end
     end
 
+    defp get_verify(options) do
+      case Keyword.take(options, [:verify, :on_verifying]) do
+        [verify: verify] -> verify
+        [verify: verify, on_verifying: _] ->
+          warn_on_verifying
+          verify
+        [on_verifying: verify] ->
+          warn_on_verifying
+          verify
+        [] ->
+          warn_supply_verify_function
+          nil
+      end
+    end
+
+    defp warn_on_verifying do
+      Logger.warn "on_verifying is deprecated for the Joken plug and will be removed in a future version. Please use verify instead."
+    end
+
+    defp warn_supply_verify_function do
+      Logger.warn "You need to supply a verify function to the Joken token."
+    end
+
+    defp set_joken_verify(conn, verify) do
+      case conn.private do
+        %{joken_on_verifying: deprecated_verify} ->
+          warn_on_verifying
+          put_private(conn, :joken_verify, deprecated_verify)
+        _ ->
+          put_private(conn, :joken_verify, verify)
+      end
+    end
+
     defp parse_auth(conn, ["Bearer " <> incoming_token]) do
-      payload_fun = Map.get(conn.private, :joken_on_verifying)
+      payload_fun = Map.get(conn.private, :joken_verify)
 
       verified_token = payload_fun.()
       |> with_compact_token(incoming_token)
