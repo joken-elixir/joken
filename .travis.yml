@@ -11,6 +11,7 @@ otp_release:
   - 18.2
 
 after_script:
+  - MIX_ENV=dev mix credo
   - mix deps.get --only docs
   - MIX_ENV=docs mix docs # generate docs to check if it is not breaking.
   - MIX_ENV=test mix bench

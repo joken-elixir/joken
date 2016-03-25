@@ -1,13 +1,13 @@
-## v1.2.0 (not released)
+## v1.2.0
 
 * Enhancements
-    - Bumped JOSE dependency to 1.7.1
-    - Added native `libsodium`, `keccakf1600` and `libdecaf` support
+    - Bumped JOSE dependency to 1.7.3 adding native `libsodium`, `keccakf1600` and `libdecaf` support. Documentation updated to account for that.
     - Generated claims are available after signing (thanks to [@lnikkila](https://github.com/lnikkila))
     - Using `credo` lint checker
   
 * Bug fixes
     - Fix validation of `iat` on the same second (thanks to [@lnikkila](https://github.com/lnikkila))
+    - Fix using `@on_load` to better support [`exrm`](https://github.com/bitwalker/exrm) (thanks to [@tonyarkles](https://github.com/tonyarkles))
 
 ## v1.1.0
 

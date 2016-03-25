@@ -161,6 +161,8 @@ Then you must plug this AFTER :match and BEFORE :dispatch.
 
     # route options
     @skip_token_verification %{joken_skip: true}
+    
+    @custom_token_verification %{joken_verify: %MyRouter.is_not_subject/0}
 
     plug :match
     plug Joken.Plug, verify: &MyRouter.verify_function/0       
@@ -169,13 +171,33 @@ Then you must plug this AFTER :match and BEFORE :dispatch.
     post "/user" do
       # will only execute here if token is present and valid
     end
+    
+    post "/endpoint", private: @custom_token_verification do
+      # will only execute here if token is present and valid 
+      # using the function `is_not_subject/0`
+    end
 
     # see options section below
     match _, private: @skip_token_verification do
       # will NOT try to validate a token
     end
+    
+    def verify_function() do
+      %Joken.Token{}
+      |> Joken.with_signer(hs256("secret"))
+      |> Joken.with_sub(1234567890)
+    end
+    
+    def is_not_subject() do
+      %Joken.Token{}
+      |> Joken.with_validation("sub", &(&1 != 1234567890))
+      |> Joken.with_signer(hs256("secret"))
+    end
   end
 ```
+
+For more examples, look in our [tests](https://github.com/bryanjos/joken/blob/master/test/plug_test.exs) for more usage scenarios. 
+
 
 ### Options
 

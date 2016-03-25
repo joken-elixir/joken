@@ -12,11 +12,11 @@ defmodule JokenPlug.Test do
   defmodule MyPlugRouter do
     use Plug.Router
 
-    @skip_auth %{joken_skip: true}
-    @is_subject %{joken_verify: &MyPlugRouter.is_subject/0 }
-    @is_not_subject %{joken_verify: &MyPlugRouter.is_not_subject/0 }
-    @is_subject_dep %{joken_on_verifying: &MyPlugRouter.is_subject/0 }
-    @is_not_subject_dep %{joken_on_verifying: &MyPlugRouter.is_not_subject/0 }
+    @skip_auth private: %{joken_skip: true}
+    @is_subject private: %{joken_verify: &MyPlugRouter.is_subject/0}
+    @is_not_subject private: %{joken_verify: &MyPlugRouter.is_not_subject/0}
+    @is_subject_dep private: %{joken_on_verifying: &MyPlugRouter.is_subject/0}
+    @is_not_subject_dep private: %{joken_on_verifying: &MyPlugRouter.is_not_subject/0}
 
     plug :match
     plug Joken.Plug,
@@ -24,7 +24,7 @@ defmodule JokenPlug.Test do
       on_error: &MyPlugRouter.error_logging/2
     plug :dispatch
 
-    post "/generate_token", private: @skip_auth do
+    post "/generate_token", @skip_auth do
 
       compact = token()
       |> with_sub(1234567890)
@@ -42,37 +42,37 @@ defmodule JokenPlug.Test do
       |> send_resp(200, "Hello Tester")
     end
 
-    get "/skip_verification", private: @skip_auth do
+    get "/skip_verification", @skip_auth do
       conn
       |> put_resp_content_type("text/plain")
       |> send_resp(200, "Hello Tester")
     end
 
-    post "/custom_function_success", private: @is_subject do
+    post "/custom_function_success", @is_subject do
       conn
       |> put_resp_content_type("text/plain")
       |> send_resp(200, "I am subject 1234567890")
     end
 
-    post "/custom_function_failure", private: @is_not_subject do
+    post "/custom_function_failure", @is_not_subject do
       conn
       |> put_resp_content_type("text/plain")
       |> send_resp(200, "I am subject 1234567890")
     end
 
-    post "/custom_function_success_dep", private: @is_subject_dep do
+    post "/custom_function_success_dep", @is_subject_dep do
       conn
       |> put_resp_content_type("text/plain")
       |> send_resp(200, "I am subject 1234567890")
     end
 
-    post "/custom_function_failure_dep", private: @is_not_subject_dep do
+    post "/custom_function_failure_dep", @is_not_subject_dep do
       conn
       |> put_resp_content_type("text/plain")
       |> send_resp(200, "I am subject 1234567890")
     end
 
-    match _, private: @skip_auth do
+    match _, @skip_auth do
       conn
       |> send_resp(404, "Not found")
     end
