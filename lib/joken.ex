@@ -1,6 +1,7 @@
 defmodule Joken do
   alias Joken.Token
   alias Joken.Signer
+  alias Joken.Claims
 
   @moduledoc """
   Joken is the main API for configuring JWT token generation and
@@ -51,8 +52,8 @@ defmodule Joken do
     %Token{claims: payload}
     |> with_json_module(Poison)
   end
-  def token(token) when is_binary(token) do
-    %Token{token: token}
+  def token(encoded_token) when is_binary(encoded_token) do
+    %Token{token: encoded_token}
     |> with_json_module(Poison)
   end
 
@@ -60,25 +61,26 @@ defmodule Joken do
   Configures the default JSON module for Joken.
   """
   @spec with_json_module(Token.t, atom) :: Token.t
-  def with_json_module(token = %Token{}, module) when is_atom(module) do
+  def with_json_module(token_struct = %Token{}, module) when is_atom(module) do
     JOSE.json_module(module)
-    %{ token | json_module: module }
+    %{token_struct | json_module: module}
   end
 
   @doc """
   Sets the given compact token into the given `Joken.Token` struct.
   """
   @spec with_compact_token(Token.t, binary) :: Token.t
-  def with_compact_token(token = %Token{}, compact) when is_binary(compact) do
-    %{ token | token: compact }
+  def with_compact_token(token_struct = %Token{}, compact)
+    when is_binary(compact) do
+    %{token_struct| token: compact}
   end
 
   @doc """
   Adds `"exp"` claim with a default generated value of now + 2hs.
   """
   @spec with_exp(Token.t) :: Token.t
-  def with_exp(token = %Token{}) do
-    token
+  def with_exp(token_struct = %Token{}) do
+    token_struct
     |> with_claim_generator("exp", fn -> current_time + (2 * 60 * 60) end)
   end
 
@@ -86,32 +88,32 @@ defmodule Joken do
   Adds `"exp"` claim with a given value.
   """
   @spec with_exp(Token.t, non_neg_integer) :: Token.t
-  def with_exp(token = %Token{claims: claims}, time_to_expire) do
-    %{ token | claims: Map.put(claims, "exp", time_to_expire) }
+  def with_exp(token_struct = %Token{claims: claims}, time_to_expire) do
+    %{token_struct | claims: Map.put(claims, "exp", time_to_expire)}
   end
 
   @doc """
   Adds `"iat"` claim with a default generated value of now.
   """
   @spec with_iat(Token.t) :: Token.t
-  def with_iat(token = %Token{}) do
-    token
-    |> with_claim_generator("iat", fn -> current_time end)
+  def with_iat(token_struct = %Token{}) do
+    token_struct
+    |> with_claim_generator("iat", fn -> current_time() end)
   end
   @doc """
   Adds `"iat"` claim with a given value.
   """
   @spec with_iat(Token.t, non_neg_integer) :: Token.t
-  def with_iat(token = %Token{claims: claims}, time_issued_at) do
-    %{ token | claims: Map.put(claims, "iat", time_issued_at) }
+  def with_iat(token_struct = %Token{claims: claims}, time_issued_at) do
+    %{token_struct | claims: Map.put(claims, "iat", time_issued_at)}
   end
 
   @doc """
   Adds `"nbf"` claim with a default generated value of now - 1s.
   """
   @spec with_nbf(Token.t) :: Token.t
-  def with_nbf(token = %Token{}) do
-    token
+  def with_nbf(token_struct = %Token{}) do
+    token_struct
     |> with_claim_generator("nbf", fn -> current_time - 1 end)
   end
 
@@ -119,84 +121,85 @@ defmodule Joken do
   Adds `"nbf"` claim with a given value.
   """
   @spec with_nbf(Token.t, non_neg_integer) :: Token.t
-  def with_nbf(token = %Token{claims: claims}, time_not_before) do
-    %{ token | claims: Map.put(claims, "nbf", time_not_before) }
+  def with_nbf(token_struct = %Token{claims: claims}, time_not_before) do
+    %{token_struct | claims: Map.put(claims, "nbf", time_not_before)}
   end
 
   @doc """
   Adds `:iss` claim with a given value.
   """
   @spec with_iss(Token.t, any) :: Token.t
-  def with_iss(token = %Token{claims: claims}, issuer) do
-    %{ token | claims: Map.put(claims, :iss, issuer) }
+  def with_iss(token_struct = %Token{claims: claims}, issuer) do
+    %{token_struct | claims: Map.put(claims, :iss, issuer)}
   end
 
   @doc """
   Adds `"sub"` claim with a given value.
   """
   @spec with_sub(Token.t, any) :: Token.t
-  def with_sub(token = %Token{claims: claims}, sub) do
-    %{ token | claims: Map.put(claims, "sub", sub) }
+  def with_sub(token_struct = %Token{claims: claims}, sub) do
+    %{token_struct | claims: Map.put(claims, "sub", sub)}
   end
 
   @doc """
   Adds `"aud"` claim with a given value.
   """
   @spec with_aud(Token.t, any) :: Token.t
-  def with_aud(token = %Token{claims: claims}, aud) do
-    %{ token | claims: Map.put(claims, "aud", aud) }
+  def with_aud(token_struct = %Token{claims: claims}, aud) do
+    %{token_struct | claims: Map.put(claims, "aud", aud)}
   end
 
   @doc """
   Adds `"jti"` claim with a given value.
   """
   @spec with_jti(Token.t, any) :: Token.t
-  def with_jti(token = %Token{claims: claims}, jti) do
-    %{ token | claims: Map.put(claims, "jti", jti) }
+  def with_jti(token_struct = %Token{claims: claims}, jti) do
+    %{token_struct | claims: Map.put(claims, "jti", jti)}
   end
 
   @doc """
   Adds a custom claim with a given value.
   """
   @spec with_claim(Token.t, String.t, any) :: Token.t
-  def with_claim(token = %Token{claims: claims}, claim_key, claim_value)
+  def with_claim(token_struct = %Token{claims: claims}, claim_key, claim_value)
     when is_binary(claim_key) do
-    %{ token | claims: Map.put(claims, claim_key, claim_value) }
+    %{token_struct | claims: Map.put(claims, claim_key, claim_value)}
   end
 
   @doc """
   Adds the given map or struct as the claims for this token
   """
   @spec with_claims(Token.t, %{String.t => any}) :: Token.t
-  def with_claims(token = %Token{}, claims) do
-    %{ token | claims: Joken.Claims.to_claims(claims) }
+  def with_claims(token_struct = %Token{}, claims) do
+    %{token_struct | claims: Claims.to_claims(claims)}
   end
 
   @doc """
   Adds a claim generation function. This is intended for dynamic values.
   """
   @spec with_claim_generator(Token.t, String.t, function) :: Token.t
-  def with_claim_generator(token = %Token{claims_generation: generators}, claim, fun)
-  when is_binary(claim) and is_function(fun) do
-    %{ token | claims_generation: Map.put(generators, claim, fun) }
+  def with_claim_generator(token_struct = %Token{claims_generation: generators},
+                           claim, fun) when is_binary(claim)
+                                        and is_function(fun) do
+    %{token_struct | claims_generation: Map.put(generators, claim, fun)}
   end
 
   @doc """
   Adds the specified key and value to the JOSE header
   """
   @spec with_header_arg(Token.t, String.t, any) :: Token.t
-  def with_header_arg(token = %Token{header: header}, key, value)
+  def with_header_arg(token_struct = %Token{header: header}, key, value)
     when is_binary(key) do
 
-    %{ token | header: Map.put(header, key, value) }
+    %{token_struct | header: Map.put(header, key, value)}
   end
 
   @doc """
   Adds the specified map as the JOSE header.
   """
   @spec with_header_args(Token.t, %{String.t => any}) :: Token.t
-  def with_header_args(token = %Token{}, header) do
-    %{ token | headers: header }
+  def with_header_args(token_struct = %Token{}, header) do
+    %{token_struct | headers: header}
   end
 
   # convenience functions
@@ -265,8 +268,8 @@ defmodule Joken do
   It only sets the signer in the token configuration.
   """
   @spec with_signer(Token.t, Signer.t) :: Token.t
-  def with_signer(token = %Token{}, signer = %Signer{}),
-    do: %{ token | signer: signer }
+  def with_signer(token_struct = %Token{}, signer = %Signer{}),
+    do: %{token_struct | signer: signer}
 
   @doc """
   Signs a given set of claims. If signing is successful it will put the compact
@@ -274,17 +277,17 @@ defmodule Joken do
   claims set. Otherwise, it will fill the error field.
   """
   @spec sign(Token.t) :: Token.t
-  def sign(token), do: Signer.sign(token)
+  def sign(token_struct), do: Signer.sign(token_struct)
 
   @doc """
   Same as `sign/1` but overrides any signer that was set in the configuration.
   """
   @spec sign(Token.t, Signer.t) :: Token.t
-  def sign(token, signer), do: Signer.sign(token, signer)
+  def sign(token_struct, signer), do: Signer.sign(token_struct, signer)
 
   @doc "Convenience function to retrieve the compact token"
   @spec get_compact(Token.t) :: binary | nil
-  def get_compact(%Token{token: token}), do: token
+  def get_compact(%Token{token: compact_token}), do: compact_token
 
   @doc """
   Convenience function to retrieve the claim set. Generated claims will only
@@ -298,58 +301,64 @@ defmodule Joken do
   def get_error(%Token{error: error}), do: error
 
   @doc "Returns either the claims or the error"
-  @spec get_data(Token.t) :: {:ok, map} | { :error, binary }
-  def get_data(%Token{} = token) do
-    case token.error do
+  @spec get_data(Token.t) :: {:ok, map} | {:error, binary}
+  def get_data(token_struct = %Token{}) do
+    case token_struct.error do
       nil ->
-        { :ok, token.claims }
+        {:ok, token_struct.claims}
       _ ->
-        { :error, token.error }
+        {:error, token_struct.error}
     end
   end
 
   @doc """
   Adds a validation for a given claim key.
 
-  Validation works by applying the given function passing the payload value for that key.
+  Validation works by applying the given function passing the payload value for
+  that key.
 
-  If it is successful the value is added to the claims. If it fails, then it will raise an
-  ArgumentError.
+  If it is successful the value is added to the claims. If it fails, then it
+  will raise an ArgumentError.
 
-  If a claim in the payload has no validation, then it **WILL BE ADDED** to the claim set.
+  If a claim in the payload has no validation, then it **WILL BE ADDED** to the
+  claim set.
   """
   @spec with_validation(Token.t, String.t, function) :: Token.t
-  def with_validation(token = %Token{validations: validations}, claim, function)
+  def with_validation(token_struct = %Token{validations: validations},
+                      claim, function)
     when is_function(function) and is_binary(claim) do
 
-    %{ token | validations: Map.put(validations, claim, function) }
+    %{token_struct | validations: Map.put(validations, claim, function)}
   end
 
   @doc """
   Removes a validation for this token.
   """
   @spec without_validation(Token.t, String.t) :: Token.t
-  def without_validation(token = %Token{validations: validations}, claim)
+  def without_validation(token_struct = %Token{validations: validations}, claim)
     when is_binary(claim) do
-    %{ token | validations: Map.delete(validations, claim) }
+    %{token_struct | validations: Map.delete(validations, claim)}
   end
 
   @doc """
   Runs verification on the token set in the configuration.
 
-  It first checks the signature comparing the header with the one found in the signer.
+  It first checks the signature comparing the header with the one found in the
+  signer.
 
-  Then it runs validations on the decoded payload. If everything passes then the configuration
+  Then it runs validations on the decoded payload. If everything passes then the
+  configuration
   has all the claims available in the claims map.
 
   It can receive options to verification. Acceptable options are:
 
   - `skip_claims`: list of claim keys to skip validation
-  - `as`: a module that Joken will use to convert the validated paylod into a sturct
+  - `as`: a module that Joken will use to convert the validated paylod into a
+  struct
   """
   @spec verify(Token.t, Signer.t | nil, list) :: Token.t
-  def verify(%Token{} = token, signer \\ nil, options \\ []),
-    do: Signer.verify(token, signer, options)
+  def verify(token_struct = %Token{}, signer \\ nil, options \\ []),
+    do: Signer.verify(token_struct, signer, options)
 
   @doc """
   Same as `verify/3` except that it returns either:
@@ -357,8 +366,9 @@ defmodule Joken do
   - `{:error, message}`
   """
   @spec verify!(Token.t, Signer.t | nil, list) :: {:ok, map} | {:error, binary}
-  def verify!(%Token{} = token, signer \\ nil, options \\ []) do
-    Signer.verify(token, signer, options)
+  def verify!(token_struct = %Token{}, signer \\ nil, options \\ []) do
+    token_struct
+    |> Signer.verify(signer, options)
     |> do_verify!
   end
 
@@ -368,8 +378,8 @@ defmodule Joken do
   the claim
   """
   @spec peek(Token.t, list) :: map
-  def peek(%Token{} = token, options \\ []),
-    do: Signer.peek(token, options)
+  def peek(token_struct = %Token{}, options \\ []),
+    do: Signer.peek(token_struct, options)
 
   @doc """
   Helper function to get the current time
@@ -380,11 +390,11 @@ defmodule Joken do
   end
 
   ## PRIVATE
-  defp do_verify!(token) do
-    if token.error do
-      {:error, token.error}
+  defp do_verify!(token_struct) do
+    if token_struct.error do
+      {:error, token_struct.error}
     else
-      {:ok, token.claims }
+      {:ok, token_struct.claims}
     end
   end
 

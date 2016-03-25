@@ -9,7 +9,6 @@ defmodule Joken.Test do
   end
 
   defimpl Joken.Claims, for: TestStruct do
-    IO.inspect("here")
     def to_claims(%TestStruct{} = test_struct) do
       Map.from_struct(test_struct)
     end
@@ -46,15 +45,15 @@ defmodule Joken.Test do
 
   test "generates default token" do
 
-    token = token()
+    token_struct = token()
 
-    assert Map.has_key? token.claims_generation, "exp"
-    assert Map.has_key? token.claims_generation, "nbf"
-    assert Map.has_key? token.claims_generation, "iat"
+    assert Map.has_key?(token_struct.claims_generation, "exp")
+    assert Map.has_key?(token_struct.claims_generation, "nbf")
+    assert Map.has_key?(token_struct.claims_generation, "iat")
 
-    assert Map.has_key? token.validations, "exp"
-    assert Map.has_key? token.validations, "nbf"
-    assert Map.has_key? token.validations, "iat"
+    assert Map.has_key?(token_struct.validations, "exp")
+    assert Map.has_key?(token_struct.validations, "nbf")
+    assert Map.has_key?(token_struct.validations, "iat")
   end
 
   test "default validations pass" do
@@ -347,17 +346,15 @@ defmodule Joken.Test do
     assert token.header == %{"key" => "value"}
   end
 
-
   test "none algorithm throws error when disabled" do
     assert_raise Joken.AlgorithmError, fn ->
-      compact = @payload
+      @payload
       |> token
       |> with_header_arg("key", "value")
       |> sign(none("secret"))
       |> get_compact
     end
   end
-
 
   test "none algorithm works when enabled" do
       JOSE.unsecured_signing(true)

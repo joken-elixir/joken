@@ -1,6 +1,8 @@
 defprotocol Joken.Claims do
+
   @moduledoc """
-  Handles turning data into claims when using the `with_claims` function in the `Joken` module.
+  Handles turning data into claims when using the `with_claims` function in the
+  `Joken` module.
 
   There is a default implementation for maps.
 
@@ -21,6 +23,7 @@ defprotocol Joken.Claims do
 end
 
 defimpl Joken.Claims, for: Any do
+
   defmacro __deriving__(module, struct, options) do
     deriving(module, struct, options)
   end
@@ -31,7 +34,7 @@ defimpl Joken.Claims, for: Any do
       options[:only] && options[:exclude] ->
         raise ArgumentError, message: "Cannot use both :only and :exclude"
       only = options[:only] ->
-        quote(do: Map.take(data, unquote(only)))  
+        quote(do: Map.take(data, unquote(only)))
       exclude = options[:exclude] ->
         quote(do: Map.drop(data, [:__struct__ | unquote(exclude)]))
       true ->
@@ -72,4 +75,3 @@ defimpl Joken.Claims, for: Map do
     end
   end
 end
-
