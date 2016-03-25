@@ -3,8 +3,6 @@ defmodule Joken.Signer do
   alias Joken.Signer
   require Logger
 
-  @on_load :configure_unsecured_signing
-
   @moduledoc """
   Signer is the JWK (JSON Web Key) and JWS (JSON Web Signature) configuration of Joken.
 
