@@ -30,6 +30,9 @@ defmodule Joken.Mixfile do
       {:jsx, "~> 2.0", only: :test},
       {:benchfella, "~> 0.3", only: :test},
       {:excoveralls, "~> 0.5", only: :test},
+      {:libdecaf, "~> 0.0", only: :test},
+      {:libsodium, "~> 0.0", only: :test},
+      {:keccakf1600, "~> 2.0", only: :test},
       {:credo, "~> 0.3", only: [:dev, :test]}
     ]
   end
