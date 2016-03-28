@@ -4,10 +4,15 @@
     - Bumped JOSE dependency to 1.7.3 adding native `libsodium`, `keccakf1600` and `libdecaf` support. Documentation updated to account for that.
     - Generated claims are available after signing (thanks to [@lnikkila](https://github.com/lnikkila))
     - Using `credo` lint checker
-  
+
 * Bug fixes
     - Fix validation of `iat` on the same second (thanks to [@lnikkila](https://github.com/lnikkila))
     - Fix using `@on_load` to better support [`exrm`](https://github.com/bitwalker/exrm) (thanks to [@tonyarkles](https://github.com/tonyarkles))
+
+* Deprecations:
+    - `Joken.Plug`: `on_verifying` option has been replaced by `verify`. The private option, `joken_on_verifying` has been replaced with `joken_verify` as well.
+      `on_verifying` and `joken_on_verifying` will be removed in a future version.
+    - Configuration of `none` algorithm is no longer done automatically. To allow the `none` algorithm, set `allow_none_algorithm` as before and call `Joken.Signer.configure_unsecured_signing()` once during your application's start
 
 ## v1.1.0
 
@@ -17,7 +22,7 @@
 ## v1.0.0
 
 * Enhancements
-    * The `none` algorithm can be used if and only if `allow_none_algorithm` exists as an application variable on the `joken` app and is set to `true`. Otherwise an error is thrown  
+    * The `none` algorithm can be used if and only if `allow_none_algorithm` exists as an application variable on the `joken` app and is set to `true`. Otherwise an error is thrown
 
     * Joken: added `peek/2`, `get_data/1`, `with_header_arg/3`, `with_header_args/2`, `none/1`
 
