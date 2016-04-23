@@ -106,7 +106,7 @@ defmodule JokenPlug.Test do
   defmodule CustomErrorBodyRouter do
     use Plug.Router
 
-    plug Joken.Plug, verify: &CustomErrorBodyRouter.verify/1,
+    plug Joken.Plug, verify: &CustomErrorBodyRouter.verify/0,
     on_error: &CustomErrorBodyRouter.on_error/2
 
     plug :match
