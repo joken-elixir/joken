@@ -323,12 +323,12 @@ defmodule Joken do
   If a claim in the payload has no validation, then it **WILL BE ADDED** to the
   claim set.
   """
-  @spec with_validation(Token.t, String.t, function) :: Token.t
+  @spec with_validation(Token.t, String.t, function, String.t | nil) :: Token.t
   def with_validation(token_struct = %Token{validations: validations},
-                      claim, function)
+                      claim, function, msg \\ nil)
     when is_function(function) and is_binary(claim) do
 
-    %{token_struct | validations: Map.put(validations, claim, function)}
+    %{token_struct | validations: Map.put(validations, claim, {function, msg})}
   end
 
   @doc """

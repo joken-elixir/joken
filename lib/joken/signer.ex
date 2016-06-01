@@ -211,29 +211,28 @@ defmodule Joken.Signer do
     if options[:skip_claims],
       do: validations = Map.drop validations, options[:skip_claims]
 
-    try do
-      validated_claims = Enum.reduce validations, [], fn({key, valid?}, acc) ->
-        validate_key(map_payload, key, valid?, acc)
-      end
+    {valid_claims, errors} = Enum.reduce validations, {[], []}, fn({key, {valid?, message}}, acc) ->
+      validate_key(map_payload, key, valid?, message, acc)
+    end
 
-      claims = validated_claims ++ Enum.filter map_payload, fn({key, _}) ->
-        not Map.has_key? validations, key
-      end
+    claims = valid_claims ++ Enum.filter map_payload, fn({key, _}) ->
+      not Map.has_key? validations, key
+    end
 
-      %{t | claims: process_claims(claims, options), header: header}
-    catch
-      _, cause ->
-        Logger.warn fn -> "Error: #{inspect cause}" end
-        %{t | error: "Invalid payload"}
+    case errors do
+      [first | _ ] -> %{t | error: first, errors: errors}
+      _ -> %{t | claims: process_claims(claims, options), header: header}
     end
   end
 
-  defp validate_key(map_payload, key, valid?, acc) do
-    case (Map.has_key? map_payload, key) and valid?.(map_payload[key]) do
-      false ->
-        raise ArgumentError
-      true ->
-        [{key, map_payload[key]} | acc]
+  defp validate_key(map_payload, key, valid?, message, {claims, errors}) do
+    if Map.has_key?(map_payload, key) and valid?.(map_payload[key]) do
+      {[{key, map_payload[key]} | claims], errors}
+    else
+      cond do
+        is_nil(message) -> {claims, ["Invalid payload" | errors]}
+        true -> {claims, [message | errors]}
+      end
     end
   end
 
