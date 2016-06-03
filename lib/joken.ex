@@ -215,6 +215,19 @@ defmodule Joken do
   @doc "See Joken.Signer.hs/2"
   def hs512(secret), do: Signer.hs("HS512", secret)
 
+  # EdDSA
+  @doc "See Joken.Signer.eddsa/2"
+  def ed25519(key), do: Signer.eddsa("Ed25519", key)
+
+  @doc "See Joken.Signer.eddsa/2"
+  def ed25519ph(key), do: Signer.eddsa("Ed25519ph", key)
+
+  @doc "See Joken.Signer.eddsa/2"
+  def ed448(key), do: Signer.eddsa("Ed448", key)
+
+  @doc "See Joken.Signer.eddsa/2"
+  def ed448ph(key), do: Signer.eddsa("Ed448ph", key)
+
   #
   @doc "See Joken.Signer.es/2"
   def es256(key), do: Signer.es("ES256", key)

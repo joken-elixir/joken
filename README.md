@@ -20,6 +20,10 @@ Supports the following algorithms:
 * RS256
 * RS384
 * RS512
+* Ed25519
+* Ed25519ph
+* Ed448ph
+* Ed448
 
 <sup><a name="footnote-1">1</a></sup> Implemented mostly in pure Erlang. May be less performant than other supported signature algorithms. See [jose JWS algorithm support](https://github.com/potatosalad/erlang-jose#json-web-signature-jws-rfc-7515) for more information.
 
@@ -180,3 +184,28 @@ to the route. The keys that Joken will look for in that map are:
 - `joken_on_verifying`: Same as `on_verifying` above. Overrides `on_verifying` if defined on the Plug
 
 - `joken_on_error`: Same as `on_error` above. Overrides `on_error` if defined on the Plug
+
+### EdDSA
+
+Native C support for Ed25519 and Ed25519ph can be provided by the libsodium asynchronous port driver by adding it as a dependency to a project's Mix file:
+
+```elixir
+defp deps do
+  [
+    {:joken, "~> 1.1"},
+    {:libsodium, "~> 0.0.2"}
+  ]
+end
+```
+
+While there isn't native C support for Ed448 and Ed448ph yet, there is a notable performance improvement by using a native C driver the SHA-3 related functions used by these signature algorithms by adding the [keccakf1600](https://github.com/potatosalad/erlang-keccakf1600) asynchronous port driver as a dependency to a project's Mix file:
+
+```elixir
+defp deps do
+  [
+    {:joken, "~> 1.1"},
+    {:keccakf1600, "~> 0.0.1"}
+  ]
+end
+```
+

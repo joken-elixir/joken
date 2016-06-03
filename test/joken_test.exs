@@ -9,6 +9,7 @@ defmodule Joken.Test do
   end
 
   defimpl Joken.Claims, for: TestStruct do
+    IO.inspect("here")
     def to_claims(%TestStruct{} = test_struct) do
       Map.from_struct(test_struct)
     end
@@ -176,6 +177,15 @@ defmodule Joken.Test do
     |> get_error
 
     assert error == "Invalid signature"
+  end
+
+  test "signs/verifies token with EdDSA" do
+
+    verify_for_dynamic_token(ed25519_token, ed25519(ed25519_key))
+    verify_for_dynamic_token(ed25519ph_token, ed25519ph(ed25519ph_key))
+    verify_for_dynamic_token(ed448_token, ed448(ed448_key))
+    verify_for_dynamic_token(ed448ph_token, ed448ph(ed448ph_key))
+
   end
 
   test "signs/verifies token with ES***" do

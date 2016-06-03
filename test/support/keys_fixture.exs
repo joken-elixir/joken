@@ -60,6 +60,50 @@ defmodule Joken.Fixtures do
       "y" => "AH0EUWVaoVROX3_OzzQIZLuKG5546exe5-0cQ-E7thMaH6-k5cqcyIedCuX1c9lOWcXgo2NLlj4JOwSetCpOspEM"}
   end
 
+  def ed25519_key do
+    %{"crv" => "Ed25519",
+      "d" => "VoU6Pm8SOjz8ummuRPsvoJQOPI3cjsdMfUhf2AAEc7s",
+      "kty" => "OKP",
+      "x" => "l11mBSuP-XxI0KoSG7YEWRp4GWm7dKMOPkItJy2tlMM"}
+  end
+
+  def ed25519ph_key do
+    %{"crv" => "Ed25519ph",
+      "d" => "D8PU55JCryvSLK44AaCcAYj99P2MDQdxmNJhTUhFqTA",
+      "kty" => "OKP",
+      "x" => "JnLdiNg-GBTQjukBZUPinl56Au_kF58adtqtzrXnZTs"}
+  end
+
+  def ed448_key do
+    %{"crv" => "Ed448",
+      "d" => "-ox5cBHY-QLR0hRdE2gd97LkQ8oRZCT89ALXm-FqhINLdVEd_PtfHuetZoKeHALqwu-NfuADYDBL",
+      "kty" => "OKP",
+      "x" => "BnJNZy1_JXpGRlrNLYsz_9I5NCM-Py39P1kEOyrLRXJj38rnOJe7cJaVsOnPj2NkL_jVtG_qkjOA"}
+  end
+
+  def ed448ph_key do
+    %{"crv" => "Ed448ph",
+      "d" => "1AlVWjtG0cTvUSQrqgXHqYTBP07FljGGvO5SZhAgtt92NTBcuTs_HedSqvikyHhhcsE4PsTHXBx0",
+      "kty" => "OKP",
+      "x" => "pqCS-juwmDl_-uZhliMmaZNssMukorRdQcqC8Nu44uYyBDgpkc_i-Ir1rYjPzLOlNHEGyb0dIN-A"}
+  end
+
+  def ed25519_token do
+    "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoiSldUIn0.eyJuYW1lIjoiSm9obiBEb2UifQ.9a7z_qCuHwBMVSOG9sDzc2Ccbk49tY2GLddqViz0nuB4zG9pQS-jhhGpkYwQ9LE33742__nujzWLaSJ93tYhAw"
+  end
+
+  def ed25519ph_token do
+    "eyJhbGciOiJFZDI1NTE5cGgiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiSm9obiBEb2UifQ.VRTZ7LyOmmPTn382rK6vP4VMYYBiQGz6i-Hpf8IB5flmcBavDmLqed8Q-h9uRlSRCTkemIBDpqKE-7zj9RlgBw"
+  end
+
+  def ed448_token do
+    "eyJhbGciOiJFZDQ0OCIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.8eVjWUndsxWOzJMRQn5BqFJDMrcIj950zmKdSkXH2NBSCRETJD0YFA3HocSiWOgswHKZXIcYeT0AFc1JjH3LGl_oREiotTuU20b8USt3Z81VzqmMG2fvx5QlwKlZwwk4A2V5F2X-d1Ky0z1VV1PovjcA"
+  end
+
+  def ed448ph_token do
+    "eyJhbGciOiJFZDQ0OHBoIiwidHlwIjoiSldUIn0.eyJuYW1lIjoiSm9obiBEb2UifQ.T4PiW8b_l0XqEI3NLXHFvHUifD0SpNNLpMwLbT-QuLE03FZ105Voyeh7uB87WxbSwWuZOyZfPQ6Az4N41A2oRsoTS7v9jeqizIP240vve3VB7sLs6zl9Vgb4nH6k0jvQUMKPBw7Mf6KbPN1a_rumIj0A"
+  end
+
   def es256_token do
     "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.ozw2CHDqSE1t5CXXP50x52tr07Nj7HGSBWGytDj93gcHxS65TJ6Tv0RrOei-WtauDN3beXF5e7lZ8c5MPwx0-w"
   end

@@ -92,5 +92,28 @@ defmodule Joken.Token.Bench do
     token |> sign(ps512(rsa_key)) |> get_compact
     :ok
   end
+
+  ## ---------------------------------------------
+  ## Ed25519, Ed25519ph, Ed448, Ed448ph benchmarks
+  ## ---------------------------------------------
+  bench "Ed25519 token generation" do
+    token |> sign(ed25519(ed25519_key)) |> get_compact
+    :ok
+  end
+
+  bench "Ed25519ph token generation" do
+    token |> sign(ed25519ph(ed25519ph_key)) |> get_compact
+    :ok
+  end
+
+  bench "Ed448 token generation" do
+    token |> sign(ed448(ed448_key)) |> get_compact
+    :ok
+  end
+
+  bench "Ed448ph token generation" do
+    token |> sign(ed448ph(ed448ph_key)) |> get_compact
+    :ok
+  end
   
 end

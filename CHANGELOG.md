@@ -1,3 +1,7 @@
+# v1.1.0
+* Enhancements
+  * Add EdDSA support: Ed25519, Ed25519ph, Ed448, Ed448ph
+
 # v1.0.1
 * Bug Fixes
   * with_validation - Fixed an issue where validations were automatically passed if the validation key was not in the payload

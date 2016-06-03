@@ -57,6 +57,13 @@ defmodule Joken.Signer do
             jwk: %{ "kty" => "oct", "k" => :base64url.encode(secret) }}
   end
 
+  @doc "Convenience for generating an EdDSA Joken.Signer"
+  @spec eddsa(binary, map) :: Signer.t
+  def eddsa(alg, key) when is_map(key)
+    and alg in ["Ed25519", "Ed25519ph", "Ed448", "Ed448ph"] do
+    %Signer{jws: %{ "alg" => alg }, jwk: key }
+  end
+
   @doc "Convenience for generating an ES*** Joken.Signer"
   @spec es(binary, map) :: Signer.t
   def es(alg, key) when is_map(key)
