@@ -21,7 +21,7 @@ defmodule Joken.Claims.Test do
     JOSE.JWA.crypto_fallback(true)
     :ok
   end
-  
+
   test "can derive protocol implementation" do
 
     token = %Joken.Token{}
@@ -65,7 +65,7 @@ defmodule Joken.Claims.Test do
   end
 
   test "can derive protocol with `exclude` option" do
-    
+
     token = %Joken.Token{}
     |> with_json_module(Poison)
     |> with_claims(%ExcludeDerive{a: 1, b: 2, c: 3})

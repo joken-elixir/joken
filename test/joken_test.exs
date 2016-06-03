@@ -9,7 +9,6 @@ defmodule Joken.Test do
   end
 
   defimpl Joken.Claims, for: TestStruct do
-    IO.inspect("here")
     def to_claims(%TestStruct{} = test_struct) do
       Map.from_struct(test_struct)
     end
@@ -46,15 +45,36 @@ defmodule Joken.Test do
 
   test "generates default token" do
 
-    token = token()
+    token_struct = token()
 
-    assert Map.has_key? token.claims_generation, "exp"
-    assert Map.has_key? token.claims_generation, "nbf"
-    assert Map.has_key? token.claims_generation, "iat"
+    assert Map.has_key?(token_struct.claims_generation, "exp")
+    assert Map.has_key?(token_struct.claims_generation, "nbf")
+    assert Map.has_key?(token_struct.claims_generation, "iat")
 
-    assert Map.has_key? token.validations, "exp"
-    assert Map.has_key? token.validations, "nbf"
-    assert Map.has_key? token.validations, "iat"
+    assert Map.has_key?(token_struct.validations, "exp")
+    assert Map.has_key?(token_struct.validations, "nbf")
+    assert Map.has_key?(token_struct.validations, "iat")
+  end
+
+  test "default validations pass" do
+    signer = hs256("secret")
+
+    assert {:ok, _} =
+      token()
+      |> sign(signer)
+      |> verify!(signer)
+  end
+
+  test "ensure iat validation passes for same second" do
+
+      now = current_time()
+
+      assert {:ok, _} = @payload
+      |> token
+      |> with_iat(now)
+      |> with_validation("iat", &(&1 <= now))
+      |> sign(hs256("secret"))
+      |> verify!
   end
 
   test "can add custom claim and validation" do
@@ -65,6 +85,22 @@ defmodule Joken.Test do
 
     assert Map.has_key? token.claims, "custom"
     assert Map.has_key? token.validations, "custom"
+  end
+
+  test "generated claims become static after signing" do
+    token = token()
+    |> with_claim("static", "static")
+    |> with_claim_generator("dynamic", fn -> "dynamic" end)
+
+    assert Map.has_key? token.claims, "static"
+    assert Map.has_key? token.claims_generation, "dynamic"
+
+    signed = sign(token, hs256("secret"))
+
+    assert Map.has_key? signed.claims, "static"
+    assert Map.has_key? signed.claims, "dynamic"
+
+    assert signed.claims_generation == %{}
   end
 
   test "signs/verifies token/claims with HS256 convenience" do
@@ -322,17 +358,15 @@ defmodule Joken.Test do
     assert token.header == %{"key" => "value"}
   end
 
-
   test "none algorithm throws error when disabled" do
     assert_raise Joken.AlgorithmError, fn ->
-      compact = @payload
+      @payload
       |> token
       |> with_header_arg("key", "value")
       |> sign(none("secret"))
       |> get_compact
     end
   end
-
 
   test "none algorithm works when enabled" do
       JOSE.unsecured_signing(true)

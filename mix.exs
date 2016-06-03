@@ -1,14 +1,19 @@
 defmodule Joken.Mixfile do
   use Mix.Project
 
+  @version "1.2.0"
+
   def project do
     [app: :joken,
-     version: "1.1.1",
+     version: @version,
      elixir: "~> 1.0",
      description: description,
      package: package,
      deps: deps,
-     consolidate_protocols: Mix.env != :test]
+     consolidate_protocols: Mix.env != :test,
+     test_coverage: [tool: ExCoveralls],
+     name: "Joken",
+     docs: docs_config]
   end
 
   def application do
@@ -17,29 +22,43 @@ defmodule Joken.Mixfile do
 
   defp deps do
     [
-      {:jose, "~> 1.6"},
+      {:jose, "~> 1.7"},
       {:plug, "~> 1.0", optional: true},
       {:poison, "~> 1.5 or ~> 2.0", optional: true},
-      {:earmark, "~> 0.1", only: :docs},
-      {:ex_doc, "~> 0.10", only: :docs},
+      {:earmark, "~> 0.2", only: :docs},
+      {:ex_doc, "~> 0.11", only: :docs},
       {:jsx, "~> 2.0", only: :test},
-      {:benchfella, "~> 0.2", only: :test}
+      {:benchfella, "~> 0.3", only: :test},
+      {:excoveralls, "~> 0.5", only: :test},
+      {:libdecaf, "~> 0.0", only: :test},
+      {:libsodium, "~> 0.0", only: :test},
+      {:keccakf1600, "~> 2.0", only: :test},
+      {:credo, "~> 0.3", only: [:dev, :test]}
     ]
   end
 
   defp description do
-    """
-    JWT Library for Elixir
-    """
+  """
+  JWT Library for Elixir
+  """
   end
 
   defp package do
     [
-      files: ["lib", "priv", "mix.exs", "README*", "readme*", "LICENSE*", "license*", "CHANGELOG*"],
+      files: ["lib", "priv", "mix.exs", "README*", "readme*", "LICENSE*",
+              "license*", "CHANGELOG*"],
       maintainers: ["Bryan Joseph", "Victor Nascimento"],
       licenses: ["Apache 2.0"],
       links: %{"GitHub" => "https://github.com/bryanjos/joken",
                "Docs" => "http://hexdocs.pm/joken"}
     ]
+  end
+
+  defp docs_config do
+    [extras: ["README.md": [title: "Overview", path: "overview"],
+              "CHANGELOG.md": [title: "Changelog"]],
+     main: "overview",
+     source_ref: "v#{@version}",
+     source_url: "https://github.com/bryanjos/joken"]
   end
 end

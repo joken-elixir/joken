@@ -1,10 +1,12 @@
-# Joken [![Documentation](https://img.shields.io/badge/docs-hexpm-blue.svg)](http://hexdocs.pm/joken/) [![Downloads](https://img.shields.io/hexpm/dt/joken.svg)](https://hex.pm/packages/joken) [![Build](https://travis-ci.org/bryanjos/joken.svg?branch=master)](https://travis-ci.org/bryanjos/joken)
+# Joken
+
+[![Documentation](https://img.shields.io/badge/docs-hexpm-blue.svg)](http://hexdocs.pm/joken/) [![Downloads](https://img.shields.io/hexpm/dt/joken.svg)](https://hex.pm/packages/joken) [![Build](https://travis-ci.org/bryanjos/joken.svg?branch=master)](https://travis-ci.org/bryanjos/joken)
 
 [Documentation](http://hexdocs.pm/joken/)
 
 A JSON Web Token (JWT) Library
 
-The goal of this library is to provide a convienent way to create, sign, verify, and validate JWTs while allowing the flexibility to customize each step along the way. This library also includes a Plug for checking tokens as well. 
+The goal of this library is to provide a convienent way to create, sign, verify, and validate JWTs while allowing the flexibility to customize each step along the way. This library also includes a Plug for checking tokens as well.
 
 Supports the following algorithms:
 
@@ -39,12 +41,15 @@ Joken allows you to use any claims you wish, but has convenience methods for the
 
 For a more in depth description of each claim, please see the reference specification [here](https://tools.ietf.org/html/rfc7519).
 
-## Usage:
+You can view the changelog [here](https://github.com/bryanjos/joken/blob/master/CHANGELOG.md) or on the official documentation in the "Pages" section.
 
-All you need to generate a token is a `Joken.Token` struct with proper values. 
+
+## Usage
+
+All you need to generate a token is a `Joken.Token` struct with proper values.
 There you can set:
 - json_module: choose your JSON library (currently supports Poison | JSX)
-- signer: a map that tells the underlying system how to sign and verify your 
+- signer: a map that tells the underlying system how to sign and verify your
 tokens
 - validations: a map of claims keys to function validations
 - claims: the map of values you want encoded in a token
@@ -112,7 +117,7 @@ my_verified_token = "some_token"
 
 There are other options and helper functions available. See the docs of the `Joken` module for a complete documentation.
 
-## Plug:
+## Plug
 
 Joken also comes with a Plug for verifying JWTs in web applications.
 
@@ -127,7 +132,7 @@ In the first scenario just add this plug before the dispatch plug.
   defmodule MyRouter do
     use Plug.Router
 
-    plug Joken.Plug, on_verifying: &MyRouter.verify_function/0
+    plug Joken.Plug, verify: &MyRouter.verify_function/0
     plug :match
     plug :dispatch
 
@@ -138,11 +143,17 @@ In the first scenario just add this plug before the dispatch plug.
     match _ do
       # will only execute here if token is present and valid
     end
+
+    def verify_function() do
+      %Joken.Token{}
+      |> Joken.with_signer(hs256("secret"))
+      |> Joken.with_sub(1234567890)
+    end
   end
 ```
 
-In the second scenario, you will need at least plug ~> 0.14 in your deps. 
-Then you must plug this AFTER :match and BEFORE :dispatch. 
+In the second scenario, you will need at least plug ~> 0.14 in your deps.
+Then you must plug this AFTER :match and BEFORE :dispatch.
 
 ```elixir
   defmodule MyRouter do
@@ -150,27 +161,49 @@ Then you must plug this AFTER :match and BEFORE :dispatch.
 
     # route options
     @skip_token_verification %{joken_skip: true}
+    
+    @custom_token_verification %{joken_verify: %MyRouter.is_not_subject/0}
 
     plug :match
-    plug Joken.Plug, on_verifying: &MyRouter.verify_function/0       
+    plug Joken.Plug, verify: &MyRouter.verify_function/0       
     plug :dispatch
 
     post "/user" do
       # will only execute here if token is present and valid
     end
     
+    post "/endpoint", private: @custom_token_verification do
+      # will only execute here if token is present and valid 
+      # using the function `is_not_subject/0`
+    end
+
     # see options section below
     match _, private: @skip_token_verification do
       # will NOT try to validate a token
     end
+    
+    def verify_function() do
+      %Joken.Token{}
+      |> Joken.with_signer(hs256("secret"))
+      |> Joken.with_sub(1234567890)
+    end
+    
+    def is_not_subject() do
+      %Joken.Token{}
+      |> Joken.with_validation("sub", &(&1 != 1234567890))
+      |> Joken.with_signer(hs256("secret"))
+    end
   end
 ```
+
+For more examples, look in our [tests](https://github.com/bryanjos/joken/blob/master/test/plug_test.exs) for more usage scenarios. 
+
 
 ### Options
 
 This plug accepts the following options in its initialization:
 
-- `on_verifying`: a function used to verify the token. Must return a Token
+- `verify` (required): a function used to verify the token. The function must at least specify algorithm used and your secret using the `with_signer` function (see above). Must return a Token.
 
 - `on_error` (optional): a function that accepts `conn` and `message` as parameters. Must
 return a tuple containing the conn and a binary representing the 401 response. If it's a map,
@@ -181,31 +214,29 @@ to the route. The keys that Joken will look for in that map are:
 
 - `joken_skip`: skips token validation. true or false
 
-- `joken_on_verifying`: Same as `on_verifying` above. Overrides `on_verifying` if defined on the Plug
+- `joken_verify`: Same as `verify` above. Overrides `verify` if defined on the Plug
 
 - `joken_on_error`: Same as `on_error` above. Overrides `on_error` if defined on the Plug
 
-### EdDSA
+## Native crypto
 
-Native C support for Ed25519 and Ed25519ph can be provided by the libsodium asynchronous port driver by adding it as a dependency to a project's Mix file:
+Joken is based on cryptography implemented by the [erlang-jose](https://github.com/potatosalad/erlang-jose) project. One of the features it provides is the ability to auto detect the presence of native crypto libraries with a NIF (Erlang's Native Implemented Function) interface. Some of these libraries are:
 
-```elixir
-defp deps do
-  [
-    {:joken, "~> 1.1"},
-    {:libsodium, "~> 0.0.2"}
-  ]
-end
-```
+- [erlang-libsodium](https://github.com/potatosalad/erlang-libsodium): provides native implemented crypto for Ed25519 and Ed25519ph
+- [erlang-keccakf1600](https://github.com/potatosalad/erlang-keccakf1600): provides SHA-3 NIFs
+- [erlang-libdecaf](https://github.com/potatosalad/erlang-libdecaf): provides ed448goldilocks NIFs
 
-While there isn't native C support for Ed448 and Ed448ph yet, there is a notable performance improvement by using a native C driver the SHA-3 related functions used by these signature algorithms by adding the [keccakf1600](https://github.com/potatosalad/erlang-keccakf1600) asynchronous port driver as a dependency to a project's Mix file:
+Joken inherits that auto discovery feature. So, in order to increase speed in scenarios that you are using these crypto libraries, all you need to do is add them as dependencies:
 
 ```elixir
 defp deps do
   [
     {:joken, "~> 1.1"},
-    {:keccakf1600, "~> 0.0.1"}
+    {:libsodium, "~> 0.0.3"},
+    {:keccakf1600, "~> 0.0.1"},
+    {:libdecaf, "~> 0.0.1"}
   ]
 end
 ```
+Be advised though that this is a work in progress by [@potatosalad](https://github.com/potatosalad).
 

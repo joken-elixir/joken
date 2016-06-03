@@ -1,12 +1,35 @@
 sudo: false # to use faster container based build environment
 language: elixir
+
 elixir:
   - 1.0.5
   - 1.1.1
+  - 1.2.2
+
 otp_release:
   - 17.5
-  - 18.0
+  - 18.2
+
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+      - llvm-toolchain-precise-3.7
+    packages:
+      - clang-3.7
+
+env:
+  - CC=clang-3.7 CXX=clang++-3.7 ARCHFLAGS=-Wgcc-compat
+  
 after_script:
+  - MIX_ENV=dev mix credo
   - mix deps.get --only docs
   - MIX_ENV=docs mix docs # generate docs to check if it is not breaking.
   - MIX_ENV=test mix bench
+  - MIX_ENV=test mix coveralls.travis
+
+matrix:
+  exclude:
+    - otp_release: 17.5
+      elixir: 1.2.2

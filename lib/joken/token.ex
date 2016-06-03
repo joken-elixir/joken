@@ -1,4 +1,9 @@
 defmodule Joken.Token do
+  alias Joken.Signer
+
+  @moduledoc """
+  This is the data structure that holds the token state.
+  """
 
   @type json_module        :: module
   @type header             :: %{binary => any}
@@ -6,7 +11,7 @@ defmodule Joken.Token do
   @type claim_function_map :: %{binary => function}
   @type error              :: binary
   @type token              :: binary
-  @type signer             :: Joken.Signer.t
+  @type signer             :: Signer.t
 
   @type t :: %__MODULE__{
     json_module: module,
@@ -17,9 +22,9 @@ defmodule Joken.Token do
     token: token,
     signer: signer
   }
-  
+
   defstruct [json_module: nil,
-             header: %{}, 
+             header: %{},
              claims: %{},
              claims_generation: %{},
              validations: %{},
