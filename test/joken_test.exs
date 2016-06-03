@@ -267,6 +267,18 @@ defmodule Joken.Test do
     assert token.error == nil
   end
 
+  test "fails with invalid payload when a validated field is not present in the payload" do
+
+    token = %Joken.Token{}
+    |> with_json_module(Poison)
+    |> with_claims(%TestStruct{a: 2, b: 2, c: 3})
+    |> with_validation("d", &(&1 == 1))
+    |> sign(hs256("test"))
+    |> verify(hs256("test"))
+
+    assert token.error == "Invalid payload"
+  end
+
   test "test with JSX" do
 
     token = %Joken.Token{}
