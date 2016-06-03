@@ -1,3 +1,8 @@
+## v1.2.1
+
+* Bug Fixes
+    - with_validation - Fixed an issue where validations were automatically passed if the validation key was not in the payload
+
 ## v1.2.0
 
 * Enhancements
