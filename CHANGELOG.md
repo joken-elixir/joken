@@ -1,3 +1,7 @@
+# v1.0.1
+* Bug Fixes
+  * with_validation - Fixed an issue where validations were automatically passed if the validation key was not in the payload
+
 # v1.0.0
 * Enhancements
   * The `none` algorithm can be used if and only if `allow_none_algorithm` exists as an application variable
