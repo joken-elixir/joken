@@ -212,8 +212,12 @@ defmodule Joken.Signer do
       do: validations = Map.drop validations, options[:skip_claims]
 
     try do
-      claims = Enum.reduce map_payload, [], fn({key, value}, acc) ->
-        validate_key(validations, key, value, acc)
+      validated_claims = Enum.reduce validations, [], fn({key, valid?}, acc) ->
+        validate_key(map_payload, key, valid?, acc)
+      end
+
+      claims = validated_claims ++ Enum.filter map_payload, fn({key, _}) ->
+        not Map.has_key? validations, key
       end
 
       %{t | claims: process_claims(claims, options), header: header}
@@ -224,15 +228,12 @@ defmodule Joken.Signer do
     end
   end
 
-  defp validate_key(validations, key, value, acc) do
-    if Map.has_key?(validations, key) do
-      if validations[key].(value) do
-        [{key, value} | acc]
-      else
+  defp validate_key(map_payload, key, valid?, acc) do
+    case (Map.has_key? map_payload, key) and valid?.(map_payload[key]) do
+      false ->
         raise ArgumentError
-      end
-    else
-      [{key, value} | acc]
+      true ->
+        [{key, map_payload[key]} | acc]
     end
   end
 

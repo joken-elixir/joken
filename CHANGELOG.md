@@ -1,3 +1,8 @@
+## v1.2.1
+
+* Bug Fixes
+    - with_validation - Fixed an issue where validations were automatically passed if the validation key was not in the payload
+
 ## v1.2.0
 
 * Enhancements
@@ -14,10 +19,20 @@
       `on_verifying` and `joken_on_verifying` will be removed in a future version.
     - Configuration of `none` algorithm is no longer done automatically. To allow the `none` algorithm, set `allow_none_algorithm` as before and call `Joken.Signer.configure_unsecured_signing()` once during your application's start
 
+## v1.1.1
+
+* Bug Fixes
+    - with_validation - Fixed an issue where validations were automatically passed if the validation key was not in the payload
+
 ## v1.1.0
 
 * Enhancements
     - Add EdDSA support: Ed25519, Ed25519ph, Ed448, Ed448ph
+
+## v1.0.1
+
+* Bug Fixes
+    * with_validation - Fixed an issue where validations were automatically passed if the validation key was not in the payload
 
 ## v1.0.0
 
