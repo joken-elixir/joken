@@ -325,6 +325,64 @@ defmodule Joken.Test do
     assert token.error == "Invalid payload"
   end
 
+  test "can fail validation wth a custom errors" do
+
+    msg = "a should be 0"
+
+    token = %Joken.Token{}
+    |> with_json_module(Poison)
+    |> with_claims(%TestStruct{a: 2, b: 2, c: 3})
+    |> with_validation("a", &(&1 == 0), msg)
+    |> sign(hs256("test"))
+    |> verify(hs256("test"))
+
+    assert token.error == msg
+    assert token.errors == [msg]
+  end
+
+  test "can fail validation wth multple custom errors" do
+
+    a_msg = "a should be 0"
+    b_msg = "b should be 0"
+    c_msg = "c should be 0"
+
+    token = %Joken.Token{}
+    |> with_json_module(Poison)
+    |> with_claims(%TestStruct{a: 2, b: 2, c: 3})
+    |> with_validation("a", &(&1 == 0), a_msg)
+    |> with_validation("b", &(&1 == 0), b_msg)
+    |> with_validation("c", &(&1 == 0), c_msg)
+    |> sign(hs256("test"))
+    |> verify(hs256("test"))
+
+    errors = [a_msg, b_msg, c_msg]
+
+    assert Enum.sort(token.errors) == Enum.sort(errors)
+    #token.error can be any one of the errors thrown (since order is not preserved)
+    assert Enum.any?(token.errors, &(&1 == token.error)) == true
+  end
+
+  test "can fail validation wth both default and custom errors" do
+
+    a_msg = "a should be 0"
+    b_msg = "b should be 2"
+
+    token = %Joken.Token{}
+    |> with_json_module(Poison)
+    |> with_claims(%TestStruct{a: 2, b: 2, c: 3})
+    |> with_validation("a", &(&1 == 0), a_msg)
+    |> with_validation("b", &(&1 == 2), b_msg)
+    |> with_validation("c", &(&1 == 0))
+    |> sign(hs256("test"))
+    |> verify(hs256("test"))
+
+    errors = [a_msg, "Invalid payload"]
+
+    assert Enum.sort(token.errors) == Enum.sort(errors)
+    #token.error can be any one of the errors thrown (since order is not preserved)
+    assert Enum.any?(token.errors, &(&1 == token.error)) == true
+  end
+
   test "test with JSX" do
 
     token = %Joken.Token{}

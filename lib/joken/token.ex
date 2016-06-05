@@ -10,6 +10,7 @@ defmodule Joken.Token do
   @type claims             :: %{binary => any}
   @type claim_function_map :: %{binary => function}
   @type error              :: binary
+  @type errors             :: [binary]
   @type token              :: binary
   @type signer             :: Signer.t
 
@@ -19,6 +20,7 @@ defmodule Joken.Token do
     claims_generation: claim_function_map,
     validations: claim_function_map,
     error: error,
+    errors: errors,
     token: token,
     signer: signer
   }
@@ -29,6 +31,7 @@ defmodule Joken.Token do
              claims_generation: %{},
              validations: %{},
              error: nil,
+             errors: nil,
              token: nil,
              signer: nil]
 

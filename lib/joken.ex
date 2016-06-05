@@ -314,21 +314,58 @@ defmodule Joken do
   @doc """
   Adds a validation for a given claim key.
 
-  Validation works by applying the given function passing the payload value for
-  that key.
+  Validation works by applying the given function to the value of the matching
+  claim key in the token payload.
 
-  If it is successful the value is added to the claims. If it fails, then it
-  will raise an ArgumentError.
+  If it is successful (e.g. the function returns a truthy value) the value is added
+  to the claims. If it fails (e.g. the function return nil or false) no claims
+  are added, and an error message is added to an `"errors"` field. Also one of
+  the errors is used for the `"error"` field.
 
-  If a claim in the payload has no validation, then it **WILL BE ADDED** to the
-  claim set.
+  By default, the error message for a failed validation is `"Invalid payload"`,
+  however an optional argument can be provided, which is used as the error instead.
+  
+  **SECURITY WARNING**: As a word of caution, be careful that your custom error messages
+  do not leak detailed security implementations to your end users.
+
+  If a claim key in the payload does not have a validation, it **WILL BE ADDED**
+  to the claim set.  If a claim key has a validation, but it is not present in
+  the payload, verification will fail with the default or provided error message.
+  
+  example validation:
+  ```
+  validated_token = token
+    |> with_validation("admin", &(&1 == true), "Must be admin")
+    |> with_validation("userId", &(&1 != 7))
+    |> with_signer(hs256("example"))
+    |> verify
+  ```
+  when used with the following tokens:
+  ```
+  #if token.claims == %{"admin" => true, "userId" => 6} then
+  validated_token == %{ claims: %{"admin" => true, "userId" => 6}, error: nil, errors: nil}
+
+  #if token.claims == %{"admin" => true, "userId" => 7} then
+  validated_token == %{
+    claims: nil,
+    error: "Invalid payload",
+    errors: ["Invalid payload"]
+  }
+
+  #if token == %{"userId" => 7} then
+  validated_token == %{
+    claims: nil,
+    error: #Order is not preserved, so this could be either of the two errors
+    errors: ["Must be admin", "Invalid payload"]
+  }
+  ```
   """
-  @spec with_validation(Token.t, String.t, function) :: Token.t
+  @spec with_validation(Token.t, String.t, function, String.t | nil) :: Token.t
   def with_validation(token_struct = %Token{validations: validations},
-                      claim, function)
+                      claim, function, msg \\ nil)
     when is_function(function) and is_binary(claim) do
 
-    %{token_struct | validations: Map.put(validations, claim, function)}
+    %{token_struct | validations: Map.put(validations, claim, {function, msg})}
   end
 
   @doc """
