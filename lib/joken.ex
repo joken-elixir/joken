@@ -324,14 +324,14 @@ defmodule Joken do
 
   By default, the error message for a failed validation is `"Invalid payload"`,
   however an optional argument can be provided, which is used as the error instead.
-  
+
   **SECURITY WARNING**: As a word of caution, be careful that your custom error messages
   do not leak detailed security implementations to your end users.
 
   If a claim key in the payload does not have a validation, it **WILL BE ADDED**
   to the claim set.  If a claim key has a validation, but it is not present in
   the payload, verification will fail with the default or provided error message.
-  
+
   example validation:
   ```
   validated_token = token
@@ -423,7 +423,7 @@ defmodule Joken do
   """
   def current_time() do
     {mega, secs, _} = :os.timestamp()
-    mega * 1000000 + secs
+    mega * 1_000_000 + secs
   end
 
   ## PRIVATE
