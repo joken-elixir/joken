@@ -33,4 +33,8 @@ after_script:
 matrix:
   exclude:
     - otp_release: 17.5
-      elixir: 1.2.2
+      elixir: 1.2.6
+    - otp_release: 19.0
+      elixir: 1.0.5
+    - otp_release: 19.0
+      elixir: 1.1.1
