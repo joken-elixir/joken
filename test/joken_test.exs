@@ -416,6 +416,21 @@ defmodule Joken.Test do
     assert token.header == %{"key" => "value"}
   end
 
+  test "with_header_args" do
+
+    compact = @payload
+    |> token
+    |> with_header_args(%{"key" => "value"})
+    |> sign(hs256("secret"))
+    |> get_compact
+
+    token = compact
+    |> token
+    |> verify(hs256("secret"))
+
+    assert token.header == %{"key" => "value"}
+  end
+
   test "none algorithm throws error when disabled" do
     assert_raise Joken.AlgorithmError, fn ->
       @payload

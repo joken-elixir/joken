@@ -199,7 +199,7 @@ defmodule Joken do
   """
   @spec with_header_args(Token.t, %{String.t => any}) :: Token.t
   def with_header_args(token_struct = %Token{}, header) do
-    %{token_struct | headers: header}
+    %{token_struct | header: header}
   end
 
   # convenience functions
