@@ -208,8 +208,11 @@ defmodule Joken.Signer do
                            map_payload,
                            options) when is_map(map_payload) do
 
-    if options[:skip_claims],
-      do: validations = Map.drop validations, options[:skip_claims]
+      validations = if options[:skip_claims] do
+        Map.drop validations, options[:skip_claims]
+      else
+        validations
+      end
 
     {valid_claims, errors} = Enum.reduce validations, {[], []}, fn({key, {valid?, message}}, acc) ->
       validate_key(map_payload, key, valid?, message, acc)
@@ -229,9 +232,11 @@ defmodule Joken.Signer do
     if Map.has_key?(map_payload, key) and valid?.(map_payload[key]) do
       {[{key, map_payload[key]} | claims], errors}
     else
-      cond do
-        is_nil(message) -> {claims, ["Invalid payload" | errors]}
-        true -> {claims, [message | errors]}
+      case message do
+        nil ->
+          {claims, ["Invalid payload" | errors]}
+        _ ->
+          {claims, [message | errors]}
       end
     end
   end
@@ -249,12 +254,14 @@ defmodule Joken.Signer do
   end
 
   defp prepare_claims(%Token{claims: claims, claims_generation: generators}) do
-
-    unless Enum.empty? generators do
-      {_, claims} = Enum.map_reduce generators, claims,
-      fn {claim_key, function}, acc ->
-        {[], Map.put(acc, claim_key, function.())}
-      end
+    claims = if Enum.empty?(generators)  do
+      claims
+    else
+      Enum.map_reduce(generators, claims, fn
+        {claim_key, function}, acc ->
+          {[], Map.put(acc, claim_key, function.())}
+      end)
+      |> elem(1)
     end
 
     retrieve_claims(claims)

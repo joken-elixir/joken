@@ -103,12 +103,16 @@ if Code.ensure_loaded?(Plug.Conn) do
     @doc false
     def call(conn, {verify, on_error}) do
 
-      unless Map.has_key?(conn.private, :joken_verify) do
-        conn = set_joken_verify(conn, verify)
+      conn = if Map.has_key?(conn.private, :joken_verify) do
+        conn
+      else
+        set_joken_verify(conn, verify)
       end
 
-      unless Map.has_key?(conn.private, :joken_on_error) do
-        conn = put_private(conn, :joken_on_error, on_error)
+      conn = if Map.has_key?(conn.private, :joken_on_error) do
+        conn
+      else
+        put_private(conn, :joken_on_error, on_error)
       end
 
       if Map.get(conn.private, :joken_skip, false) do
