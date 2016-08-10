@@ -218,6 +218,50 @@ to the route. The keys that Joken will look for in that map are:
 
 - `joken_on_error`: Same as `on_error` above. Overrides `on_error` if defined on the Plug
 
+## Key arguments
+
+The family of HS algorithms use Hash-Based Message Authentication Code algorithms with the SHA (Secure Hash) hashing function. This means that it uses a shared key (the "secret") to generate a signature of the message. So, the key is a string and `Joken`s signer functions can receive a string.
+
+The other algorithms are based on asymmetric cryptography. For example: RS512 is based on RSA asymmetric cryptography. This is an algorithm that works with [large prime numbers multiplication](https://en.wikipedia.org/wiki/RSA_(cryptosystem)). So the key must contain data about the chosen primes amongst other parameters. Therefore, we can't simply accept these parameters as string.
+
+Similarly, as an added example, ES256 is based on a digital signing algorithm using elliptic curve keys, a kind of asymmetric cryptography. They also need information on the points used on the curve and aren't suitable to be passed as a string in free-form.
+
+These keys have standards on how they are shared. PEM (Privacy enhanced mail) files are a common example. They have all the key information encoded in a text format. Erlang, and by consequence Elixir, has native modules for dealing with these. They reside in the `:public_key` module. Functions like `pem_decode/1` or `pem_encode/1` might be useful for handling this kind of data. 
+
+Actually, `Joken` depends on `JOSE`. There are facilities in `JOSE` that make the job even easier. Here is an example with an RSA key used in jwt.io:
+
+``` elixir
+# Suppose we have a file accessible from 'test/example_key.pem' with the following contents
+
+#-----BEGIN RSA PRIVATE KEY-----
+#MIICWwIBAAKBgQDdlatRjRjogo3WojgGHFHYLugdUWAY9iR3fy4arWNA1KoS8kVw33cJibXr8bvwUAUparCwlvdbH6dvEOfou0/gCFQsHUfQrSDv+MuSUMAe8jzKE4qW+jK+xQU9a03GUnKHkkle+Q0pX/g6jXZ7r1/xAK5Do2kQ+X5xK9cipRgEKwIDAQABAoGAD+onAtVye4ic7VR7V50DF9bOnwRwNXrARcDhq9LWNRrRGElESYYTQ6EbatXS3MCyjjX2eMhu/aF5YhXBwkppwxg+EOmXeh+MzL7Zh284OuPbkglAaGhV9bb6/5CpuGb1esyPbYW+Ty2PC0GSZfIXkXs76jXAu9TOBvD0ybc2YlkCQQDywg2R/7t3Q2OE2+yo382CLJdrlSLVROWKwb4tb2PjhY4XAwV8d1vy0RenxTB+K5Mu57uVSTHtrMK0GAtFr833AkEA6avx20OHo61Yela/4k5kQDtjEf1N0LfI+BcWZtxsS3jDM3i1Hp0KSu5rsCPb8acJo5RO26gGVrfAsDcIXKC+bQJAZZ2XIpsitLyPpuiMOvBbzPavd4gY6Z8KWrfYzJoI/Q9FuBo6rKwl4BFoToD7WIUS+hpkagwWiz+6zLoX1dbOZwJACmH5fSSjAkLRi54PKJ8TFUeOP15h9sQzydI8zJU+upvDEKZsZc/UhT/SySDOxQ4G/523Y0sz/OZtSWcol/UMgQJALesy++GdvoIDLfJX5GBQpuFgFenRiRDabxrE9MNUZ2aPFaFp+DyAe+b4nDwuJaW2LURbr8AEZga7oQj0uYxcYw==
+#  -----END RSA PRIVATE KEY-----
+
+# We can sign with this PRIVATE key using:
+import Joken
+key = JOSE.JWK.from_pem_file("test/example_key.pem") 
+
+signed_token = %{ "name" => "John Doe" }
+|> token
+|> sign(rs256(key))
+|> get_compact
+```
+
+In summary, what `Joken` expects as a key is what suits the algorithm in use. If it is: 
+
+- HSXXX: then it must be a string
+- RSXXX: then it must be a map with RSA key parameters (remember that it must sign with a private key and verify with a public key)
+
+And so on...
+
+The definition of the parameters we expect can be seen in:
+
+* JSON Web Algorithms (JWA) [RFC 7518](https://tools.ietf.org/html/rfc7518)
+* JSON Web Encryption (JWE) [RFC 7516](https://tools.ietf.org/html/rfc7516)
+* JSON Web Key (JWK)        [RFC 7517](https://tools.ietf.org/html/rfc7517)
+* JSON Web Signature (JWS)  [RFC 7515](https://tools.ietf.org/html/rfc7515)
+* JSON Web Token (JWT)      [RFC 7519](https://tools.ietf.org/html/rfc7519)
+
 ## Native crypto
 
 Joken is based on cryptography implemented by the [erlang-jose](https://github.com/potatosalad/erlang-jose) project. One of the features it provides is the ability to auto detect the presence of native crypto libraries with a NIF (Erlang's Native Implemented Function) interface. Some of these libraries are:
