@@ -6,7 +6,7 @@
 
 A JSON Web Token (JWT) Library
 
-The goal of this library is to provide a convienent way to create, sign, verify, and validate JWTs while allowing the flexibility to customize each step along the way. This library also includes a Plug for checking tokens as well.
+The goal of this library is to provide a convenient way to create, sign, verify, and validate JWTs while allowing the flexibility to customize each step along the way. This library also includes a Plug for checking tokens as well.
 
 Supports the following algorithms:
 
@@ -70,7 +70,7 @@ my_token = token
 |> with_signer(hs256("my_secret"))
 ```
 
-To create a function with an inital map of claims:
+To create a function with an initial map of claims:
 
 ```elixir
 import Joken
