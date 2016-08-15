@@ -37,7 +37,7 @@ defmodule Joken.Test do
     |> token
     |> sign(%Signer{
       jws: %{ "alg" => "HS256" },
-      jwk: %{ "kty" => "oct", "k" => :base64url.encode(:erlang.iolist_to_binary("secret")) }
+      jwk: %{ "kty" => "oct", "k" => Base.url_encode64(:erlang.iolist_to_binary("secret")) }
     })
 
     assert(signed_token.token == "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.xuEv8qrfXu424LZk8bVgr9MQJUIrp1rHcPyZw_KSsds")

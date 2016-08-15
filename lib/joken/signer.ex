@@ -49,7 +49,7 @@ defmodule Joken.Signer do
     end
 
     %Signer{jws: %{"alg" => "none"}, jwk: %{"kty" => "oct",
-                                            "k" => :base64url.encode(secret)}}
+                                            "k" => Base.url_encode64(secret, padding: false)}}
   end
 
   @doc "Convenience for generating an HS*** Joken.Signer"
@@ -57,7 +57,7 @@ defmodule Joken.Signer do
   def hs(alg, secret) when is_binary(secret)
     and alg in ["HS256", "HS384", "HS512"] do
     %Signer{jws: %{"alg" => alg},
-            jwk: %{"kty" => "oct", "k" => :base64url.encode(secret)}}
+            jwk: %{"kty" => "oct", "k" => Base.url_encode64(secret, padding: false)}}
   end
 
   @doc "Convenience for generating an EdDSA Joken.Signer"
@@ -117,7 +117,7 @@ defmodule Joken.Signer do
   end
   def sign(token, %Signer{jws: jws, jwk: secret}) when is_binary(secret) do
     jwk = %{"kty" => "oct",
-            "k" => :base64url.encode(:erlang.iolist_to_binary(secret))}
+            "k" => Base.url_encode64(:erlang.iolist_to_binary(secret), padding: false)}
     sign(token, %Signer{jwk: jwk, jws: jws})
   end
   def sign(token, signer) do
