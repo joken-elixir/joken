@@ -2,6 +2,7 @@
 
 * Bug fixes
     - Fix incorrect property name in `with_header_args/2` (thanks to [@hogjosh](https://github.com/hogjosh))
+    - Extend 'with_validation' to accept a custom message (thanks to [@IamfromSpace](https://github.com/IamfromSpace))
     - Fix typos in README.md (thanks to [@ugisozols](https://github.com/ugisozols))
     - Fix warnings introduced in Elixir 1.3
 
