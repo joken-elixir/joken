@@ -1,3 +1,8 @@
+## v1.3.0
+
+* Enhancements
+    - Now requires Elixir 1.2 or greater
+
 ## v1.2.2
 
 * Bug fixes
