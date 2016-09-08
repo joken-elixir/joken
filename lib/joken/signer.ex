@@ -4,7 +4,6 @@ defmodule Joken.Signer do
   alias JOSE.JWS
   alias JOSE.JWT
   alias JOSE.JWK
-  require Logger
 
   @moduledoc """
   Signer is the JWK (JSON Web Key) and JWS (JSON Web Signature) configuration of
@@ -125,10 +124,6 @@ defmodule Joken.Signer do
     signer = %{signer | jws: Map.merge(signer.jws, header)}
     token = %{token | signer: signer}
 
-    Logger.debug fn ->
-      "Signing #{inspect token.claims} with #{inspect signer}"
-    end
-
     claims = prepare_claims(token)
 
     {_, compacted_token} = JWS.compact(JWT.sign(signer.jwk,
@@ -168,10 +163,6 @@ defmodule Joken.Signer do
                  s = %Signer{jwk: jwk, jws: %{"alg" => algorithm}},
                  options) do
 
-    Logger.debug fn ->
-      "Verifying #{token} using #{inspect s} with options #{inspect options}"
-    end
-
     t = %{t | signer: s}
     t = %{t | error: nil}
 
@@ -187,7 +178,6 @@ defmodule Joken.Signer do
       end
     catch
       :error, cause ->
-        Logger.warn fn -> "Error: #{inspect cause}" end
         %{t | error: "Could not verify token"}
     end
   end
