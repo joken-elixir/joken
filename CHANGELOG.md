@@ -1,7 +1,9 @@
 ## v1.3.0
 
 * Enhancements
+    - Update jose dependency to 1.8
     - Now requires Elixir 1.2 or greater
+    - Remove debug logging statements (thanks to [@MSch](https://github.com/MSch))
 
 ## v1.2.2
 
