@@ -6,7 +6,7 @@ defmodule Joken.Mixfile do
   def project do
     [app: :joken,
      version: @version,
-     elixir: "~> 1.2 or ~> 1.3",
+     elixir: "~> 1.2.3 or ~> 1.3",
      description: description,
      package: package,
      deps: deps,
