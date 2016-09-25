@@ -1,3 +1,8 @@
+## v1.3.1
+
+* Enhancements
+  - Updates Elixir requirement to 1.2.3 (thanks to [@supernintendo](https://github.com/supernintendo))
+
 ## v1.3.0
 
 * Enhancements
