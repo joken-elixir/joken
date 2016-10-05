@@ -177,7 +177,7 @@ defmodule Joken.Signer do
           %{t | error: "Invalid signature"}
       end
     catch
-      :error, cause ->
+      :error, _cause ->
         %{t | error: "Could not verify token"}
     end
   end
