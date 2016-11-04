@@ -45,8 +45,7 @@ defmodule Joken.Mixfile do
 
   defp package do
     [
-      files: ["lib", "priv", "mix.exs", "README*", "readme*", "LICENSE*",
-              "license*", "CHANGELOG*"],
+      files: ["lib", "mix.exs", "README.md", "LICENSE.txt", "CHANGELOG.md"],
       maintainers: ["Bryan Joseph", "Victor Nascimento"],
       licenses: ["Apache 2.0"],
       links: %{"GitHub" => "https://github.com/bryanjos/joken",
