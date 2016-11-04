@@ -1,7 +1,7 @@
 defmodule Joken.Mixfile do
   use Mix.Project
 
-  @version "1.3.1"
+  @version "1.3.2"
 
   def project do
     [app: :joken,

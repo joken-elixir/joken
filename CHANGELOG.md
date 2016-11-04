@@ -1,3 +1,8 @@
+## v1.3.2
+
+* Enhancements
+  - [Add Poison 3.0 as possible dependency](https://github.com/bryanjos/joken/pull/151)
+
 ## v1.3.1
 
 * Enhancements
