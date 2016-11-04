@@ -24,7 +24,7 @@ defmodule Joken.Mixfile do
     [
       {:jose, "~> 1.8"},
       {:plug, "~> 1.0", optional: true},
-      {:poison, "~> 1.5 or ~> 2.0", optional: true},
+      {:poison, "~> 1.5 or ~> 2.0 or ~> 3.0", optional: true},
       {:earmark, "~> 1.0", only: :dev},
       {:ex_doc, "~> 0.13", only: :dev},
       {:jsx, "~> 2.0", only: :test},
