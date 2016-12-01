@@ -232,8 +232,8 @@ defmodule Joken.Signer do
   end
 
   defp validate_key(map_payload, keys, valid?, message, {claims, errors}) when is_list(keys) do
-    if Enum.all?(keys, fn(key) -> Map.has_key?(map_payload, key) end) and
-      apply(valid?, Enum.map(keys, fn(key) -> Map.fetch!(map_payload, key)end)) do
+    if Enum.all?(keys, &(Map.has_key?(map_payload, &1))) and
+      apply(valid?, Enum.map(keys, &(Map.fetch!(map_payload, &1)))) do
       {claims, errors}
     else
       case message do
