@@ -325,6 +325,19 @@ defmodule Joken.Test do
     assert token.error == "Invalid payload"
   end
 
+  test "can fail multi-claim validation with a custom errors" do
+    msg = "claim a should be different to claim b"
+    token = %Joken.Token{}
+    |> with_json_module(Poison)
+    |> with_claims(%TestStruct{a: 2, b: 2, c: 3})
+    |> with_validation(["a", "b"], &(&1 !== &2), msg)
+    |> sign(hs256("test"))
+    |> verify(hs256("test"))
+
+    assert token.error == msg
+    assert token.errors == [msg]
+  end
+
   test "can fail validation wth a custom errors" do
 
     msg = "a should be 0"

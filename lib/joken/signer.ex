@@ -218,9 +218,23 @@ defmodule Joken.Signer do
     end
   end
 
-  defp validate_key(map_payload, key, valid?, message, {claims, errors}) do
+  defp validate_key(map_payload, key, valid?, message, {claims, errors}) when is_binary(key) do
     if Map.has_key?(map_payload, key) and valid?.(map_payload[key]) do
       {[{key, map_payload[key]} | claims], errors}
+    else
+      case message do
+        nil ->
+          {claims, ["Invalid payload" | errors]}
+        _ ->
+          {claims, [message | errors]}
+      end
+    end
+  end
+
+  defp validate_key(map_payload, keys, valid?, message, {claims, errors}) when is_list(keys) do
+    if Enum.all?(keys, &(Map.has_key?(map_payload, &1))) and
+      apply(valid?, Enum.map(keys, &(Map.fetch!(map_payload, &1)))) do
+      {claims, errors}
     else
       case message do
         nil ->
