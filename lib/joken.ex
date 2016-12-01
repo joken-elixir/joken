@@ -315,7 +315,7 @@ defmodule Joken do
   Adds a validation for a given claim key.
 
   Validation works by applying the given function to the value of the matching
-  claim key in the token payload.
+  claim key or list of claim keys in the token payload.
 
   If it is successful (e.g. the function returns a truthy value) the value is added
   to the claims. If it fails (e.g. the function return nil or false) no claims
@@ -358,14 +358,36 @@ defmodule Joken do
     error: #Order is not preserved, so this could be either of the two errors
     errors: ["Must be admin", "Invalid payload"]
   }
+
+  other example with multi-claim validation
+
+  validated_token = token
+    |> with_validation(["a", "b"], &(&1 == &2))
+    |> with_signer(hs256("example"))
+    |> verify
+
+  #if token == %{"a" => 1, "b" => 2} then
+  validated_token == %{
+    claims: nil,
+    error: "Invalid payload"
+    errors: ["Invalid payload"]
+  }
   ```
   """
-  @spec with_validation(Token.t, String.t, function, String.t | nil) :: Token.t
+  @spec with_validation(Token.t, String.t | [String.t], function, String.t | nil) :: Token.t
+  def with_validation(token_struct, claim, function, msg \\ nil)
   def with_validation(token_struct = %Token{validations: validations},
-                      claim, function, msg \\ nil)
+                      claim, function, msg)
     when is_function(function) and is_binary(claim) do
 
     %{token_struct | validations: Map.put(validations, claim, {function, msg})}
+  end
+
+  def with_validation(token_struct = %Token{validations: validations},
+                      claims, function, msg)
+    when is_function(function) and is_list(claims) do
+
+    %{token_struct | validations: Map.put(validations, claims, {function, msg})}
   end
 
   @doc """
