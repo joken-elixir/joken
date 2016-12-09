@@ -61,7 +61,7 @@ To help you fill that configuration struct properly, use the functions in the `J
 
 Joken allows for customization of tokens, but also provides some defaults.
 
-To create a token with default generator for claims `exp`, `iaf`, and `nbf`, and to use Poison as the json serializer:
+To create a token with default generator for claims `exp`, `iat`, and `nbf`, and to use Poison as the json serializer:
 
 ```elixir
 import Joken
