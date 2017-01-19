@@ -19,10 +19,10 @@ defmodule Joken.Token do
     claims: claims,
     claims_generation: claim_function_map,
     validations: claim_function_map,
-    error: error,
+    error: error | nil,
     errors: errors,
-    token: token,
-    signer: signer
+    token: token | nil,
+    signer: signer | nil
   }
 
   defstruct [json_module: nil,
@@ -31,7 +31,7 @@ defmodule Joken.Token do
              claims_generation: %{},
              validations: %{},
              error: nil,
-             errors: nil,
+             errors: [],
              token: nil,
              signer: nil]
 
