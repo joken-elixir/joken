@@ -1,3 +1,10 @@
+## v1.4.0
+* Enhancements
+  - [Add Joken.peek_header/1](https://github.com/bryanjos/joken/pull/162)
+
+* Bug fixes
+  - [Correct Joken.Token.t typespec](https://github.com/bryanjos/joken/pull/161)
+
 ## v1.3.2
 
 * Enhancements
