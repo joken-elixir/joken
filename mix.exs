@@ -13,7 +13,7 @@ defmodule Joken.Mixfile do
      consolidate_protocols: Mix.env != :test,
      test_coverage: [tool: ExCoveralls],
      name: "Joken",
-     docs: docs_config]
+     docs: docs_config()]
   end
 
   def application do
