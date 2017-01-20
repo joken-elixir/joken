@@ -441,6 +441,13 @@ defmodule Joken do
     do: Signer.peek(token_struct, options)
 
   @doc """
+  Returns the header without verifying.
+  """
+  @spec peek_header(Token.t) :: map
+  def peek_header(token_struct = %Token{}),
+    do: Signer.peek_header(token_struct)
+
+  @doc """
   Helper function to get the current time
   """
   def current_time() do
