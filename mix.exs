@@ -7,13 +7,13 @@ defmodule Joken.Mixfile do
     [app: :joken,
      version: @version,
      elixir: "~> 1.2.3 or ~> 1.3",
-     description: description,
-     package: package,
-     deps: deps,
+     description: description(),
+     package: package(),
+     deps: deps(),
      consolidate_protocols: Mix.env != :test,
      test_coverage: [tool: ExCoveralls],
      name: "Joken",
-     docs: docs_config]
+     docs: docs_config()]
   end
 
   def application do
