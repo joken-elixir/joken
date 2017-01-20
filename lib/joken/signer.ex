@@ -160,7 +160,7 @@ defmodule Joken.Signer do
   @doc """
   Returns the token header without validating or verifying
   """
-  @spec peek_header(Token.t, Keyword.t) :: map
+  @spec peek_header(Token.t) :: map
   def peek_header(%Token{token: compact_token} = token) do
     header = JWS.peek_protected(compact_token)
 

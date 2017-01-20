@@ -443,7 +443,7 @@ defmodule Joken do
   @doc """
   Returns the header without verifying.
   """
-  @spec peek_header(Token.t, list) :: map
+  @spec peek_header(Token.t) :: map
   def peek_header(token_struct = %Token{}),
     do: Signer.peek_header(token_struct)
 
