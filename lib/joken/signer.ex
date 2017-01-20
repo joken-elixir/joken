@@ -148,12 +148,24 @@ defmodule Joken.Signer do
   @doc """
   Returns the token payload without validating or verifying
   """
-  @spec peek(Token.t, Keyword.t) :: Token.t
+  @spec peek(Token.t, Keyword.t) :: map
   def peek(%Token{token: compact_token} = token, options \\ []) do
-    payload = JWS.peek(compact_token)
+    payload = JWS.peek_payload(compact_token)
+
     token
     |> decode_payload(payload)
     |> process_claims(options)
+  end
+
+  @doc """
+  Returns the token header without validating or verifying
+  """
+  @spec peek_header(Token.t, Keyword.t) :: map
+  def peek_header(%Token{token: compact_token} = token, options \\ []) do
+    header = JWS.peek_protected(compact_token)
+
+    token
+    |> decode_payload(header)
   end
 
   ### PRIVATE

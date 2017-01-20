@@ -186,6 +186,22 @@ defmodule Joken.Test do
     assert claims == @payload
   end
 
+  test "peek_header" do
+
+    compact = @payload
+    |> token
+    |> with_header_arg("kid", "123")
+    |> sign(hs384("test"))
+    |> get_compact
+
+    header = compact
+    |> token
+    |> peek_header
+
+    assert Map.has_key?(header, "kid")
+    assert Map.get(header, "kid") == "123"
+  end
+
   test "using a struct for claims" do
     token = %Joken.Token{}
     |> with_claims(%TestStruct{a: 1, b: 2, c: 3})
