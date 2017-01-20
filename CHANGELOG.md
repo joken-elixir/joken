@@ -1,3 +1,7 @@
+## v1.4.1
+* Enhancements
+  - [Fix warnings in Elixir 1.4](https://github.com/bryanjos/joken/pull/164)
+
 ## v1.4.0
 * Enhancements
   - [Add Joken.peek_header/1](https://github.com/bryanjos/joken/pull/162)
