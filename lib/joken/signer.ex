@@ -39,7 +39,7 @@ defmodule Joken.Signer do
   """
   @spec none(binary) :: Signer.t
   def none(secret) do
-    unless none_algorithm_allowed? do
+    unless none_algorithm_allowed?() do
       raise Joken.AlgorithmError, message: """
         'none' algorithm is not allowed.
         In order to use the 'none algorithm', the 'allow_none_algorithm' key on
