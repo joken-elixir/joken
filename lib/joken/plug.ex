@@ -126,13 +126,13 @@ if Code.ensure_loaded?(Plug.Conn) do
       case Keyword.take(options, [:verify, :on_verifying]) do
         [verify: verify] -> verify
         [verify: verify, on_verifying: _] ->
-          warn_on_verifying
+          warn_on_verifying()
           verify
         [on_verifying: verify] ->
-          warn_on_verifying
+          warn_on_verifying()
           verify
         [] ->
-          warn_supply_verify_function
+          warn_supply_verify_function()
           nil
       end
     end
@@ -148,7 +148,7 @@ if Code.ensure_loaded?(Plug.Conn) do
     defp set_joken_verify(conn, verify) do
       case conn.private do
         %{joken_on_verifying: deprecated_verify} ->
-          warn_on_verifying
+          warn_on_verifying()
           put_private(conn, :joken_verify, deprecated_verify)
         _ ->
           put_private(conn, :joken_verify, verify)

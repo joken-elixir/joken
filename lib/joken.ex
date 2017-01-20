@@ -38,9 +38,9 @@ defmodule Joken do
     |> with_exp
     |> with_iat
     |> with_nbf
-    |> with_validation("exp", &(&1 > current_time))
-    |> with_validation("iat", &(&1 <= current_time))
-    |> with_validation("nbf", &(&1 < current_time))
+    |> with_validation("exp", &(&1 > current_time()))
+    |> with_validation("iat", &(&1 <= current_time()))
+    |> with_validation("nbf", &(&1 < current_time()))
   end
 
   @doc """
@@ -81,7 +81,7 @@ defmodule Joken do
   @spec with_exp(Token.t) :: Token.t
   def with_exp(token_struct = %Token{}) do
     token_struct
-    |> with_claim_generator("exp", fn -> current_time + (2 * 60 * 60) end)
+    |> with_claim_generator("exp", fn -> current_time() + (2 * 60 * 60) end)
   end
 
   @doc """
@@ -114,7 +114,7 @@ defmodule Joken do
   @spec with_nbf(Token.t) :: Token.t
   def with_nbf(token_struct = %Token{}) do
     token_struct
-    |> with_claim_generator("nbf", fn -> current_time - 1 end)
+    |> with_claim_generator("nbf", fn -> current_time() - 1 end)
   end
 
   @doc """
