@@ -126,11 +126,11 @@ defmodule Joken do
   end
 
   @doc """
-  Adds `:iss` claim with a given value.
+  Adds `"iss"` claim with a given value.
   """
   @spec with_iss(Token.t, any) :: Token.t
   def with_iss(token_struct = %Token{claims: claims}, issuer) do
-    %{token_struct | claims: Map.put(claims, :iss, issuer)}
+    %{token_struct | claims: Map.put(claims, "iss", issuer)}
   end
 
   @doc """
