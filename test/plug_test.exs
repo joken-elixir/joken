@@ -176,6 +176,31 @@ defmodule JokenPlug.Test do
     end
   end
 
+  defmodule CustomTokenFunctionRouter do
+    use Plug.Router
+
+    plug :match
+    plug Joken.Plug,
+      verify: &CustomTokenFunctionRouter.verify/0,
+      token: &CustomTokenFunctionRouter.my_token/1
+    plug :dispatch
+
+    get "/verify_custom_token" do
+      conn
+        |> put_resp_content_type("text/plain")
+        |> send_resp(200, "Hello Custom Token Function Tester")
+    end
+
+    def verify() do
+      %Token{}
+        |> with_json_module(Poison)
+        |> with_signer(hs256("secret"))
+        |> with_sub(1234567890)
+    end
+
+    def my_token(_conn), do: JokenPlug.Test.simple_binary_token
+  end
+
   test "generates token properly" do
     conn = conn(:post, "/generate_token") |> MyPlugRouter.call([])
     assert conn.status == 200
@@ -280,11 +305,16 @@ defmodule JokenPlug.Test do
     assert conn.resp_body == "Invalid payload"
   end
 
-  defp simple_binary_token do
+  test "uses custom function for getting token value" do
+    conn = conn(:get, "/verify_custom_token") |> CustomTokenFunctionRouter.call([])
+    assert conn.status == 200
+    assert conn.resp_body == "Hello Custom Token Function Tester"
+  end
+
+  def simple_binary_token do
     token()
     |> with_sub(1234567890)
     |> sign(hs256("secret"))
     |> get_compact
   end
-
 end

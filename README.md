@@ -209,6 +209,12 @@ This plug accepts the following options in its initialization:
 return a tuple containing the conn and a binary representing the 401 response. If it's a map,
 it's turned into json, otherwise, it is returned as is.
 
+- `token` (option): a function used to return the token to verify.  By
+  default, the [Bearer authentication scheme in the
+Authorization header](https://tools.ietf.org/html/rfc6750) is used, but
+if your token happens to be stored somewhere else, you can set `token`
+to a function that will return the token to use instead.
+
 When using this with per route options you must pass a private map of options
 to the route. The keys that Joken will look for in that map are:
 
