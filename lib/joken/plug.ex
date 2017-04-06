@@ -97,11 +97,12 @@ if Code.ensure_loaded?(Plug.Conn) do
     def init(opts) do
       verify   = get_verify(opts)
       on_error = Keyword.get(opts, :on_error, &Joken.Plug.default_on_error/2)
-      {verify, on_error}
+      token_function = Keyword.get(opts, :token, &Joken.Plug.default_token_function/1)
+      {verify, on_error, token_function}
     end
 
     @doc false
-    def call(conn, {verify, on_error}) do
+    def call(conn, {verify, on_error, token_function}) do
 
       conn = if Map.has_key?(conn.private, :joken_verify) do
         conn
@@ -115,10 +116,16 @@ if Code.ensure_loaded?(Plug.Conn) do
         put_private(conn, :joken_on_error, on_error)
       end
 
+      conn = if Map.has_key?(conn.private, :joken_token_function) do
+        conn
+      else
+        put_private(conn, :joken_token_function, token_function)
+      end
+
       if Map.get(conn.private, :joken_skip, false) do
         conn
       else
-        parse_auth(conn, get_req_header(conn, "authorization"))
+        parse_auth(conn, conn.private[:joken_token_function].(conn))
       end
     end
 
@@ -155,7 +162,13 @@ if Code.ensure_loaded?(Plug.Conn) do
       end
     end
 
-    defp parse_auth(conn, ["Bearer " <> incoming_token]) do
+    defp parse_auth(conn, nil) do
+      send_401(conn, "Unauthorized")
+    end
+
+    defp parse_auth(conn, ""), do: parse_auth(conn, nil)
+
+    defp parse_auth(conn, incoming_token) do
       payload_fun = Map.get(conn.private, :joken_verify)
 
       verified_token = payload_fun.()
@@ -163,9 +176,6 @@ if Code.ensure_loaded?(Plug.Conn) do
       |> verify
 
       evaluate(conn, verified_token)
-    end
-    defp parse_auth(conn, _header) do
-      send_401(conn, "Unauthorized")
     end
 
     defp evaluate(conn, %Token{error: nil} = token) do
@@ -200,5 +210,13 @@ if Code.ensure_loaded?(Plug.Conn) do
     def default_on_error(conn, message) do
       {conn, message}
     end
+
+    @doc false
+    def default_token_function(conn) do
+      get_req_header(conn, "authorization") |> token_from_header
+    end
+
+    defp token_from_header(["Bearer " <> incoming_token]), do: incoming_token
+    defp token_from_header(_), do: nil
   end
 end
