@@ -13,7 +13,7 @@
   "jsx": {:hex, :jsx, "2.6.2", "213721e058da0587a4bce3cc8a00ff6684ced229c8f9223245c6ff2c88fbaa5a", [:mix, :rebar], []},
   "keccakf1600": {:hex, :keccakf1600, "2.0.0", "69d02d844a101bf3c75484c9e334fd04b0f57280727e881cac3bd8240432f43a", [:rebar3], []},
   "libdecaf": {:hex, :libdecaf, "0.0.3", "899b02e86ea6abcf4ce3831753cedfd5a91881d29e9c0a4fba591452c53ecc80", [:rebar3], []},
-  "libsodium": {:hex, :libsodium, "0.0.8", "3fe9bd6797dd612ec9483cce263b61350a7cf0056d6bf403ccbed606ede264f0", [:rebar3], []},
+  "libsodium": {:hex, :libsodium, "0.0.9", "c2417f1c8112e755765cce8fe3b48b65c96f4a84af379d63c25db517353b5b01", [:rebar3], []},
   "metrics": {:hex, :metrics, "1.0.1", "25f094dea2cda98213cecc3aeff09e940299d950904393b2a29d191c346a8486", [:rebar3], []},
   "mime": {:hex, :mime, "1.0.1", "05c393850524767d13a53627df71beeebb016205eb43bfbd92d14d24ec7a1b51", [:mix], []},
   "mimerl": {:hex, :mimerl, "1.0.2", "993f9b0e084083405ed8252b99460c4f0563e41729ab42d9074fd5e52439be88", [:rebar3], []},
