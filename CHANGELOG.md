@@ -1,3 +1,8 @@
+## v1.5
+* Enhancements
+  - [Adds `token` option to `Joken.Plug`](https://github.com/bryanjos/joken/pull/167)
+  - [Change :iss claim key to "iss" in Joken.with_iss](https://github.com/bryanjos/joken/pull/165)
+
 ## v1.4.1
 * Enhancements
   - [Fix warnings in Elixir 1.4](https://github.com/bryanjos/joken/pull/164)
