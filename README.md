@@ -70,6 +70,16 @@ my_token = token
 |> with_signer(hs256("my_secret"))
 ```
 
+To create a function with the default generator for claims (`exp`, `iat` and `nbf`) but override one of the default claims (the example below overrides the default `exp` value to be 24 hours):
+
+```elixir
+import Joken
+
+my_token = token
+|> with_claim_generator("exp", fn -> 24 * 60 * 60 end)
+|> with_signer(hs256("my_secret"))
+```
+
 To create a function with an initial map of claims:
 
 ```elixir
@@ -161,19 +171,19 @@ Then you must plug this AFTER :match and BEFORE :dispatch.
 
     # route options
     @skip_token_verification %{joken_skip: true}
-    
+
     @custom_token_verification %{joken_verify: %MyRouter.is_not_subject/0}
 
     plug :match
-    plug Joken.Plug, verify: &MyRouter.verify_function/0       
+    plug Joken.Plug, verify: &MyRouter.verify_function/0
     plug :dispatch
 
     post "/user" do
       # will only execute here if token is present and valid
     end
-    
+
     post "/endpoint", private: @custom_token_verification do
-      # will only execute here if token is present and valid 
+      # will only execute here if token is present and valid
       # using the function `is_not_subject/0`
     end
 
@@ -181,13 +191,13 @@ Then you must plug this AFTER :match and BEFORE :dispatch.
     match _, private: @skip_token_verification do
       # will NOT try to validate a token
     end
-    
+
     def verify_function() do
       %Joken.Token{}
       |> Joken.with_signer(hs256("secret"))
       |> Joken.with_sub(1234567890)
     end
-    
+
     def is_not_subject() do
       %Joken.Token{}
       |> Joken.with_validation("sub", &(&1 != 1234567890))
@@ -196,7 +206,7 @@ Then you must plug this AFTER :match and BEFORE :dispatch.
   end
 ```
 
-For more examples, look in our [tests](https://github.com/bryanjos/joken/blob/master/test/plug_test.exs) for more usage scenarios. 
+For more examples, look in our [tests](https://github.com/bryanjos/joken/blob/master/test/plug_test.exs) for more usage scenarios.
 
 
 ### Options
@@ -232,7 +242,7 @@ The other algorithms are based on asymmetric cryptography. For example: RS512 is
 
 Similarly, as an added example, ES256 is based on a digital signing algorithm using elliptic curve keys, a kind of asymmetric cryptography. They also need information on the points used on the curve and aren't suitable to be passed as a string in free-form.
 
-These keys have standards on how they are shared. PEM (Privacy enhanced mail) files are a common example. They have all the key information encoded in a text format. Erlang, and by consequence Elixir, has native modules for dealing with these. They reside in the `:public_key` module. Functions like `pem_decode/1` or `pem_encode/1` might be useful for handling this kind of data. 
+These keys have standards on how they are shared. PEM (Privacy enhanced mail) files are a common example. They have all the key information encoded in a text format. Erlang, and by consequence Elixir, has native modules for dealing with these. They reside in the `:public_key` module. Functions like `pem_decode/1` or `pem_encode/1` might be useful for handling this kind of data.
 
 Actually, `Joken` depends on `JOSE`. There are facilities in `JOSE` that make the job even easier. Here is an example with an RSA key used in jwt.io:
 
@@ -245,7 +255,7 @@ Actually, `Joken` depends on `JOSE`. There are facilities in `JOSE` that make th
 
 # We can sign with this PRIVATE key using:
 import Joken
-key = JOSE.JWK.from_pem_file("test/example_key.pem") 
+key = JOSE.JWK.from_pem_file("test/example_key.pem")
 
 signed_token = %{ "name" => "John Doe" }
 |> token
@@ -253,7 +263,7 @@ signed_token = %{ "name" => "John Doe" }
 |> get_compact
 ```
 
-In summary, what `Joken` expects as a key is what suits the algorithm in use. If it is: 
+In summary, what `Joken` expects as a key is what suits the algorithm in use. If it is:
 
 - HSXXX: then it must be a string
 - RSXXX: then it must be a map with RSA key parameters (remember that it must sign with a private key and verify with a public key)
