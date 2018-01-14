@@ -290,3 +290,4 @@ end
 ```
 Be advised though that this is a work in progress by [@potatosalad](https://github.com/potatosalad).
 
+Also be advised that building this libraries may require additional dependencies in your build system. 
