@@ -21,20 +21,19 @@ defmodule Joken.Mixfile do
 
   def application do
     [
-      extra_applications: [:logger, :crypto]
+      extra_applications: [:logger, :crypto],
+      mod: {Joken.Application, []}
     ]
   end
 
   defp deps do
     [
       {:jose, "~> 1.8"},
+      {:jason, "~> 1.0.0-rc.2", optional: true},
       {:plug, "~> 1.0", optional: true},
-      {:poison, "~> 2.0 or ~> 3.0", optional: true},
-      {:earmark, "~> 1.2", only: :dev},
-      {:ex_doc, "~> 0.18", only: :dev},
-      {:benchfella, "~> 0.3", only: :test},
-      {:excoveralls, "~> 0.8", only: :test},
-      {:credo, "~> 0.3", only: [:dev, :test]}
+      {:ex_doc, "~> 0.18", only: :dev, runtime: false},
+      {:benchfella, "~> 0.3"},
+      {:excoveralls, "~> 0.8", only: :test, runtime: false}
     ]
   end
 

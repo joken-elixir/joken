@@ -137,6 +137,11 @@ defmodule Joken.Signer do
     %{token | token: compacted_token, claims: claims, claims_generation: %{}}
   end
 
+  def sign_new(claims, signer) do
+    {_, compacted_token} = JWS.compact(JWT.sign(signer.jwk, signer.jws, claims))
+    compacted_token
+  end
+
   @doc """
   Verifies a token signature and decodes its payload. This assumes a signer was
   configured. It raises if there was none.
