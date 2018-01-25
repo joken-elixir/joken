@@ -1,4 +1,8 @@
 defmodule Joken.Error do
+  @moduledoc """
+  Errors for the Joken API.
+  """
+
   @pem_or_map """
   `PEM` is a format for encoding keys. Here is a key configuration example:
 
@@ -67,7 +71,7 @@ defmodule Joken.Error do
 
     Possible values are: 
 
-    #{inspect(Joken2.Signer.algorithms())}
+    #{inspect(Joken.Signer.algorithms())}
     """
 
   def message(%__MODULE__{reason: [:hs_no_secret, [key_alg: key_alg]]}),
@@ -91,5 +95,12 @@ defmodule Joken.Error do
     Please, provide only one of them.
 
     #{@pem_or_map}
+    """
+
+  def message(%__MODULE__{reason: :claim_not_valid}),
+    do: """
+    Claim did not pass validation
+
+    Set log level to debug for more information.
     """
 end

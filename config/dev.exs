@@ -2,7 +2,11 @@ use Mix.Config
 
 config :joken,
   default_key: "s3cr3t",
-  pem_rs256: [
+  hs256: [
+    key_alg: "HS256",
+    key_secret: "test"
+  ],
+  rs256: [
     key_alg: "RS256",
     key_pem: """
     -----BEGIN RSA PRIVATE KEY-----

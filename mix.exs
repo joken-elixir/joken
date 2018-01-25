@@ -14,7 +14,6 @@ defmodule Joken.Mixfile do
       description: description(),
       package: package(),
       deps: deps(),
-      test_coverage: [tool: ExCoveralls],
       docs: docs_config()
     ]
   end
@@ -30,16 +29,17 @@ defmodule Joken.Mixfile do
     [
       {:jose, "~> 1.8"},
       {:jason, "~> 1.0.0-rc.2", optional: true},
-      {:plug, "~> 1.0", optional: true},
-      {:ex_doc, "~> 0.18", only: :dev, runtime: false},
-      {:benchfella, "~> 0.3"},
-      {:excoveralls, "~> 0.8", only: :test, runtime: false}
+      {:benchee, "~> 0.11", only: :bench},
+
+      # Test
+      {:junit_formatter, "~> 2.1", only: :test},
+      {:stream_data, "~> 0.4", only: :test}
     ]
   end
 
   defp description do
     """
-    JWT Library for Elixir
+    JWT (JSON Web Token) Library for Elixir
     """
   end
 

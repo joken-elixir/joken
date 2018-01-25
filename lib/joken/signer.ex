@@ -1,324 +1,183 @@
 defmodule Joken.Signer do
-  alias Joken.Token
+  @moduledoc """
+  Interface between Joken and JOSE for signing and verifying tokens.
+  """
   alias Joken.Signer
   alias JOSE.JWS
   alias JOSE.JWT
   alias JOSE.JWK
 
-  @moduledoc """
-  Signer is the JWK (JSON Web Key) and JWS (JSON Web Signature) configuration of
-  Joken.
+  @hs_algorithms ["HS256", "HS384", "HS512"]
+  @rs_algorithms ["RS256", "RS384", "RS512"]
+  @es_algorithms ["ES256", "ES384", "ES512"]
+  @ps_algorithms ["PS256", "PS384", "PS512"]
+  @eddsa_algorithms ["Ed25519", "Ed25519ph", "Ed448", "Ed448ph"]
 
-  JWK is used by JWS to generate a token _signature_ that is appended to the end
-  of the token compact representation.
+  @map_key_algorithms @rs_algorithms ++ @es_algorithms ++ @ps_algorithms ++ @eddsa_algorithms
 
-  Joken uses https://hex.pm/packages/jose to do signing and verification.
+  @algorithms @hs_algorithms ++ @map_key_algorithms
 
-  Note: By default, the 'none' algorithm is disabled. To enable it, set the
-  'allow_none_algorithm' key on the 'joken' app configuration to true
-  """
-
-  @type jwk :: %{}
-  @type jws :: %{}
+  @type jwk :: %JWK{}
+  @type jws :: %JWS{}
 
   @type t :: %__MODULE__{
           jwk: jwk,
-          jws: jws
+          jws: jws,
+          alg: binary()
         }
 
-  @doc "Enables the use of `none` algorithm."
-  def configure_unsecured_signing() do
-    JOSE.unsecured_signing(none_algorithm_allowed?())
-  end
-
-  defstruct [:jwk, :jws]
+  defstruct [:jwk, :jws, :alg]
 
   @doc """
-  Convenience for generating a Joken.Signer with the none algorithm.
-  This raises `Joken.AlgorithmError` if the `none` algorightm is enabled.
+  All supported algorithms.
   """
-  @spec none(binary) :: Signer.t()
-  def none(secret) do
-    unless none_algorithm_allowed?() do
-      raise Joken.AlgorithmError,
-        message: """
-          'none' algorithm is not allowed.
-          In order to use the 'none algorithm', the 'allow_none_algorithm' key on
-          the joken app's configuration must be set to 'true'
-        """
-    end
+  def algorithms, do: @algorithms
 
+  @doc """
+  Creates a new Joken.Signer struct. Can accept either a binary for HS*** algorithms
+  or a map with arguments for the other kinds of keys.
+
+  ## Example:
+
+      iex> Joken.Signer.create("HS256", "s3cret")
+      %Joken.Signer{
+        alg: "HS256",
+        jwk: %JOSE.JWK{
+          fields: %{},
+          keys: :undefined,
+          kty: {:jose_jwk_kty_oct, "s3cret"}
+        },
+        jws: %JOSE.JWS{
+          alg: {:jose_jws_alg_hmac, :HS256},
+          b64: :undefined,
+          fields: %{"typ" => "JWT"}
+        }
+      }
+      
+  """
+  def create(alg, secret) when is_binary(secret) and alg in @hs_algorithms do
     %Signer{
-      jws: %{"alg" => "none"},
-      jwk: %{"kty" => "oct", "k" => Base.url_encode64(secret, padding: false)}
+      jws: JOSE.JWS.from_map(%{"alg" => alg, "typ" => "JWT"}),
+      jwk: JOSE.JWK.from_oct(secret),
+      alg: alg
     }
   end
 
-  @doc "Convenience for generating an HS*** Joken.Signer"
-  @spec hs(binary, binary) :: Signer.t()
-  def hs(alg, secret) when is_binary(secret) and alg in ["HS256", "HS384", "HS512"] do
+  def create(alg, key) when is_map(key) and alg in @map_key_algorithms do
     %Signer{
-      jws: %{"alg" => alg},
-      jwk: %{"kty" => "oct", "k" => Base.url_encode64(secret, padding: false)}
+      jws: JOSE.JWS.from_map(%{"alg" => alg, "typ" => "JWT"}),
+      jwk: JOSE.JWK.from_map(key),
+      alg: alg
     }
   end
 
-  @doc "Convenience for generating an EdDSA Joken.Signer"
-  @spec eddsa(binary, map) :: Signer.t()
-  def eddsa(alg, key) when is_map(key) and alg in ["Ed25519", "Ed25519ph", "Ed448", "Ed448ph"] do
-    %Signer{jws: %{"alg" => alg}, jwk: key}
-  end
-
-  @doc "Convenience for generating an ES*** Joken.Signer"
-  @spec es(binary, map) :: Signer.t()
-  def es(alg, key) when is_map(key) and alg in ["ES256", "ES384", "ES512"] do
-    %Signer{jws: %{"alg" => alg}, jwk: key}
-  end
-
-  @doc "Convenience for generating an RS*** Joken.Signer"
-  @spec rs(binary, map) :: Signer.t()
-  def rs(alg, key) when is_map(key) and alg in ["RS256", "RS384", "RS512"] do
-    %Signer{jws: %{"alg" => alg}, jwk: key}
-  end
-
-  @doc "Convenience for generating an PS*** Joken.Signer"
-  @spec ps(binary, map) :: Signer.t()
-  def ps(alg, key) when is_map(key) and alg in ["PS256", "PS384", "PS512"] do
-    %Signer{jws: %{"alg" => alg}, jwk: key}
-  end
-
   @doc """
-  Signs a payload (JOSE header + claims) with the configured signer.
+  Signs a map of claims with the given Joken.Signer.
 
-  It raises ArgumentError if no signer was configured.
+  ## Example
+
+      iex> Joken.Signer.sign(%{"name" => "John Doe"}, Joken.Signer.create("HS256", "secret"))
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.xuEv8qrfXu424LZk8bVgr9MQJUIrp1rHcPyZw_KSsds"
+
+      iex> Joken.Signer.sign(%{"name" => "John Doe"}, Joken.Signer.parse_config(:rs256))
+      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.e3hyn_oaaA2lxMlqH1UPo8STN-a_sszl8B2_s6tY9aT_YBAmfd7BXJOPsOMl7x2wXeKMQaNBVjna2tA0UiO_m3SpwiYgoTcU65D6OgkzugmLD_DhjDK1YCOKlm7So1uhbkb_QCuo4Ij5scsQqwv7hkxo4IximGBeH9LAvPhPTaGmYJMI7_tWIld2TlY6tNUQP4n0qctXsI3hjvGzdvuQW-tRnzAQCC4TYe-mJgFa033NSHeiX-sZB-SuYlWi7DJqDTiwlb_beVdqWpxxtFDA005Iw6FZTpH9Rs1LVwJU5t3RN5iWB-z4ZI-kKsGUGLNrAZ7btV6Ow2FMAdj9TXmNpQ"
+
   """
-  @spec sign(Token.t()) :: Token.t()
-  def sign(%Token{signer: nil}) do
-    raise ArgumentError, message: "Missing Signer"
-  end
-
-  def sign(token = %Token{signer: signer = %Signer{}}) do
-    sign(token, signer)
-  end
-
-  @doc """
-  Signs a payload (JOSE header + claims) with the given signer.
-
-  This will override the configured signer.
-  """
-  @spec sign(Token.t(), Signer.t()) :: Token.t()
-  def sign(token, %Signer{jws: nil, jwk: %{"kty" => "oct"} = jwk}) do
-    jws = %{"alg" => "HS256"}
-    sign(token, %Signer{jwk: jwk, jws: jws})
-  end
-
-  def sign(token, %Signer{jws: nil, jwk: jwk}) when is_binary(jwk) do
-    jws = %{"alg" => "HS256"}
-    sign(token, %Signer{jwk: jwk, jws: jws})
-  end
-
-  def sign(token, %Signer{jws: jws, jwk: secret}) when is_binary(secret) do
-    jwk = %{
-      "kty" => "oct",
-      "k" => Base.url_encode64(:erlang.iolist_to_binary(secret), padding: false)
-    }
-
-    sign(token, %Signer{jwk: jwk, jws: jws})
-  end
-
-  def sign(token, signer) do
-    header = token.header
-    signer = %{signer | jws: Map.merge(signer.jws, header)}
-    token = %{token | signer: signer}
-
-    claims = prepare_claims(token)
-
-    {_, compacted_token} = JWS.compact(JWT.sign(signer.jwk, signer.jws, claims))
-    %{token | token: compacted_token, claims: claims, claims_generation: %{}}
-  end
-
-  def sign_new(claims, signer) do
-    {_, compacted_token} = JWS.compact(JWT.sign(signer.jwk, signer.jws, claims))
+  def sign(claims, %Signer{jwk: jwk, jws: jws}) when is_map(claims) do
+    {_, compacted_token} = JWT.sign(jwk, jws, claims) |> JWS.compact()
     compacted_token
   end
 
-  @doc """
-  Verifies a token signature and decodes its payload. This assumes a signer was
-  configured. It raises if there was none.
-  """
-  @spec verify(Token.t(), Signer.t() | nil, Keyword.t()) :: Token.t()
-  def verify(token, signer \\ nil, options \\ [])
-
-  def verify(%Token{signer: nil}, nil, _options),
-    do: raise(ArgumentError, message: "Missing Signer")
-
-  def verify(token = %Token{signer: signer = %Signer{}}, nil, options),
-    do: do_verify(token, signer, options)
-
-  def verify(t, signer, options), do: do_verify(t, signer, options)
-
-  @doc """
-  Returns the token payload without validating or verifying
-  """
-  @spec peek(Token.t(), Keyword.t()) :: map
-  def peek(%Token{token: compact_token} = token, options \\ []) do
-    payload = JWS.peek_payload(compact_token)
-
-    token
-    |> decode_payload(payload)
-    |> process_claims(options)
-  end
-
-  @doc """
-  Returns the token header without validating or verifying
-  """
-  @spec peek_header(Token.t()) :: map
-  def peek_header(%Token{token: compact_token} = token) do
-    header = JWS.peek_protected(compact_token)
-
-    token
-    |> decode_payload(header)
-  end
-
-  ### PRIVATE
-  defp do_verify(t = %Token{token: nil}, _signer, _options),
-    do: %{t | error: "No compact token set for verification"}
-
-  defp do_verify(
-         t = %Token{token: token},
-         s = %Signer{jwk: jwk, jws: %{"alg" => algorithm}},
-         options
-       ) do
-    t = %{t | signer: s}
-    t = %{t | error: nil}
-
-    try do
-      case JWK.verify_strict(token, [algorithm |> to_string], jwk) do
-        {true, payload, jws} ->
-          jws = jws |> JWS.to_map() |> elem(1)
-          map_payload = decode_payload(t, payload)
-          header = jws |> Map.drop(["alg", "typ"])
-          validate_all_claims(t, header, map_payload, options)
-
-        _ ->
-          %{t | error: "Invalid signature"}
-      end
-    catch
-      :error, _cause ->
-        %{t | error: "Could not verify token"}
-    end
-  end
-
-  defp decode_payload(%Token{json_module: nil}, _),
-    do: raise(ArgumentError, message: "No JSON module defined")
-
-  defp decode_payload(%Token{json_module: :jsx}, payload)
-       when is_binary(payload) do
-    :jsx.decode(payload, [:return_maps])
-  end
-
-  defp decode_payload(%Token{json_module: json}, payload)
-       when is_binary(payload) do
-    json.decode!(payload)
-  end
-
-  defp validate_all_claims(t = %Token{validations: validations}, header, map_payload, options)
-       when is_map(map_payload) do
-    validations =
-      if options[:skip_claims] do
-        Map.drop(validations, options[:skip_claims])
-      else
-        validations
-      end
-
-    {valid_claims, errors} =
-      Enum.reduce(validations, {[], []}, fn {key, {valid?, message}}, acc ->
-        validate_key(map_payload, key, valid?, message, acc)
-      end)
-
-    claims =
-      valid_claims ++
-        Enum.filter(map_payload, fn {key, _} ->
-          not Map.has_key?(validations, key)
-        end)
-
-    case errors do
-      [first | _] -> %{t | error: first, errors: errors}
-      _ -> %{t | claims: process_claims(claims, options), header: header}
-    end
-  end
-
-  defp validate_key(map_payload, key, valid?, message, {claims, errors}) when is_binary(key) do
-    if Map.has_key?(map_payload, key) and valid?.(map_payload[key]) do
-      {[{key, map_payload[key]} | claims], errors}
-    else
-      case message do
-        nil ->
-          {claims, ["Invalid payload" | errors]}
-
-        _ ->
-          {claims, [message | errors]}
-      end
-    end
-  end
-
-  defp validate_key(map_payload, keys, valid?, message, {claims, errors}) when is_list(keys) do
-    if Enum.all?(keys, &Map.has_key?(map_payload, &1)) and
-         apply(valid?, Enum.map(keys, &Map.fetch!(map_payload, &1))) do
-      {claims, errors}
-    else
-      case message do
-        nil ->
-          {claims, ["Invalid payload" | errors]}
-
-        _ ->
-          {claims, [message | errors]}
-      end
-    end
-  end
-
-  def process_claims(claims, options) do
-    struct_name = options[:as]
-
-    if struct_name do
-      struct(
-        struct_name,
-        Enum.map(claims, fn {key, value} ->
-          {String.to_existing_atom(key), value}
-        end)
-      )
-    else
-      Enum.into(claims, %{})
-    end
-  end
-
-  defp prepare_claims(%Token{claims: claims, claims_generation: generators}) do
-    claims =
-      if Enum.empty?(generators) do
-        claims
-      else
-        Enum.map_reduce(generators, claims, fn {claim_key, function}, acc ->
-          {[], Map.put(acc, claim_key, function.())}
-        end)
-        |> elem(1)
-      end
-
-    retrieve_claims(claims)
-  end
-
-  defp retrieve_claims(%{__struct__: _} = claims) do
-    Map.from_struct(claims)
-  end
-
-  defp retrieve_claims(claims) when is_map(claims) do
+  def verify(token, %Signer{alg: alg, jwk: jwk}) when is_binary(token) do
+    {true, %JWT{fields: claims}, _} = JWT.verify_strict(jwk, [alg], token)
     claims
   end
 
-  defp retrieve_claims(_) do
-    raise ArgumentError, message: "Claims must be a map"
+  @doc """
+  Generates a Joken.Signer from Joken's application configuration.
+
+  A Joken.Signer has an algorithm (one of #{inspect(@algorithms)}) and a key. 
+
+  There are several types of keys used by JWTs algorithms: 
+    - RSA
+    - Elliptic Curve
+    - Octet (binary) 
+    - So on...
+
+  Also, they can be encoded in several ways:
+    - Raw (map of parameters)
+    - PEM (Privacy Enhanced Mail format)
+    - Open SSH encoding
+    - So on...
+
+  To ease configuring these types of keys used by JWTs algorithms, Joken accepts a few
+  parameters in its configuration:
+    - **signer_alg** : one of #{inspect(@algorithms)}
+    - **signer_pem** : a binary containing a key in PEM encoding format 
+    - **signer_ssh** : a binary containing a key in Open SSH encoding format
+    - **signer_map** : a map with the raw parameters
+    - **signer_secret** : a binary used as the password for HS algorithms only
+
+  """
+  def parse_config(key \\ :default_key) do
+    case Application.get_env(:joken, key) do
+      key_config when is_binary(key_config) ->
+        create("HS256", key_config)
+
+      key_config when is_list(key_config) ->
+        parse_list_config(key_config)
+
+      _ ->
+        nil
+    end
   end
 
-  defp none_algorithm_allowed?() do
-    Application.get_env(:joken, :allow_none_algorithm, false)
+  defp parse_list_config(config) do
+    key_alg = Keyword.get(config, :key_alg, "HS256")
+    key_pem = Keyword.get(config, :key_pem)
+    key_map = Keyword.get(config, :key_map)
+    key_secret = Keyword.get(config, :key_secret)
+
+    cond do
+      key_alg in @hs_algorithms ->
+        parse_signer_with_secret(key_alg, key_secret)
+
+      key_alg in @map_key_algorithms ->
+        parse_signer_with_pem_or_map(key_alg, key_pem, key_map)
+
+      true ->
+        raise(Joken.Error, :unrecognized_algorithm)
+    end
   end
+
+  defp parse_signer_with_secret(key_alg, nil),
+    do: raise(Joken.Error, [:hs_no_secret, [key_alg: key_alg]])
+
+  defp parse_signer_with_secret(key_alg, secret) when is_binary(secret),
+    do: %Signer{
+      jwk: JOSE.JWK.from_oct(secret),
+      jws: JOSE.JWS.from_map(%{"alg" => key_alg, "typ" => "JWT"}),
+      alg: key_alg
+    }
+
+  defp parse_signer_with_pem_or_map(key_alg, nil, nil),
+    do: raise(Joken.Error, [:no_map_or_pem, [key_alg: key_alg]])
+
+  defp parse_signer_with_pem_or_map(key_alg, key_pem, key_map)
+       when not is_nil(key_pem) and not is_nil(key_map),
+       do: raise(Joken.Error, [:provided_pem_and_map, [key_alg: key_alg]])
+
+  defp parse_signer_with_pem_or_map(key_alg, key_pem, nil),
+    do: %Signer{
+      jwk: JOSE.JWK.from_pem(key_pem),
+      jws: JOSE.JWS.from_map(%{"alg" => key_alg, "typ" => "JWT"}),
+      alg: key_alg
+    }
+
+  defp parse_signer_with_pem_or_map(key_alg, nil, key_map) when is_map(key_map),
+    do: %Signer{
+      jwk: JOSE.JWK.from_map(key_map),
+      jws: JOSE.JWS.from_map(%{"alg" => key_alg, "typ" => "JWT"}),
+      alg: key_alg
+    }
 end

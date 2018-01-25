@@ -28,6 +28,8 @@ MIICWwIBAAKBgQDdlatRjRjogo3WojgGHFHYLugdUWAY9iR3fy4arWNA1KoS8kVw33cJibXr8bvwUAUp
 """
 
 config :joken,
+  current_time_adapter: Joken.CurrentTime.Mock,
+  default_key: "s3cr3t",
   hs256: [
     key_alg: "HS256",
     key_secret: "test"

@@ -1,13 +1,13 @@
 defmodule Joken.Application do
+  @moduledoc """
+  Application behaviour for Joken. Used to bootstrap some key options.
+  """
+
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
-    children = [
-      # Define workers and child supervisors to be supervised
-      # worker(Chatbot.Worker, [arg1, arg2, arg3]),
-    ]
+    children = []
 
-    IO.puts("Initializing Joken")
     JOSE.json_module(JOSE.Jason)
     opts = [strategy: :one_for_one]
     Supervisor.start_link(children, opts)
@@ -15,9 +15,16 @@ defmodule Joken.Application do
 end
 
 defmodule JOSE.Jason do
+  @moduledoc """
+  Implementation of the `:jose_json` behaviour for the Jason library.
+
+  It only delegates both `encode/1` and `decode/1` functions to Jason's calls.
+  """
   @behaviour :jose_json
 
+  @doc false
   def encode(term), do: Jason.encode!(term)
 
+  @doc false
   def decode(binary) when is_binary(binary), do: Jason.decode!(binary)
 end
