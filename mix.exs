@@ -14,6 +14,8 @@ defmodule Joken.Mixfile do
       description: description(),
       package: package(),
       deps: deps(),
+      source_ref: "v#{@version}",
+      source_url: "https://github.com/bryanjos/joken",
       docs: docs_config()
     ]
   end
@@ -30,6 +32,9 @@ defmodule Joken.Mixfile do
       {:jose, "~> 1.8"},
       {:jason, "~> 1.0.0-rc.2", optional: true},
       {:benchee, "~> 0.11", only: :bench},
+
+      # Docs
+      {:ex_doc, "~> 0.18.2", only: :dev, runtime: false},
 
       # Test
       {:junit_formatter, "~> 2.1", only: :test},
@@ -61,9 +66,7 @@ defmodule Joken.Mixfile do
         "README.md": [title: "Overview"],
         "CHANGELOG.md": [title: "Changelog"]
       ],
-      main: "readme",
-      source_ref: "v#{@version}",
-      source_url: "https://github.com/bryanjos/joken"
+      main: "readme"
     ]
   end
 end

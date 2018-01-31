@@ -103,4 +103,20 @@ defmodule Joken.Error do
 
     Set log level to debug for more information.
     """
+
+  def message(%__MODULE__{reason: :claim_configuration_not_valid}),
+    do: """
+    Claim configuration is not valid. You must have either a generation function or a 
+    validation function. 
+
+    If both are nil you don`t need a Joken.Claim configuration. You can pass any map of values
+    to `Joken.Config.generate_and_sign/3`. Verify will only use claims that have a validation
+    function on your configuration. Example:
+
+        defmodule CustomClaimTest do
+          use Joken.Config
+        end
+        
+        CustomClaimTest.generate_and_sign %{"a claim without configuration" => "any value"}
+    """
 end

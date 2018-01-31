@@ -11,36 +11,39 @@ defmodule HS512Auth do
 end
 
 defmodule HS256AuthVerify do
-  use Joken.Config,
-    default_key: :hs256,
-    claims_config:
-      %{}
-      |> add_claim("name", fn -> "John Doe" end, &(&1 == "John Doe"))
-      |> add_claim("test", fn -> true end, &(&1 == true))
-      |> add_claim("age", fn -> 666 end, &(&1 > 18))
-      |> add_claim("simple time test", fn -> 1 end, &(Joken.current_time() > &1))
+  use Joken.Config, default_key: :hs256
+
+  def token_config do
+    %{}
+    |> add_claim("name", fn -> "John Doe" end, &(&1 == "John Doe"))
+    |> add_claim("test", fn -> true end, &(&1 == true))
+    |> add_claim("age", fn -> 666 end, &(&1 > 18))
+    |> add_claim("simple time test", fn -> 1 end, &(Joken.current_time() > &1))
+  end
 end
 
 defmodule HS384AuthVerify do
-  use Joken.Config,
-    default_key: :hs384,
-    claims_config:
-      %{}
-      |> add_claim("name", fn -> "John Doe" end, &(&1 == "John Doe"))
-      |> add_claim("test", fn -> true end, &(&1 == true))
-      |> add_claim("age", fn -> 666 end, &(&1 > 18))
-      |> add_claim("simple time test", fn -> 1 end, &(Joken.current_time() > &1))
+  use Joken.Config, default_key: :hs384
+
+  def token_config do
+    %{}
+    |> add_claim("name", fn -> "John Doe" end, &(&1 == "John Doe"))
+    |> add_claim("test", fn -> true end, &(&1 == true))
+    |> add_claim("age", fn -> 666 end, &(&1 > 18))
+    |> add_claim("simple time test", fn -> 1 end, &(Joken.current_time() > &1))
+  end
 end
 
 defmodule HS512AuthVerify do
-  use Joken.Config,
-    default_key: :hs512,
-    claims_config:
-      %{}
-      |> add_claim("name", fn -> "John Doe" end, &(&1 == "John Doe"))
-      |> add_claim("test", fn -> true end, &(&1 == true))
-      |> add_claim("age", fn -> 666 end, &(&1 > 18))
-      |> add_claim("simple time test", fn -> 1 end, &(Joken.current_time() > &1))
+  use Joken.Config, default_key: :hs512
+
+  def token_config do
+    %{}
+    |> add_claim("name", fn -> "John Doe" end, &(&1 == "John Doe"))
+    |> add_claim("test", fn -> true end, &(&1 == true))
+    |> add_claim("age", fn -> 666 end, &(&1 > 18))
+    |> add_claim("simple time test", fn -> 1 end, &(Joken.current_time() > &1))
+  end
 end
 
 hs256_token =

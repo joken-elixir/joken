@@ -4,10 +4,8 @@ defmodule Joken.Config.Test do
   alias Joken.{Config, CurrentTime.Mock}
 
   setup do
-    Mock.start_link()
+    start_supervised!(Mock)
 
-    name = Mock.unique_name_per_process()
-    on_exit(fn -> IO.puts("Mock test process: #{inspect(Process.whereis(name))}") end)
     :ok
   end
 

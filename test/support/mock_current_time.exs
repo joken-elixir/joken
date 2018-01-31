@@ -1,13 +1,20 @@
 defmodule Joken.CurrentTime.Mock do
   use Agent
 
-  def start_link do
+  def start_link(name) do
     Agent.start_link(
       fn ->
         %{is_frozen: false, frozen_value: nil}
       end,
-      name: unique_name_per_process()
+      name: name
     )
+  end
+
+  def child_spec(_args) do
+    %{
+      id: Joken.CurrentTime.Mock,
+      start: {Joken.CurrentTime.Mock, :start_link, [unique_name_per_process()]}
+    }
   end
 
   def current_time do
@@ -31,11 +38,9 @@ defmodule Joken.CurrentTime.Mock do
   end
 
   def unfreeze do
-    if Process.whereis(unique_name_per_process()) do
-      Agent.update(unique_name_per_process(), fn _state ->
-        %{is_frozen: false, frozen_value: nil}
-      end)
-    end
+    Agent.update(unique_name_per_process(), fn _state ->
+      %{is_frozen: false, frozen_value: nil}
+    end)
   end
 
   def unique_name_per_process do
@@ -44,6 +49,6 @@ defmodule Joken.CurrentTime.Mock do
       |> :erlang.pid_to_list()
       |> :erlang.iolist_to_binary()
 
-    "#{__MODULE__}_#{binary_pid}" |> String.to_atom()
+    "{__MODULE__}_#{binary_pid}" |> String.to_atom()
   end
 end

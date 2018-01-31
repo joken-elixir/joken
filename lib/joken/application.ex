@@ -22,9 +22,9 @@ defmodule JOSE.Jason do
   """
   @behaviour :jose_json
 
-  @doc false
+  @impl true
   def encode(term), do: Jason.encode!(term)
 
-  @doc false
+  @impl true
   def decode(binary) when is_binary(binary), do: Jason.decode!(binary)
 end
