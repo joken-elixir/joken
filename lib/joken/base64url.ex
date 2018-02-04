@@ -1,3 +1,11 @@
+# This file overrides a module used by JOSE for performing base64 url encode/decode
+#
+# After profiling, the Elixir Base implementation has higher performance and so we
+# override the default JOSE implementation with one that uses Elixir.Base.
+
+# Ignore module conflicts because that is what we are after here
+Code.compiler_options(ignore_module_conflict: true)
+
 defmodule :base64url do
   @moduledoc """
   Redefines default :base64url dependency of erlang-jose for taking advantage from the faster
@@ -17,3 +25,6 @@ defmodule :base64url do
 
   def decode(term) when is_list(term), do: :erlang.iolist_to_binary(term) |> decode()
 end
+
+# Turn back module conflicts
+Code.compiler_options(ignore_module_conflict: false)

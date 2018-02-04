@@ -2,7 +2,7 @@ defmodule Joken.Config do
   @moduledoc ~S"""
   Main entry point for configuring Joken. This module has two approaches:
 
-  ## Creating a map of Joken.Claim s
+  ## Creating a map of `Joken.Claim` s
 
   If you prefer to avoid using macros, you can create your configuration manually. Joken's 
   configuration is just a map with keys being binaries (the claim name) and the value an
@@ -32,21 +32,31 @@ defmodule Joken.Config do
 
   This way, `Joken.Config` will implement some functions for you:
 
-    - `generate_and_sign/2`
-    - `verify_and_validate/2`
-    - `token_config/0`
+    - `generate_claims/1`: generates dynamic claims and adds them to the passed map.
+    - `encode_and_sign/2`: takes a map of claims, encodes it to JSON and signs it.
+    - `verify/2`: check for token tampering using a signer.
+    - `validate/1`: takes a claim map and a configuration to run validations.
+    - `generate_and_sign/2`: combines generation and signing.
+    - `verify_and_validate/2`: combines verification and validation.
+    - `token_config/0`: where you customize token generation and validation.
+
+  ## Overriding
+
+  All generated functions can be overridden. There are other functions for plugging into the
+  lifecycle of tokens. Please, see `Joken.Hooks` as a way for integrating with Joken.
 
   ## Overriding functions
 
-  All callbacks in `Joken.Config` are overridable. This can be used for customizing the token
-  configuration. All that is needed is to override the `token_config/0` function returning your map
-  of binary keys to `Joken.Claim` structs. Example from the benchmark suite:
+  All callbacks in `Joken.Config` and `Joken.Hooks` are overridable. This can be used for 
+  customizing the token configuration. All that is needed is to override the `token_config/0`
+  function returning your map of binary keys to `Joken.Claim` structs. Example from the 
+  benchmark suite:
 
       defmodule MyCustomClaimsAuth do
         use Joken.Config
 
         def token_config do
-          %{}
+          %{} # empty claim map
           |> add_claim("name", fn -> "John Doe" end, &(&1 == "John Doe"))
           |> add_claim("test", fn -> true end, &(&1 == true))
           |> add_claim("age", fn -> 666 end, &(&1 > 18))
@@ -81,24 +91,30 @@ defmodule Joken.Config do
   import Joken, only: [current_time: 0]
   alias Joken.{Signer, Claim}
 
-  @default_generated_claims [:exp, :iat, :nbf, :iss]
+  @default_generated_claims [:exp, :iat, :nbf, :iss, :aud, :jti]
 
-  @callback token_config() :: Map.t()
+  @type claims_config :: %{binary() => Joken.Claim.t()}
+  @type claims :: %{binary() => term()}
+  @type token :: binary()
+  @type validate_result :: {:ok, claims()} | {:error, term()}
 
-  @doc "See Joken.Config.generate_and_sign/3 for the default implementation"
-  @callback generate_and_sign(extra_claims :: Map.t(), key :: atom() | nil) :: binary()
+  @callback token_config() :: claims_config()
 
-  @doc "See Joken.Config.verify_and_validate/3 for the default implementation"
-  @callback verify_and_validate(bearer_token :: binary(), key :: atom | nil) :: Map.t()
+  @callback generate_claims(extra :: claims()) :: claims()
+  @callback encode_and_sign(claims(), key :: atom() | nil) :: token()
+  @callback verify(token(), key :: atom | nil) :: claims()
+  @callback validate(claims()) :: claims()
 
-  @doc false
   defmacro __using__(options) do
     quote do
       import Joken, only: [current_time: 0]
       import Joken.Config
-      alias Joken.{Signer, Claim}
 
       @behaviour Joken.Config
+
+      use Joken.Hooks
+
+      alias Joken.{Signer, Claim}
 
       @joken_using_args unquote(options)
 
@@ -110,19 +126,69 @@ defmodule Joken.Config do
       @impl Joken.Config
       def token_config, do: default_claims(@joken_using_args)
 
-      @doc "See Joken.Config.generate_and_sign/3 for the default implementation"
-      @impl Joken.Config
-      def generate_and_sign(extra_claims \\ %{}, key \\ nil)
-          when is_map(extra_claims) and is_atom(key),
-          do: Joken.Config.generate_and_sign(__MODULE__, extra_claims, key)
+      @doc """
+      Generates a JWT claim set, encode it and then sign it.
 
-      @doc "See Joken.Config.verify_and_validate/3 for the default implementation"
-      @impl Joken.Config
-      def verify_and_validate(bearer_token, key \\ nil)
-          when is_binary(bearer_token) and is_atom(key),
-          do: Joken.Config.verify_and_validate(__MODULE__, bearer_token, key)
+      The signer used will be (in order of preference):
 
-      defoverridable token_config: 0, generate_and_sign: 2, verify_and_validate: 2
+        1. The one represented by the key passed as second argument. The signer will be 
+        parsed from the configuration. 
+        2. If no argument was passed then we will use the one from the configuration default_signer
+         passed as argument for the `use Joken.Config` macro.
+        3. If no key was passed for the use macro then we will use the one configured as 
+        default_signer in the configuration.
+
+      Extra claims must be a map with keys as binaries. Ex: %{"sub" => "some@one.com"}
+      """
+      @impl Joken.Config
+      def generate_claims(extra_claims \\ %{}),
+        do: Joken.Config.generate_claims(__MODULE__, extra_claims)
+
+      @doc "Encode and sign"
+      @impl Joken.Config
+      def encode_and_sign(claims, key \\ nil),
+        do: Joken.Config.encode_and_sign(__MODULE__, claims, key)
+
+      @doc """
+      Verifies token's signature using a Joken.Signer.
+
+      The signer used is (in order of precedence):
+
+      1. The signer in the configuration with the given `key`.
+      2. The signer passed in the `use Joken.Config` through the `default_signer` key.
+      3. The default signer in configuration (the one with the key `default_signer`).
+
+      It returns either:
+
+      - `{:ok, claims_map}` where claims_map is the token's claims.
+      - `{:error, [message: message, claim: key, claim_val: claim_value]}` where message can be used
+      on the frontend (it does not contain which claim nor which value failed).
+      """
+      @impl Joken.Config
+      def verify(bearer_token, key \\ nil) when is_atom(key),
+        do: Joken.Config.verify(__MODULE__, bearer_token, key)
+
+      @doc "Validate"
+      @impl Joken.Config
+      def validate(claims), do: Joken.Config.validate(__MODULE__, claims)
+
+      defoverridable token_config: 0,
+                     generate_claims: 1,
+                     encode_and_sign: 2,
+                     verify: 2,
+                     validate: 1
+
+      @doc "Combines generate_claims/1 and encode_and_sign/2"
+      def generate_and_sign(extra_claims \\ %{}, key \\ nil) do
+        claims = generate_claims(extra_claims)
+        encode_and_sign(claims, key)
+      end
+
+      @doc "Combines verify/2 and validate/1"
+      def verify_and_validate(bearer_token, key \\ nil) do
+        claim_map = verify(bearer_token, key)
+        validate(claim_map)
+      end
 
       @doc "Same as verify_and_update/2 but raises if error"
       def verify_and_validate!(extra_claims \\ %{}, key \\ nil) do
@@ -139,28 +205,20 @@ defmodule Joken.Config do
     end
   end
 
-  @doc """
-  Verifies token's signature using a Joken.Signer.
+  def verify(mod, bearer_token, key) when is_atom(key) do
+    signer = parse_signer(mod, key)
+    {:ok, bearer_token, signer} = mod.before_verify(bearer_token, signer)
+    claim_map = Signer.verify(bearer_token, signer)
+    {:ok, claim_map} = mod.after_verify(bearer_token, claim_map, signer)
+    claim_map
+  end
 
-  The signer used is (in order of precedence):
-
-  1. The signer in the configuration with the given `key`.
-  2. The signer passed in the `use Joken.Config` through the `default_signer` key.
-  3. The default signer in configuration (the one with the key `default_signer`).
-
-  It returns either:
-
-  - `{:ok, claims_map}` where claims_map is the token's claims.
-  - `{:error, [message: message, claim: key, claim_val: claim_value]}` where message can be used
-  on the frontend (it does not contain which claim nor which value failed).
-  """
-  def verify_and_validate(mod, bearer_token, key) do
+  def validate(mod, claim_map) do
     require Logger
 
-    signer = parse_signer(mod, key)
-    claim_map = Signer.verify(bearer_token, signer)
-
     config = mod.token_config()
+
+    {:ok, claim_map, config} = mod.before_validate(claim_map, config)
 
     result =
       Enum.reduce_while(claim_map, nil, fn {key, claim_val}, _acc ->
@@ -191,34 +249,37 @@ defmodule Joken.Config do
         end
       end)
 
-    case result do
-      :ok ->
-        {:ok, claim_map}
+    result =
+      case result do
+        :ok ->
+          {:ok, claim_map}
 
-      {:error, key, claim_val} ->
-        {:error, message: "Invalid token", claim: key, claim_val: claim_val}
-    end
+        {:error, key, claim_val} ->
+          {:error, message: "Invalid token", claim: key, claim_val: claim_val}
+      end
+
+    {:ok, result} = mod.after_validate(result, claim_map, config)
+
+    result
   end
 
-  @doc """
-  Generates a JWT claim set, encode it and then sign it.
-
-  The signer used will be (in order of preference):
-
-    1. The one represented by the key passed as second argument. The signer will be 
-    parsed from the configuration. 
-    2. If no argument was passed then we will use the one from the configuration default_signer
-     passed as argument for the `use Joken.Config` macro.
-    3. If no key was passed for the use macro then we will use the one configured as 
-    default_signer in the configuration.
-
-  Extra claims must be a map with keys as binaries. Ex: %{"sub" => "some@one.com"}
-  """
-  def generate_and_sign(mod, extra_claims \\ %{}, key \\ nil) do
+  def generate_claims(mod, extra_claims) when is_map(extra_claims) do
     claims_config = mod.token_config()
+
+    # Generate
+    {:ok, extra_claims, claims_config} = mod.before_generate(extra_claims, claims_config)
     claims = Enum.reduce(claims_config, extra_claims, &Claim.__generate_claim__/2)
+    {:ok, claims} = mod.after_generate(claims)
+    claims
+  end
+
+  def encode_and_sign(mod, claims, key) do
+    # Sign
     signer = parse_signer(mod, key)
-    Signer.sign(claims, signer)
+    {:ok, claims, signer} = mod.before_sign(claims, signer)
+    token = Signer.sign(claims, signer)
+    {:ok, token} = mod.after_sign(token, claims, signer)
+    token
   end
 
   @doc """
@@ -229,6 +290,7 @@ defmodule Joken.Config do
   - skip: do not include claims in this list. Ex: ["iss"]
   - default_exp: changes the default expiration of the token. Default is 2 hours
   - iss: changes the issuer claim. Default is "Joken" 
+  - aud: changes the audience claim
   """
   def default_claims(options \\ []) do
     skip = Keyword.get(options, :skip, [])
@@ -251,6 +313,12 @@ defmodule Joken.Config do
 
           :iss ->
             add_claim(acc, "iss", fn -> default_iss end, &(&1 == default_iss))
+
+          :aud ->
+            add_claim(acc, "aud", fn -> default_iss end, &(&1 == default_iss))
+
+          :jti ->
+            add_claim(acc, "jti", &Joken.generate_jti/0)
         end
       end
     end)

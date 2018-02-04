@@ -87,8 +87,18 @@ defmodule Joken do
   will be used. Even though there is a use case for this, be extra careful to handle data without 
   validation.
   """
-  def peek_payload(token) when is_binary(token) do
+  def peek_claims(token) when is_binary(token) do
     %JOSE.JWT{fields: fields} = JOSE.JWT.peek_payload(token)
     fields
+  end
+
+  def generate_jti do
+    binary = <<
+      System.system_time(:nanoseconds)::64,
+      :erlang.phash2({node(), self()}, 16_777_216)::24,
+      :erlang.unique_integer()::32
+    >>
+
+    Base.hex_encode32(binary, case: :lower)
   end
 end
