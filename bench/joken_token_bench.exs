@@ -10,7 +10,7 @@ defmodule Joken.Token.Bench do
   setup_all do
     app = :joken
     :application.ensure_all_started(app)
-    Logger.configure level: :warn
+    Logger.configure(level: :warn)
     JOSE.JWA.crypto_fallback(true)
     {:ok, app}
   end
@@ -114,5 +114,4 @@ defmodule Joken.Token.Bench do
     token |> sign(ed448ph(ed448ph_key)) |> get_compact
     :ok
   end
-
 end
