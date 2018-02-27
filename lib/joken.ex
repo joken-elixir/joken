@@ -268,8 +268,7 @@ defmodule Joken do
   It only sets the signer in the token configuration.
   """
   @spec with_signer(Token.t(), Signer.t()) :: Token.t()
-  def with_signer(token_struct = %Token{}, signer = %Signer{}),
-    do: %{token_struct | signer: signer}
+  def with_signer(token_struct = %Token{}, signer = %Signer{}), do: %{token_struct | signer: signer}
 
   @doc """
   Signs a given set of claims. If signing is successful it will put the compact
@@ -375,8 +374,7 @@ defmodule Joken do
   }
   ```
   """
-  @spec with_validation(Token.t(), String.t() | [String.t()], function, String.t() | nil) ::
-          Token.t()
+  @spec with_validation(Token.t(), String.t() | [String.t()], function, String.t() | nil) :: Token.t()
   def with_validation(token_struct, claim, function, msg \\ nil)
 
   def with_validation(token_struct = %Token{validations: validations}, claim, function, msg)
@@ -415,8 +413,7 @@ defmodule Joken do
   struct
   """
   @spec verify(Token.t(), Signer.t() | nil, list) :: Token.t()
-  def verify(token_struct = %Token{}, signer \\ nil, options \\ []),
-    do: Signer.verify(token_struct, signer, options)
+  def verify(token_struct = %Token{}, signer \\ nil, options \\ []), do: Signer.verify(token_struct, signer, options)
 
   @doc """
   Same as `verify/3` except that it returns either:

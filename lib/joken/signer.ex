@@ -144,11 +144,9 @@ defmodule Joken.Signer do
   @spec verify(Token.t(), Signer.t() | nil, Keyword.t()) :: Token.t()
   def verify(token, signer \\ nil, options \\ [])
 
-  def verify(%Token{signer: nil}, nil, _options),
-    do: raise(ArgumentError, message: "Missing Signer")
+  def verify(%Token{signer: nil}, nil, _options), do: raise(ArgumentError, message: "Missing Signer")
 
-  def verify(token = %Token{signer: signer = %Signer{}}, nil, options),
-    do: do_verify(token, signer, options)
+  def verify(token = %Token{signer: signer = %Signer{}}, nil, options), do: do_verify(token, signer, options)
 
   def verify(t, signer, options), do: do_verify(t, signer, options)
 
@@ -176,8 +174,7 @@ defmodule Joken.Signer do
   end
 
   ### PRIVATE
-  defp do_verify(t = %Token{token: nil}, _signer, _options),
-    do: %{t | error: "No compact token set for verification"}
+  defp do_verify(t = %Token{token: nil}, _signer, _options), do: %{t | error: "No compact token set for verification"}
 
   defp do_verify(
          t = %Token{token: token},
@@ -204,8 +201,7 @@ defmodule Joken.Signer do
     end
   end
 
-  defp decode_payload(%Token{json_module: nil}, _),
-    do: raise(ArgumentError, message: "No JSON module defined")
+  defp decode_payload(%Token{json_module: nil}, _), do: raise(ArgumentError, message: "No JSON module defined")
 
   defp decode_payload(%Token{json_module: :jsx}, payload)
        when is_binary(payload) do
@@ -258,8 +254,7 @@ defmodule Joken.Signer do
   end
 
   defp validate_key(map_payload, keys, valid?, message, {claims, errors}) when is_list(keys) do
-    if Enum.all?(keys, &Map.has_key?(map_payload, &1)) and
-         apply(valid?, Enum.map(keys, &Map.fetch!(map_payload, &1))) do
+    if Enum.all?(keys, &Map.has_key?(map_payload, &1)) and apply(valid?, Enum.map(keys, &Map.fetch!(map_payload, &1))) do
       {claims, errors}
     else
       case message do
