@@ -268,8 +268,7 @@ defmodule Joken do
   It only sets the signer in the token configuration.
   """
   @spec with_signer(Token.t(), Signer.t()) :: Token.t()
-  def with_signer(token_struct = %Token{}, signer = %Signer{}),
-    do: %{token_struct | signer: signer}
+  def with_signer(token_struct = %Token{}, signer = %Signer{}), do: %{token_struct | signer: signer}
 
   @doc """
   Signs a given set of claims. If signing is successful it will put the compact
@@ -375,19 +374,74 @@ defmodule Joken do
   }
   ```
   """
-  @spec with_validation(Token.t(), String.t() | [String.t()], function, String.t() | nil) ::
-          Token.t()
-  def with_validation(token_struct, claim, function, msg \\ nil)
+  @type option :: {:atom, String.t()} | {:atom, nil} | {:atom, boolean}
 
-  def with_validation(token_struct = %Token{validations: validations}, claim, function, msg)
-      when is_function(function) and is_binary(claim) do
-    %{token_struct | validations: Map.put(validations, claim, {function, msg})}
+  @spec with_validation(
+          Token.t(),
+          String.t() | [String.t()],
+          function,
+          nil | String.t() | [option] | []
+        ) :: Token.t()
+  def with_validation(token_struct, claim, function, options \\ [])
+
+  def with_validation(token_struct = %Token{validations: validations}, claims, function, nil)
+      when is_function(function) do
+    cond do
+      is_binary(claims) ->
+        %{token_struct | validations: Map.put(validations, claims, {function, nil, false})}
+
+      is_list(claims) ->
+        %{token_struct | validations: Map.put(validations, claims, {function, nil, false})}
+
+      true ->
+        raise(ArgumentError, message: "Invalid claim(s)")
+    end
   end
 
   def with_validation(token_struct = %Token{validations: validations}, claims, function, msg)
-      when is_function(function) and is_list(claims) do
-    %{token_struct | validations: Map.put(validations, claims, {function, msg})}
+      when is_function(function) and is_binary(msg) do
+    cond do
+      is_binary(claims) ->
+        %{token_struct | validations: Map.put(validations, claims, {function, msg, false})}
+
+      is_list(claims) ->
+        %{token_struct | validations: Map.put(validations, claims, {function, msg, false})}
+
+      true ->
+        raise(ArgumentError, message: "Invalid claim(s)")
+    end
   end
+
+  def with_validation(token_struct = %Token{validations: validations}, claims, function, options)
+      when is_function(function) and is_list(options) do
+    msg = Keyword.get(options, :message, nil)
+    optional = Keyword.get(options, :optional, false)
+
+    cond do
+      is_binary(claims) ->
+        %{token_struct | validations: Map.put(validations, claims, {function, msg, optional})}
+
+      is_list(claims) ->
+        %{token_struct | validations: Map.put(validations, claims, {function, msg, optional})}
+
+      true ->
+        raise(ArgumentError, message: "Invalid claim(s)")
+    end
+  end
+
+  # # @spec with_validation(Token.t(), String.t() | [String.t()], function, String.t() | nil) ::
+  # #         Token.t()
+  # # def with_validation(token_struct, claim, function, msg \\ nil)
+
+  # def do_with_validation(token_struct = %Token{validations: validations}, claim, function, msg)
+  #     when is_function(function) and is_binary(claim) do
+  #   %{token_struct | validations: Map.put(validations, claim, {function, msg})}
+  # end
+
+  # def do_with_validation(token_struct = %Token{validations: validations}, claims, function, msg)
+  #     when is_function(function) and is_list(claims) do
+  #   %{token_struct | validations: Map.put(validations, claims, {function, msg})}
+  # end
 
   @doc """
   Removes a validation for this token.
@@ -415,8 +469,7 @@ defmodule Joken do
   struct
   """
   @spec verify(Token.t(), Signer.t() | nil, list) :: Token.t()
-  def verify(token_struct = %Token{}, signer \\ nil, options \\ []),
-    do: Signer.verify(token_struct, signer, options)
+  def verify(token_struct = %Token{}, signer \\ nil, options \\ []), do: Signer.verify(token_struct, signer, options)
 
   @doc """
   Same as `verify/3` except that it returns either:

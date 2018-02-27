@@ -360,6 +360,18 @@ defmodule Joken.Test do
     assert token.error == "Invalid payload"
   end
 
+  test "will pass with invalid payload when a validated field is not present in the payload but validation is optional" do
+    token =
+      %Joken.Token{}
+      |> with_json_module(Poison)
+      |> with_claims(%TestStruct{a: 2, b: 2, c: 3})
+      |> with_validation("d", &(&1 == 1), optional: true)
+      |> sign(hs256("test"))
+      |> verify(hs256("test"))
+
+    assert token.error == nil
+  end
+
   test "can fail multi-claim validation with a custom errors" do
     msg = "claim a should be different to claim b"
 
