@@ -329,8 +329,12 @@ defmodule Joken do
   do not leak detailed security implementations to your end users.
 
   If a claim key in the payload does not have a validation, it **WILL BE ADDED**
-  to the claim set.  If a claim key has a validation, but it is not present in
+  to the claim set. If a claim key has a validation, but it is not present in
   the payload, verification will fail with the default or provided error message.
+
+  You can pass additional parameter to make this validation optional. If claim key
+  is absent from the payload then validation will pass as successfull without calling
+  provided function.
 
   example validation:
   ```
@@ -358,9 +362,10 @@ defmodule Joken do
     error: #Order is not preserved, so this could be either of the two errors
     errors: ["Must be admin", "Invalid payload"]
   }
+  ```
 
-  other example with multi-claim validation
-
+  other example with multi-claim validation:
+  ```
   validated_token = token
     |> with_validation(["a", "b"], &(&1 == &2))
     |> with_signer(hs256("example"))
@@ -373,6 +378,16 @@ defmodule Joken do
     errors: ["Invalid payload"]
   }
   ```
+
+  optional validation:
+  ```
+  validated_token = token
+    |> with_validation(“exp”, &(&1 > current_time), optional: false, message: "Token expired")
+    |> with_validation(“iat”, &(&1 <= current_time), optional: true, message: "Invalid IAT claim")
+    |> with_validation(“nbf”, &(&1 < current_time), optional: true)
+    |> with_signer(hs256("example"))
+    |> verify
+  ```
   """
   @type option :: {:atom, String.t()} | {:atom, nil} | {:atom, boolean}
 
@@ -382,16 +397,16 @@ defmodule Joken do
           function,
           nil | String.t() | [option] | []
         ) :: Token.t()
-  def with_validation(token_struct, claim, function, options \\ [])
+  def with_validation(token_struct, claim, function, options \\ nil)
 
-  def with_validation(token_struct = %Token{validations: validations}, claims, function, nil)
-      when is_function(function) do
+  def with_validation(token_struct = %Token{validations: validations}, claims, function, params)
+      when is_function(function) and is_list(params) do
     cond do
       is_binary(claims) ->
-        %{token_struct | validations: Map.put(validations, claims, {function, nil, false})}
+        %{token_struct | validations: Map.put(validations, claims, {function, params})}
 
       is_list(claims) ->
-        %{token_struct | validations: Map.put(validations, claims, {function, nil, false})}
+        %{token_struct | validations: Map.put(validations, claims, {function, params})}
 
       true ->
         raise(ArgumentError, message: "Invalid claim(s)")
@@ -399,35 +414,8 @@ defmodule Joken do
   end
 
   def with_validation(token_struct = %Token{validations: validations}, claims, function, msg)
-      when is_function(function) and is_binary(msg) do
-    cond do
-      is_binary(claims) ->
-        %{token_struct | validations: Map.put(validations, claims, {function, msg, false})}
-
-      is_list(claims) ->
-        %{token_struct | validations: Map.put(validations, claims, {function, msg, false})}
-
-      true ->
-        raise(ArgumentError, message: "Invalid claim(s)")
-    end
-  end
-
-  def with_validation(token_struct = %Token{validations: validations}, claims, function, options)
-      when is_function(function) and is_list(options) do
-    msg = Keyword.get(options, :message, nil)
-    optional = Keyword.get(options, :optional, false)
-
-    cond do
-      is_binary(claims) ->
-        %{token_struct | validations: Map.put(validations, claims, {function, msg, optional})}
-
-      is_list(claims) ->
-        %{token_struct | validations: Map.put(validations, claims, {function, msg, optional})}
-
-      true ->
-        raise(ArgumentError, message: "Invalid claim(s)")
-    end
-  end
+      when is_function(function),
+      do: with_validation(token_struct, claims, function, optional: false, message: msg)
 
   # # @spec with_validation(Token.t(), String.t() | [String.t()], function, String.t() | nil) ::
   # #         Token.t()

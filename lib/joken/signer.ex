@@ -223,8 +223,8 @@ defmodule Joken.Signer do
       end
 
     {valid_claims, errors} =
-      Enum.reduce(validations, {[], []}, fn {key, {valid?, message, optional}}, acc ->
-        validate_key(map_payload, key, valid?, message, optional, acc)
+      Enum.reduce(validations, {[], []}, fn {key, {valid?, params}}, acc ->
+        validate_key(map_payload, key, valid?, params, acc)
       end)
 
     claims =
@@ -239,33 +239,42 @@ defmodule Joken.Signer do
     end
   end
 
-  defp validate_key(map_payload, key, valid?, message, optional, {claims, errors}) when is_binary(key) do
+  defp validate_key(map_payload, key, valid?, params, {claims, errors}) when is_binary(key) do
+    %{optional: optional, message: message} = get_validation_params(params)
+
     if (not optional and Map.has_key?(map_payload, key) and valid?.(map_payload[key])) or optional do
       {[{key, map_payload[key]} | claims], errors}
     else
-      case message do
-        nil ->
-          {claims, ["Invalid payload" | errors]}
-
-        _ ->
-          {claims, [message | errors]}
-      end
+      {claims, [message | errors]}
     end
   end
 
-  defp validate_key(map_payload, keys, valid?, message, optional, {claims, errors}) when is_list(keys) do
+  defp validate_key(map_payload, keys, valid?, params, {claims, errors}) when is_list(keys) do
+    %{optional: optional, message: message} = get_validation_params(params)
+
     if (Enum.all?(keys, &Map.has_key?(map_payload, &1)) and apply(valid?, Enum.map(keys, &Map.fetch!(map_payload, &1)))) or
          optional do
       {claims, errors}
     else
-      case message do
-        nil ->
-          {claims, ["Invalid payload" | errors]}
-
-        _ ->
-          {claims, [message | errors]}
-      end
+      {claims, [message | errors]}
     end
+  end
+
+  defp get_validation_params(params) do
+    message =
+      case Keyword.get(params, :message) do
+        nil -> "Invalid payload"
+        message when is_binary(message) -> message
+        _ -> raise(ArgumentError, message: "Invalid parameter 'message'")
+      end
+
+    optional =
+      case Keyword.get(params, :optional, false) do
+        optional when is_boolean(optional) -> optional
+        _ -> raise(ArgumentError, message: "Invalid parameter 'optional'")
+      end
+
+    %{message: message, optional: optional}
   end
 
   def process_claims(claims, options) do
