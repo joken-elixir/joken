@@ -397,7 +397,7 @@ defmodule Joken do
           function,
           nil | String.t() | [option] | []
         ) :: Token.t()
-  def with_validation(token_struct, claim, function, options \\ nil)
+  def with_validation(token_struct, claim, function, options \\ [])
 
   def with_validation(token_struct = %Token{validations: validations}, claims, function, params)
       when is_function(function) and is_list(params) do
@@ -416,20 +416,6 @@ defmodule Joken do
   def with_validation(token_struct = %Token{validations: validations}, claims, function, msg)
       when is_function(function),
       do: with_validation(token_struct, claims, function, optional: false, message: msg)
-
-  # # @spec with_validation(Token.t(), String.t() | [String.t()], function, String.t() | nil) ::
-  # #         Token.t()
-  # # def with_validation(token_struct, claim, function, msg \\ nil)
-
-  # def do_with_validation(token_struct = %Token{validations: validations}, claim, function, msg)
-  #     when is_function(function) and is_binary(claim) do
-  #   %{token_struct | validations: Map.put(validations, claim, {function, msg})}
-  # end
-
-  # def do_with_validation(token_struct = %Token{validations: validations}, claims, function, msg)
-  #     when is_function(function) and is_list(claims) do
-  #   %{token_struct | validations: Map.put(validations, claims, {function, msg})}
-  # end
 
   @doc """
   Removes a validation for this token.

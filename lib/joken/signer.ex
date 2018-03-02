@@ -241,22 +241,23 @@ defmodule Joken.Signer do
 
   defp validate_key(map_payload, key, valid?, params, {claims, errors}) when is_binary(key) do
     %{optional: optional, message: message} = get_validation_params(params)
+    has_key = Map.has_key?(map_payload, key)
 
-    if (not optional and Map.has_key?(map_payload, key) and valid?.(map_payload[key])) or optional do
-      {[{key, map_payload[key]} | claims], errors}
-    else
-      {claims, [message | errors]}
+    cond do
+      has_key and valid?.(map_payload[key]) -> {[{key, map_payload[key]} | claims], errors}
+      not has_key and optional -> {claims, errors}
+      true -> {claims, [message | errors]}
     end
   end
 
   defp validate_key(map_payload, keys, valid?, params, {claims, errors}) when is_list(keys) do
     %{optional: optional, message: message} = get_validation_params(params)
+    has_keys = Enum.all?(keys, &Map.has_key?(map_payload, &1))
 
-    if (Enum.all?(keys, &Map.has_key?(map_payload, &1)) and apply(valid?, Enum.map(keys, &Map.fetch!(map_payload, &1)))) or
-         optional do
-      {claims, errors}
-    else
-      {claims, [message | errors]}
+    cond do
+      has_keys and apply(valid?, Enum.map(keys, &Map.fetch!(map_payload, &1))) -> {claims, errors}
+      not has_keys and optional -> {claims, errors}
+      true -> {claims, [message | errors]}
     end
   end
 
@@ -265,13 +266,13 @@ defmodule Joken.Signer do
       case Keyword.get(params, :message) do
         nil -> "Invalid payload"
         message when is_binary(message) -> message
-        _ -> raise(ArgumentError, message: "Invalid parameter 'message'")
+        _ -> raise(ArgumentError, message: "Invalid 'message' value")
       end
 
     optional =
       case Keyword.get(params, :optional, false) do
         optional when is_boolean(optional) -> optional
-        _ -> raise(ArgumentError, message: "Invalid parameter 'optional'")
+        _ -> raise(ArgumentError, message: "Invalid 'optional' value")
       end
 
     %{message: message, optional: optional}
