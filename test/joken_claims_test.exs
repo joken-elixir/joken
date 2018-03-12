@@ -23,71 +23,76 @@ defmodule Joken.Claims.Test do
   end
 
   test "can derive protocol implementation" do
-
-    token = %Joken.Token{}
-    |> with_json_module(Poison)
-    |> with_claims(%FullDerive{a: 1, b: 2, c: 3})
-    |> with_validation("a", &(&1 == 1))
+    token =
+      %Joken.Token{}
+      |> with_json_module(Poison)
+      |> with_claims(%FullDerive{a: 1, b: 2, c: 3})
+      |> with_validation("a", &(&1 == 1))
 
     assert token.claims == %{"a" => 1, "b" => 2, "c" => 3}
 
-    compact = token
-    |> sign(hs512("test"))
-    |> get_compact
+    compact =
+      token
+      |> sign(hs512("test"))
+      |> get_compact
 
-    test_struct = compact
-    |> token
-    |> verify(hs512("test"), as: FullDerive)
-    |> get_claims
+    test_struct =
+      compact
+      |> token
+      |> verify(hs512("test"), as: FullDerive)
+      |> get_claims
 
     assert test_struct == %FullDerive{a: 1, b: 2, c: 3}
   end
 
   test "can derive protocol with `only` option" do
-
-    token = %Joken.Token{}
-    |> with_json_module(Poison)
-    |> with_claims(%OnlyDerive{a: 1, b: 2, c: 3})
-    |> with_validation("a", &(&1 == 1))
+    token =
+      %Joken.Token{}
+      |> with_json_module(Poison)
+      |> with_claims(%OnlyDerive{a: 1, b: 2, c: 3})
+      |> with_validation("a", &(&1 == 1))
 
     assert token.claims == %{"a" => 1}
 
-    compact = token
-    |> sign(hs512("test"))
-    |> get_compact
+    compact =
+      token
+      |> sign(hs512("test"))
+      |> get_compact
 
-    test_struct = compact
-    |> token
-    |> verify(hs512("test"), as: OnlyDerive)
-    |> get_claims
+    test_struct =
+      compact
+      |> token
+      |> verify(hs512("test"), as: OnlyDerive)
+      |> get_claims
 
     assert test_struct == %OnlyDerive{a: 1}
   end
 
   test "can derive protocol with `exclude` option" do
-
-    token = %Joken.Token{}
-    |> with_json_module(Poison)
-    |> with_claims(%ExcludeDerive{a: 1, b: 2, c: 3})
-    |> with_validation("a", &(&1 == 1))
-    |> with_validation("c", &(&1 == 3))
+    token =
+      %Joken.Token{}
+      |> with_json_module(Poison)
+      |> with_claims(%ExcludeDerive{a: 1, b: 2, c: 3})
+      |> with_validation("a", &(&1 == 1))
+      |> with_validation("c", &(&1 == 3))
 
     assert token.claims == %{"a" => 1, "c" => 3}
 
-    compact = token
-    |> sign(hs512("test"))
-    |> get_compact
+    compact =
+      token
+      |> sign(hs512("test"))
+      |> get_compact
 
-    test_struct = compact
-    |> token
-    |> verify(hs512("test"), as: ExcludeDerive)
-    |> get_claims
+    test_struct =
+      compact
+      |> token
+      |> verify(hs512("test"), as: ExcludeDerive)
+      |> get_claims
 
     assert test_struct == %ExcludeDerive{a: 1, c: 3}
   end
 
   test "raises on wrong usage of options" do
-
     assert_raise ArgumentError, "Cannot use both :only and :exclude", fn ->
       defmodule Wrong do
         @derive {Joken.Claims, only: [:a], exclude: [:b]}
