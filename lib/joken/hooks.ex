@@ -1,4 +1,8 @@
 defmodule Joken.Hooks do
+  @moduledoc """
+  Behaviour for defining hooks into Joken's lifecycle. 
+  """
+
   @type claims_config :: %{binary() => Joken.Claim.t()}
   @type claims :: %{binary() => term()}
   @type token :: binary()
@@ -27,7 +31,6 @@ defmodule Joken.Hooks do
       def after_generate(claims), do: {:ok, claims}
       def after_sign(token, claims, signer), do: {:ok, token}
       def after_verify(token, claims, signer), do: {:ok, claims}
-
       def after_validate(validate_result, claims, claims_config), do: {:ok, validate_result}
 
       defoverridable before_generate: 2,

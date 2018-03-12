@@ -118,7 +118,7 @@ defmodule Joken.Config do
 
       @joken_using_args unquote(options)
 
-      key = Keyword.get(@joken_using_args, :default_key, :default_key)
+      key = Keyword.get(@joken_using_args, :default_signer, :default_signer)
       @joken_default_signer Joken.Signer.parse_config(key)
 
       def __default_signer__, do: @joken_default_signer
@@ -127,16 +127,7 @@ defmodule Joken.Config do
       def token_config, do: default_claims(@joken_using_args)
 
       @doc """
-      Generates a JWT claim set, encode it and then sign it.
-
-      The signer used will be (in order of preference):
-
-        1. The one represented by the key passed as second argument. The signer will be 
-        parsed from the configuration. 
-        2. If no argument was passed then we will use the one from the configuration default_signer
-         passed as argument for the `use Joken.Config` macro.
-        3. If no key was passed for the use macro then we will use the one configured as 
-        default_signer in the configuration.
+      Generates a JWT claim set.
 
       Extra claims must be a map with keys as binaries. Ex: %{"sub" => "some@one.com"}
       """
@@ -144,7 +135,18 @@ defmodule Joken.Config do
       def generate_claims(extra_claims \\ %{}),
         do: Joken.Config.generate_claims(__MODULE__, extra_claims)
 
-      @doc "Encode and sign"
+      @doc """
+      Encodes the given map of claims to JSON and signs it.
+
+      The signer used will be (in order of preference):
+
+        1. The one represented by the key passed as second argument. The signer will be 
+        parsed from the configuration. 
+        2. If no argument was passed then we will use the one from the configuration `:default_signer`
+         passed as argument for the `use Joken.Config` macro.
+        3. If no key was passed for the use macro then we will use the one configured as 
+        `:default_signer` in the configuration.
+      """
       @impl Joken.Config
       def encode_and_sign(claims, key \\ nil),
         do: Joken.Config.encode_and_sign(__MODULE__, claims, key)
@@ -168,7 +170,9 @@ defmodule Joken.Config do
       def verify(bearer_token, key \\ nil) when is_atom(key),
         do: Joken.Config.verify(__MODULE__, bearer_token, key)
 
-      @doc "Validate"
+      @doc """
+      Runs validations on the already verified token. 
+      """
       @impl Joken.Config
       def validate(claims), do: Joken.Config.validate(__MODULE__, claims)
 
@@ -184,10 +188,23 @@ defmodule Joken.Config do
         encode_and_sign(claims, key)
       end
 
+      @doc "Same as generate_and_sign/2 but raises if not :ok"
+      def generate_and_sign!(extra_claims \\ %{}, key \\ nil) do
+        {status, result} = generate_and_sign(extra_claims, key)
+
+        case status do
+          :ok ->
+            result
+
+          :error ->
+            raise(Joken.Error, [:bad_encode_and_sign, result: result])
+        end
+      end
+
       @doc "Combines verify/2 and validate/1"
       def verify_and_validate(bearer_token, key \\ nil) do
-        claim_map = verify(bearer_token, key)
-        validate(claim_map)
+        verify(bearer_token, key)
+        |> validate()
       end
 
       @doc "Same as verify_and_update/2 but raises if error"
@@ -199,7 +216,7 @@ defmodule Joken.Config do
             result
 
           :error ->
-            raise(Joken.Error, :claim_not_valid)
+            raise Joken.Error, :claim_not_valid
         end
       end
     end
@@ -278,12 +295,11 @@ defmodule Joken.Config do
     signer = parse_signer(mod, key)
     {:ok, claims, signer} = mod.before_sign(claims, signer)
     token = Signer.sign(claims, signer)
-    {:ok, token} = mod.after_sign(token, claims, signer)
-    token
+    mod.after_sign(token, claims, signer)
   end
 
   @doc """
-  Initializes a map of `Joken.Claim`s with "exp", "iat", "nbf" and "iss". 
+  Initializes a map of `Joken.Claim`s with "exp", "iat", "nbf", "iss", "aud" and "jti". 
 
   Default parameters can be customized with options:
 

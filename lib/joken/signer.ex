@@ -125,22 +125,22 @@ defmodule Joken.Signer do
   To ease configuring these types of keys used by JWTs algorithms, Joken accepts a few
   parameters in its configuration:
     - **signer_alg** : one of #{inspect(@algorithms)}
-    - **signer_pem** : a binary containing a key in PEM encoding format 
-    - **signer_ssh** : a binary containing a key in Open SSH encoding format
-    - **signer_map** : a map with the raw parameters
-    - **signer_secret** : a binary used as the password for HS algorithms only
+    - **key_pem** : a binary containing a key in PEM encoding format 
+    - **key_openssh** : a binary containing a key in Open SSH encoding format
+    - **key_map** : a map with the raw parameters
+    - **key_octet** : a binary used as the password for HS algorithms only
 
   ## Examples
 
       config :joken,
         hs256: [
-          key_alg: "HS256",
-          key_secret: "test"
+          signer_alg: "HS256",
+          key_octet: "test"
         ]
 
       config :joken,
         rs256: [
-          key_alg: "RS256",
+          signer_alg: "RS256",
           key_pem: \"\"\"
           -----BEGIN RSA PRIVATE KEY-----
           MIICWwIBAAKBgQDdlatRjRjogo3WojgGHFHYLugdUWAY9iR3fy4arWNA1KoS8kVw33cJibXr8bvwUAUparCwlvdbH6dvEOfou0/gCFQsHUfQrSDv+MuSUMAe8jzKE4qW+jK+xQU9a03GUnKHkkle+Q0pX/g6jXZ7r1/xAK5Do2kQ+X5xK9cipRgEKwIDAQABAoGAD+onAtVye4ic7VR7V50DF9bOnwRwNXrARcDhq9LWNRrRGElESYYTQ6EbatXS3MCyjjX2eMhu/aF5YhXBwkppwxg+EOmXeh+MzL7Zh284OuPbkglAaGhV9bb6/5CpuGb1esyPbYW+Ty2PC0GSZfIXkXs76jXAu9TOBvD0ybc2YlkCQQDywg2R/7t3Q2OE2+yo382CLJdrlSLVROWKwb4tb2PjhY4XAwV8d1vy0RenxTB+K5Mu57uVSTHtrMK0GAtFr833AkEA6avx20OHo61Yela/4k5kQDtjEf1N0LfI+BcWZtxsS3jDM3i1Hp0KSu5rsCPb8acJo5RO26gGVrfAsDcIXKC+bQJAZZ2XIpsitLyPpuiMOvBbzPavd4gY6Z8KWrfYzJoI/Q9FuBo6rKwl4BFoToD7WIUS+hpkagwWiz+6zLoX1dbOZwJACmH5fSSjAkLRi54PKJ8TFUeOP15h9sQzydI8zJU+upvDEKZsZc/UhT/SySDOxQ4G/523Y0sz/OZtSWcol/UMgQJALesy++GdvoIDLfJX5GBQpuFgFenRiRDabxrE9MNUZ2aPFaFp+DyAe+b4nDwuJaW2LURbr8AEZga7oQj0uYxcYw==
@@ -163,51 +163,51 @@ defmodule Joken.Signer do
   end
 
   defp parse_list_config(config) do
-    key_alg = Keyword.get(config, :key_alg, "HS256")
+    signer_alg = Keyword.get(config, :signer_alg, "HS256")
     key_pem = Keyword.get(config, :key_pem)
     key_map = Keyword.get(config, :key_map)
-    key_secret = Keyword.get(config, :key_secret)
+    key_secret = Keyword.get(config, :key_octet)
 
     cond do
-      key_alg in @hs_algorithms ->
-        parse_signer_with_secret(key_alg, key_secret)
+      signer_alg in @hs_algorithms ->
+        parse_signer_with_secret(signer_alg, key_secret)
 
-      key_alg in @map_key_algorithms ->
-        parse_signer_with_pem_or_map(key_alg, key_pem, key_map)
+      signer_alg in @map_key_algorithms ->
+        parse_signer_with_pem_or_map(signer_alg, key_pem, key_map)
 
       true ->
         raise(Joken.Error, :unrecognized_algorithm)
     end
   end
 
-  defp parse_signer_with_secret(key_alg, nil),
-    do: raise(Joken.Error, [:hs_no_secret, [key_alg: key_alg]])
+  defp parse_signer_with_secret(signer_alg, nil),
+    do: raise(Joken.Error, [:hs_no_secret, [signer_alg: signer_alg]])
 
-  defp parse_signer_with_secret(key_alg, secret) when is_binary(secret),
+  defp parse_signer_with_secret(signer_alg, secret) when is_binary(secret),
     do: %Signer{
       jwk: JOSE.JWK.from_oct(secret),
-      jws: JOSE.JWS.from_map(%{"alg" => key_alg, "typ" => "JWT"}),
-      alg: key_alg
+      jws: JOSE.JWS.from_map(%{"alg" => signer_alg, "typ" => "JWT"}),
+      alg: signer_alg
     }
 
-  defp parse_signer_with_pem_or_map(key_alg, nil, nil),
-    do: raise(Joken.Error, [:no_map_or_pem, [key_alg: key_alg]])
+  defp parse_signer_with_pem_or_map(signer_alg, nil, nil),
+    do: raise(Joken.Error, [:no_map_or_pem, [signer_alg: signer_alg]])
 
-  defp parse_signer_with_pem_or_map(key_alg, key_pem, key_map)
+  defp parse_signer_with_pem_or_map(signer_alg, key_pem, key_map)
        when not is_nil(key_pem) and not is_nil(key_map),
-       do: raise(Joken.Error, [:provided_pem_and_map, [key_alg: key_alg]])
+       do: raise(Joken.Error, [:provided_pem_and_map, [signer_alg: signer_alg]])
 
-  defp parse_signer_with_pem_or_map(key_alg, key_pem, nil),
+  defp parse_signer_with_pem_or_map(signer_alg, key_pem, nil),
     do: %Signer{
       jwk: JOSE.JWK.from_pem(key_pem),
-      jws: JOSE.JWS.from_map(%{"alg" => key_alg, "typ" => "JWT"}),
-      alg: key_alg
+      jws: JOSE.JWS.from_map(%{"alg" => signer_alg, "typ" => "JWT"}),
+      alg: signer_alg
     }
 
-  defp parse_signer_with_pem_or_map(key_alg, nil, key_map) when is_map(key_map),
+  defp parse_signer_with_pem_or_map(signer_alg, nil, key_map) when is_map(key_map),
     do: %Signer{
       jwk: JOSE.JWK.from_map(key_map),
-      jws: JOSE.JWS.from_map(%{"alg" => key_alg, "typ" => "JWT"}),
-      alg: key_alg
+      jws: JOSE.JWS.from_map(%{"alg" => signer_alg, "typ" => "JWT"}),
+      alg: signer_alg
     }
 end

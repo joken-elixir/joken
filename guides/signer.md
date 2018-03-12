@@ -1,7 +1,49 @@
-# This file is responsible for configuring your application
-# and its dependencies with the aid of the Mix.Config module.
-use Mix.Config
+# Signers
 
+A signer is the combination of a "key" and an algorithm. That is all we need to sign and verify tokens. In JWT's vocabulary: a JWS (JSON Web Signing) with a JWK (JSON Web Key).
+
+For each algorithm, a specific key format is expected. HS algorithms expect an octet key (a "password" like key), RS algorithms expect an RSA key and so on.
+
+## Configuration
+
+A signer is configured using the following parameters:
+
+  - **signer_alg** : "HS256", "HS384" and so on
+  - **key_pem** : a binary containing a key in PEM encoding format 
+  - **key_openssh** : a binary containing a key in Open SSH encoding format
+  - **key_map** : a map with the raw parameters of the key
+  - **key_octet** : a binary used as the password for HS algorithms only
+  - **key_index** : the index of the key on a pem or openssh key set defaults to 0
+  
+Let's see some examples:
+
+``` elixir
+  # RS256 with a PEM encoded key
+  [
+    signer_alg: "RS256",
+    key_pem: """ # You can pass a PEM encoded key... See below for all options.
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIC...xcYw==
+    -----END RSA PRIVATE KEY-----
+    """
+  ]
+  
+  # HS512 with an octet key
+  [
+    signer_alg: "HS512",
+    key_octet: "a very random string"
+  ]
+```
+
+## Octet keys
+
+HS algorithms (HS256, HS384, HS512) use a simple binary for its key. You can only use `key_octet` with HS algorithms.
+
+## All other keys
+
+Besides HS algorithms, we have several types of keys. Each type has its own set of parameters. For example, here is a full list of RSA parameters in an RSA private key:
+
+``` elixir
 rsa_map_key = %{
   "d" =>
     "A2gHIUmJOzRGvklIA2S8wWayCXnF8NYAhOhu7woSwjioO3HRzvd3ptegSKDpPfABJuzhy7y08ug5ZcyFbN1hJBVY8NwNzpLSUK9wmXekrbTG9MT76NAiQTxV6fYK5DXPF4Cp0qghBt-tq0kQNKx4q9QEzLb9XonmXE2a10U8EWJIs972SFGhxKzf6aq6Ri7UDK607ngQyEhVmGxr3gDJLAGQ5wOap5NYIL2ufI5FYqH-Sby_Qk7299b-w4B0fl6u8isR8OlpwMLVnD-oqOBPH-65tE82hxPV0QbSmyzmg9hlVVinJ82YRBkbcu-XG9XXOhUqJJ7kafQrYkQx6BiFKQ",
@@ -20,49 +62,24 @@ rsa_map_key = %{
   "qi" =>
     "kG5Stetls18_1fvQx8rxhX2Ais0Xg0gLDUjpE_9TYcb-utq79HVKOQ_2PJGz09hQ_teqnhXhgGMubqaktl6UOSJr6B4JgcAY7yU-34EuSxp8uKLix9BVsF2cpiC4ADhjLKP9c7IQ7X7zfs336_Reb8fh9G_zRdwEfmqFy7m28Lg"
 }
+```
 
-rsa_pem_key = """
+This map is in the format defined by JWK spec. Although you CAN use this format for configuring RSA keys, it is most common to use other formats like PEM and OpenSSH encoded keys.
+
+## PEM - Privacy Enhanced Mail
+
+Please, don't mind the name... This is just History being unfair. If you are curious, take a look at Wikipedia's article on pem [here](https://en.wikipedia.org/wiki/Privacy-enhanced_Electronic_Mail).
+
+Joken brings a facility for setting a PEM key. Just use the config option `key_pem`. Paste your PEM contents there and that's it. Example:
+
+``` elixir
+[
+signer_alg: "RS512",
+key_pem: """
 -----BEGIN RSA PRIVATE KEY-----
 MIICWwIBAAKBgQDdlatRjRjogo3WojgGHFHYLugdUWAY9iR3fy4arWNA1KoS8kVw33cJibXr8bvwUAUparCwlvdbH6dvEOfou0/gCFQsHUfQrSDv+MuSUMAe8jzKE4qW+jK+xQU9a03GUnKHkkle+Q0pX/g6jXZ7r1/xAK5Do2kQ+X5xK9cipRgEKwIDAQABAoGAD+onAtVye4ic7VR7V50DF9bOnwRwNXrARcDhq9LWNRrRGElESYYTQ6EbatXS3MCyjjX2eMhu/aF5YhXBwkppwxg+EOmXeh+MzL7Zh284OuPbkglAaGhV9bb6/5CpuGb1esyPbYW+Ty2PC0GSZfIXkXs76jXAu9TOBvD0ybc2YlkCQQDywg2R/7t3Q2OE2+yo382CLJdrlSLVROWKwb4tb2PjhY4XAwV8d1vy0RenxTB+K5Mu57uVSTHtrMK0GAtFr833AkEA6avx20OHo61Yela/4k5kQDtjEf1N0LfI+BcWZtxsS3jDM3i1Hp0KSu5rsCPb8acJo5RO26gGVrfAsDcIXKC+bQJAZZ2XIpsitLyPpuiMOvBbzPavd4gY6Z8KWrfYzJoI/Q9FuBo6rKwl4BFoToD7WIUS+hpkagwWiz+6zLoX1dbOZwJACmH5fSSjAkLRi54PKJ8TFUeOP15h9sQzydI8zJU+upvDEKZsZc/UhT/SySDOxQ4G/523Y0sz/OZtSWcol/UMgQJALesy++GdvoIDLfJX5GBQpuFgFenRiRDabxrE9MNUZ2aPFaFp+DyAe+b4nDwuJaW2LURbr8AEZga7oQj0uYxcYw==
------END RSA PRIVATE KEY-----  
+-----END RSA PRIVATE KEY-----
 """
+```
 
-config :joken,
-  current_time_adapter: Joken.CurrentTime.Mock,
-  default_signer: "s3cr3t",
-  hs256: [
-    signer_alg: "HS256",
-    key_octet: "test"
-  ],
-  hs384: [
-    signer_alg: "HS384",
-    key_octet: "test"
-  ],
-  hs512: [
-    signer_alg: "HS512",
-    key_octet: "test"
-  ],
-  rs256: [
-    signer_alg: "RS256",
-    key_map: rsa_map_key
-  ],
-  rs384: [
-    signer_alg: "RS384",
-    key_map: rsa_map_key
-  ],
-  rs512: [
-    signer_alg: "RS512",
-    key_map: rsa_map_key
-  ],
-  pem_rs256: [
-    signer_alg: "RS256",
-    key_pem: rsa_pem_key
-  ],
-  pem_rs384: [
-    signer_alg: "RS384",
-    key_pem: rsa_pem_key
-  ],
-  pem_rs512: [
-    signer_alg: "RS512",
-    key_pem: rsa_pem_key
-  ]
+

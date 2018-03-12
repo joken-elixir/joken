@@ -19,6 +19,8 @@ defmodule JOSE.Jason do
   Implementation of the `:jose_json` behaviour for the Jason library.
 
   It only delegates both `encode/1` and `decode/1` functions to Jason's calls.
+
+  Future work might want to encode/decode specific types like Poison's implementation.
   """
   @behaviour :jose_json
 

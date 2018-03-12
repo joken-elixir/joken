@@ -11,7 +11,7 @@ defmodule Joken.Config.Test do
 
   describe "Joken.Config.default_claims/1" do
     test "generates exp, iss, iat, nbf claims" do
-      assert Config.default_claims() |> Map.keys() == ["exp", "iat", "iss", "nbf"]
+      assert Config.default_claims() |> Map.keys() == ["aud", "exp", "iat", "iss", "jti", "nbf"]
     end
 
     test "can customize exp duration" do
@@ -28,12 +28,12 @@ defmodule Joken.Config.Test do
 
     test "can skip claims" do
       keys = Config.default_claims(skip: [:exp]) |> Map.keys()
-      assert keys == ["iat", "iss", "nbf"]
+      assert keys == ["aud", "iat", "iss", "jti", "nbf"]
 
       keys = Config.default_claims(skip: [:exp, :iat]) |> Map.keys()
-      assert keys == ["iss", "nbf"]
+      assert keys == ["aud", "iss", "jti", "nbf"]
 
-      assert Config.default_claims(skip: [:exp, :iat, :iss, :nbf]) == %{}
+      assert Config.default_claims(skip: [:aud, :exp, :iat, :iss, :jti, :nbf]) == %{}
     end
 
     test "can set a different issuer" do
@@ -80,5 +80,68 @@ defmodule Joken.Config.Test do
       # not before a second in the future
       refute exp_claim.validate.(Joken.current_time() + 1)
     end
+  end
+
+  describe "generate_and_sign/verify_and_update" do
+    property "should always pass for the same signer" do
+      generator =
+        StreamData.map_of(
+          StreamData.string(:ascii),
+          StreamData.one_of([
+            StreamData.string(:ascii),
+            StreamData.integer(),
+            StreamData.boolean(),
+            StreamData.map_of(
+              StreamData.string(:ascii),
+              StreamData.one_of([
+                StreamData.string(:ascii),
+                StreamData.integer(),
+                StreamData.boolean()
+              ])
+            )
+          ])
+        )
+
+      defmodule PropertyEncodeDecode do
+        use Joken.Config
+      end
+
+      check all input_map <- generator do
+        {:ok, token} = PropertyEncodeDecode.generate_and_sign(input_map)
+        {:ok, claims} = PropertyEncodeDecode.verify_and_validate(token)
+
+        map_contains_other(claims, input_map)
+      end
+    end
+  end
+
+  defp map_contains_other(target, contains_map) do
+    contains_map
+    |> Enum.each(fn
+      {"", _val} ->
+        :ok
+
+      {key, value} ->
+        result = Map.fetch(target, key)
+
+        case result do
+          {:ok, cur_value} ->
+            unless value == cur_value do
+              raise """
+              Value for key #{key} differs. 
+
+              Expected: #{inspect(value)}
+              Got:      #{inspect(cur_value)}
+              """
+            end
+
+          val ->
+            raise """
+            Expected value differs.
+
+            Got: #{inspect(val)}.
+            """
+        end
+    end)
   end
 end

@@ -7,7 +7,7 @@ defmodule Joken.Error do
   `PEM` is a format for encoding keys. Here is a key configuration example:
 
         pem_rs256: [
-            key_alg: "RS256",
+            signer_alg: "RS256",
             key_pem: \"\"\"
             -----BEGIN RSA PRIVATE KEY-----
             MIICWwIBAAKBgQDdlatRjRjogo3WojgGHFHYLugdUWAY9iR3fy4arWNA1KoS8kVw33cJibXr8bvwUAUparCwlvdbH6dvEOfou0/gCFQsHUfQrSDv+MuSUMAe8jzKE4qW+jK+xQU9a03GUnKHkkle+Q0pX/g6jXZ7r1/xAK5Do2kQ+X5xK9cipRgEKwIDAQABAoGAD+onAtVye4ic7VR7V50DF9bOnwRwNXrARcDhq9LWNRrRGElESYYTQ6EbatXS3MCyjjX2eMhu/aF5YhXBwkppwxg+EOmXeh+MzL7Zh284OuPbkglAaGhV9bb6/5CpuGb1esyPbYW+Ty2PC0GSZfIXkXs76jXAu9TOBvD0ybc2YlkCQQDywg2R/7t3Q2OE2+yo382CLJdrlSLVROWKwb4tb2PjhY4XAwV8d1vy0RenxTB+K5Mu57uVSTHtrMK0GAtFr833AkEA6avx20OHo61Yela/4k5kQDtjEf1N0LfI+BcWZtxsS3jDM3i1Hp0KSu5rsCPb8acJo5RO26gGVrfAsDcIXKC+bQJAZZ2XIpsitLyPpuiMOvBbzPavd4gY6Z8KWrfYzJoI/Q9FuBo6rKwl4BFoToD7WIUS+hpkagwWiz+6zLoX1dbOZwJACmH5fSSjAkLRi54PKJ8TFUeOP15h9sQzydI8zJU+upvDEKZsZc/UhT/SySDOxQ4G/523Y0sz/OZtSWcol/UMgQJALesy++GdvoIDLfJX5GBQpuFgFenRiRDabxrE9MNUZ2aPFaFp+DyAe+b4nDwuJaW2LURbr8AEZga7oQj0uYxcYw==
@@ -20,7 +20,7 @@ defmodule Joken.Error do
   `key_map` is a map with all the parameters needed for the key. Example:
 
         rs256: [
-            key_alg: "RS256",
+            signer_alg: "RS256",
             key_map: %{
                 "d" =>
                 "A2gHIUmJOzRGvklIA2S8wWayCXnF8NYAhOhu7woSwjioO3HRzvd3ptegSKDpPfABJuzhy7y08ug5ZcyFbN1hJBVY8NwNzpLSUK9wmXekrbTG9MT76NAiQTxV6fYK5DXPF4Cp0qghBt-tq0kQNKx4q9QEzLb9XonmXE2a10U8EWJIs972SFGhxKzf6aq6Ri7UDK607ngQyEhVmGxr3gDJLAGQ5wOap5NYIL2ufI5FYqH-Sby_Qk7299b-w4B0fl6u8isR8OlpwMLVnD-oqOBPH-65tE82hxPV0QbSmyzmg9hlVVinJ82YRBkbcu-XG9XXOhUqJJ7kafQrYkQx6BiFKQ",
@@ -55,12 +55,12 @@ defmodule Joken.Error do
     To create a signer we need a key in config.exs. You can define 
     a key in your config.exs in several ways:
 
-    1. For the default key, use `config :joken, default_key: <key_params>`
+    1. For the default key, use `config :joken, default_signer: <key_params>`
     2. For other keys, use `config :joken, <key_name>: <key_params>`
 
     If you are using different than default keys, you can pass it as the second
     argument to `generate_and_sign/2` or as a parameter for `use Joken.Config`, 
-    example: `use Joken.Config, default_key: <key_name>`
+    example: `use Joken.Config, default_signer: <key_name>`
 
     See configuration docs for possible values of <key_params>.
     """
@@ -74,23 +74,23 @@ defmodule Joken.Error do
     #{inspect(Joken.Signer.algorithms())}
     """
 
-  def message(%__MODULE__{reason: [:hs_no_secret, [key_alg: key_alg]]}),
+  def message(%__MODULE__{reason: [:hs_no_secret, [signer_alg: signer_alg]]}),
     do: """
-    #{key_alg} algorithm must have a `key_secret` parameter in its configuration.
+    #{signer_alg} algorithm must have a `key_secret` parameter in its configuration.
 
     The `key_secret` is the "password" used for signing your tokens in HS*** algorithms.
     """
 
-  def message(%__MODULE__{reason: [:no_map_or_pem, [key_alg: key_alg]]}),
+  def message(%__MODULE__{reason: [:no_map_or_pem, [signer_alg: signer_alg]]}),
     do: """
-    "#{key_alg} algorithm needs either a `key_map` or a `key_pem` in its configuration.
+    "#{signer_alg} algorithm needs either a `key_map` or a `key_pem` in its configuration.
 
     #{@pem_or_map}
     """
 
-  def message(%__MODULE__{reason: [:provided_pem_and_map, [key_alg: key_alg]]}),
+  def message(%__MODULE__{reason: [:provided_pem_and_map, [signer_alg: signer_alg]]}),
     do: """
-    #{key_alg} is badly configured. It can NOT use BOTH a `key_map` and a `key_pem`.
+    #{signer_alg} is badly configured. It can NOT use BOTH a `key_map` and a `key_pem`.
 
     Please, provide only one of them.
 
@@ -99,7 +99,7 @@ defmodule Joken.Error do
 
   def message(%__MODULE__{reason: :claim_not_valid}),
     do: """
-    Claim did not pass validation
+    Claim did not pass validation.
 
     Set log level to debug for more information.
     """
@@ -118,5 +118,12 @@ defmodule Joken.Error do
         end
         
         CustomClaimTest.generate_and_sign %{"a claim without configuration" => "any value"}
+    """
+
+  def message(%__MODULE__{reason: [:bad_generate_and_sign, [result: result]]}),
+    do: """
+    An error was raised while generating and signing.
+
+    #{result}
     """
 end

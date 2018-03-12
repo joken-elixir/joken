@@ -16,7 +16,14 @@ defmodule Joken.Mixfile do
       deps: deps(),
       source_ref: "v#{@version}",
       source_url: "https://github.com/bryanjos/joken",
-      docs: docs_config()
+      docs: docs_config(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ]
     ]
   end
 
@@ -30,15 +37,16 @@ defmodule Joken.Mixfile do
   defp deps do
     [
       {:jose, "~> 1.8"},
-      {:jason, "~> 1.0.0-rc.2", optional: true},
-      {:benchee, "~> 0.11", only: :bench},
+      {:jason, "~> 1.0.0", optional: true},
+      {:benchee, "~> 0.12", only: :bench},
 
       # Docs
       {:ex_doc, "~> 0.18.2", only: :dev, runtime: false},
 
       # Test
-      {:junit_formatter, "~> 2.1", only: :test},
-      {:stream_data, "~> 0.4", only: :test}
+      {:junit_formatter, "~> 2.2", only: :test},
+      {:stream_data, "~> 0.4", only: :test},
+      {:excoveralls, "~> 0.8", only: :test}
     ]
   end
 
@@ -62,11 +70,14 @@ defmodule Joken.Mixfile do
 
   defp docs_config do
     [
+      extra_section: "GUIDES",
       extras: [
-        "README.md": [title: "Overview"],
-        "CHANGELOG.md": [title: "Changelog"]
+        "guides/introduction.md",
+        "guides/configuration.md",
+        "guides/signer.md",
+        {"CHANGELOG.md", [title: "Changelog"]}
       ],
-      main: "readme"
+      main: "introduction"
     ]
   end
 end
