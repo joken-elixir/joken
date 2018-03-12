@@ -48,7 +48,7 @@ You can view the changelog [here](https://github.com/bryanjos/joken/blob/master/
 
 All you need to generate a token is a `Joken.Token` struct with proper values.
 There you can set:
-- json_module: choose your JSON library (currently supports Poison | JSX)
+- json_module: choose your JSON library (currently supports Poison | JSX). **THIS IS NOT SET BY DEFAULT ON THE STRUCT**. Please, set the json_module if you are constructing a `Joken.Token` manually with a `%Joken.Token{}` call.
 - signer: a map that tells the underlying system how to sign and verify your
 tokens
 - validations: a map of claims keys to function validations
