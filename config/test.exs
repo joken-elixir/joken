@@ -65,4 +65,17 @@ config :joken,
   pem_rs512: [
     signer_alg: "RS512",
     key_pem: rsa_pem_key
+  ],
+  ed25519: [
+    signer_alg: "Ed25519",
+    key_openssh: """
+    -----BEGIN OPENSSH PRIVATE KEY-----
+    b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+    QyNTUxOQAAACB/qscCIU645l8xh1J5l5PQmB9IBiSPMmzFywW7bFl5LAAAAKjOwjJQzsIy
+    UAAAAAtzc2gtZWQyNTUxOQAAACB/qscCIU645l8xh1J5l5PQmB9IBiSPMmzFywW7bFl5LA
+    AAAEBCfc95wRP1nAlJY4ahZBMUs2iN3eiSp48aNqjTfdhQsX+qxwIhTrjmXzGHUnmXk9CY
+    H0gGJI8ybMXLBbtsWXksAAAAI3ZpY3Rvcm9saW5hc2NAbG9jYWxob3N0LmxvY2FsZG9tYW
+    luAQI=
+    -----END OPENSSH PRIVATE KEY-----    
+    """
   ]

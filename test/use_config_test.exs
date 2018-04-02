@@ -34,6 +34,20 @@ defmodule Joken.UseConfig.Test do
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.P4Lqll22jQQJ1eMJikvNg5HKG-cKB0hUZA9BZFIG7Jk"}
     end
 
+    test "can pass a `Joken.Signer` instance" do
+      defmodule SignerInstanceConfig do
+        use Joken.Config
+
+        def token_config, do: %{}
+      end
+
+      signer = Joken.Signer.create("HS256", "s3cret")
+
+      assert SignerInstanceConfig.generate_and_sign(%{}, signer) ==
+               {:ok,
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.JXJ_RWHq_C9ZJbkrRGRg7NxSFm2hnVu5ToEa8Nx6OiU"}
+    end
+
     test "can receive extra claims" do
       defmodule ExtraClaimsConfig do
         use Joken.Config

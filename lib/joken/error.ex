@@ -44,7 +44,7 @@ defmodule Joken.Error do
   This is also an RSA key. Please, refer to JWKs RFCs for possible parameters. Joken has a few examples in its tests that can be helpful.
   """
 
-  defexception([:reason])
+  defexception [:reason]
 
   def exception(reason), do: %__MODULE__{reason: reason}
 
@@ -67,7 +67,7 @@ defmodule Joken.Error do
 
   def message(%__MODULE__{reason: :unrecognized_algorithm}),
     do: """
-    Couldn't recognize the algorithm signer algorithm. 
+    Couldn't recognize the signer algorithm. 
 
     Possible values are: 
 
@@ -76,21 +76,23 @@ defmodule Joken.Error do
 
   def message(%__MODULE__{reason: [:hs_no_secret, [signer_alg: signer_alg]]}),
     do: """
-    #{signer_alg} algorithm must have a `key_secret` parameter in its configuration.
+    #{signer_alg} algorithm must have a `key_octet` parameter in its configuration.
 
     The `key_secret` is the "password" used for signing your tokens in HS*** algorithms.
     """
 
   def message(%__MODULE__{reason: [:no_map_or_pem, [signer_alg: signer_alg]]}),
     do: """
-    "#{signer_alg} algorithm needs either a `key_map` or a `key_pem` in its configuration.
+    "#{signer_alg} algorithm needs either a `key_map`, a `key_pem` or a `key_openssh`
+    in its configuration.
 
     #{@pem_or_map}
     """
 
   def message(%__MODULE__{reason: [:provided_pem_and_map, [signer_alg: signer_alg]]}),
     do: """
-    #{signer_alg} is badly configured. It can NOT use BOTH a `key_map` and a `key_pem`.
+    #{signer_alg} is badly configured. It can NOT use BOTH a `key_map`, a `key_pem` and a 
+    `key_openssh`.
 
     Please, provide only one of them.
 

@@ -39,29 +39,9 @@ It is important to notice that this configuration is used for claims we want to 
 
 All claims in this configuration have a binary key and a `Joken.Claim` value with a function for generating the claim data and a function with one parameter for validating the claim. These are called during token generation and validation respectively.
 
-### Passing options to `use Joken.Config`
-
-You can pass all options that `Joken.Config.default_claims/1` accepts. Let's see an example:
-
-``` elixir
-defmodule MyApp.Token do
-  use Joken.Config, [
-    default_exp: 20 * 60, # 20 minutes
-    skip: [:aud, :iss]
-  ]
-end
-```
-
-Now calling `MyApp.Token.generate_and_sign` will result in:
-
-- "exp": with 20 minutes and validation
-- "iat": calls `Joken.current_time/0`
-- "nbf": calls `Joken.current_time/0` (with validation)
-- "jti": calls `Joken.generate_jti/0` 
-
 ### Overriding `token_config/0`
 
-Another way of customizing token generation and validation is by overriding the function `token_config/0` in your module. Example:
+You can customize token generation and validation by overriding the function `token_config/0` in your module. Example:
 
 ``` elixir
 defmodule MyApp.Token do

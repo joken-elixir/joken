@@ -10,6 +10,13 @@ defmodule Joken.Config.Test do
   end
 
   describe "Joken.Config.default_claims/1" do
+    property "any given issuer will be validated" do
+      check all issuer <- binary() do
+        iss_claim = Config.default_claims(iss: issuer)["iss"]
+        assert iss_claim.validate.(issuer)
+      end
+    end
+
     test "generates exp, iss, iat, nbf claims" do
       assert Config.default_claims() |> Map.keys() == ["aud", "exp", "iat", "iss", "jti", "nbf"]
     end
@@ -60,13 +67,6 @@ defmodule Joken.Config.Test do
       refute exp_claim.validate.("Another")
     end
 
-    property "any given issuer will be validated" do
-      check all issuer <- binary() do
-        iss_claim = Config.default_claims(iss: issuer)["iss"]
-        assert iss_claim.validate.(issuer)
-      end
-    end
-
     test "default nbf validates properly" do
       Mock.freeze()
       exp_claim = Config.default_claims()["nbf"]
@@ -79,6 +79,12 @@ defmodule Joken.Config.Test do
 
       # not before a second in the future
       refute exp_claim.validate.(Joken.current_time() + 1)
+    end
+
+    test "can switch default jti generation function" do
+      jti_claim = Config.default_claims(generate_jti: fn -> "Hi" end)["jti"]
+
+      assert jti_claim.generate.() == "Hi"
     end
   end
 

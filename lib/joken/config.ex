@@ -15,7 +15,7 @@ defmodule Joken.Config do
         validate: &(&1 < Joken.Config.current_time())  
       }}
 
-  Since this is cumbersome and error prone, you can use this module with a more fluent API, see:
+  n  Since this is cumbersome and error prone, you can use this module with a more fluent API, see:
     - default_claims/1
     - add_claim/4
 
@@ -64,29 +64,23 @@ defmodule Joken.Config do
         end
       end
 
+  ## Customizing default generated claims
+
+  The default claims generation is just a bypass call to `default_claims/1`. If one would
+  like to customize it, then we need only to override the token_config function:
+
+      defmodule MyCustomDefaults do
+        use Joken.Config
+
+        def token_config, do: default_claims(default_exp: 60 * 60) # 1 hour
+      end
+
   ## Options
 
   You can pass some options to `use Joken.Config` to ease on your configuration:
 
-    - default_signer: a signer configuration key in config.exs (see Joken.Signer)
+    - default_signer: a signer configuration key in config.exs (see `Joken.Signer`)
 
-  Also, all options from `default_claims/1` can be passed. These are used in the default
-  `token_config/0` implementation. If you override the function `token_config/0` then these
-  options are ignored.
-
-  It is easy to configure your token generation and validation this way:
-
-      defmodule MyAuth do
-        use Joken.Config, default_signer: :rs256
-
-        def token_config do
-          default_claims(default_exp: 8 * 60 * 60)
-          |> add_claim(
-              "custom",
-                fn -> "My generate function" end, 
-                &("This is my validate function with param #{&1} from token")
-             ) 
-        end
   """
   import Joken, only: [current_time: 0]
   alias Joken.{Signer, Claim}
@@ -116,15 +110,13 @@ defmodule Joken.Config do
 
       alias Joken.{Signer, Claim}
 
-      @joken_using_args unquote(options)
-
-      key = Keyword.get(@joken_using_args, :default_signer, :default_signer)
+      key = unquote(options)[:default_signer] || :default_signer
       @joken_default_signer Joken.Signer.parse_config(key)
 
       def __default_signer__, do: @joken_default_signer
 
       @impl Joken.Config
-      def token_config, do: default_claims(@joken_using_args)
+      def token_config, do: default_claims()
 
       @doc """
       Generates a JWT claim set.
@@ -142,8 +134,8 @@ defmodule Joken.Config do
 
         1. The one represented by the key passed as second argument. The signer will be 
         parsed from the configuration. 
-        2. If no argument was passed then we will use the one from the configuration `:default_signer`
-         passed as argument for the `use Joken.Config` macro.
+        2. If no argument was passed then we will use the one from the configuration 
+        `:default_signer` passed as argument for the `use Joken.Config` macro.
         3. If no key was passed for the use macro then we will use the one configured as 
         `:default_signer` in the configuration.
       """
@@ -222,8 +214,10 @@ defmodule Joken.Config do
     end
   end
 
-  def verify(mod, bearer_token, key) when is_atom(key) do
-    signer = parse_signer(mod, key)
+  def verify(mod, bearer_token, key) when is_atom(key),
+    do: verify(mod, bearer_token, parse_signer(mod, key))
+
+  def verify(mod, bearer_token, signer = %Signer{}) do
     {:ok, bearer_token, signer} = mod.before_verify(bearer_token, signer)
     claim_map = Signer.verify(bearer_token, signer)
     {:ok, claim_map} = mod.after_verify(bearer_token, claim_map, signer)
@@ -248,7 +242,7 @@ defmodule Joken.Config do
           nil ->
             {:cont, :ok}
 
-          # When there is a configuration but not validation function
+          # When there is a configuration but no validation function
           %Claim{validate: nil} ->
             {:cont, :ok}
 
@@ -290,9 +284,10 @@ defmodule Joken.Config do
     claims
   end
 
-  def encode_and_sign(mod, claims, key) do
-    # Sign
-    signer = parse_signer(mod, key)
+  def encode_and_sign(mod, claims, key) when is_atom(key),
+    do: encode_and_sign(mod, claims, parse_signer(mod, key))
+
+  def encode_and_sign(mod, claims, signer = %Signer{}) do
     {:ok, claims, signer} = mod.before_sign(claims, signer)
     token = Signer.sign(claims, signer)
     mod.after_sign(token, claims, signer)
@@ -309,9 +304,17 @@ defmodule Joken.Config do
   - aud: changes the audience claim
   """
   def default_claims(options \\ []) do
-    skip = Keyword.get(options, :skip, [])
-    default_exp = Keyword.get(options, :default_exp, 2 * 60 * 60)
-    default_iss = Keyword.get(options, :iss, "Joken")
+    skip = options[:skip] || []
+    default_exp = options[:default_exp] || 2 * 60 * 60
+    default_iss = options[:iss] || "Joken"
+    generate_jti = options[:generate_jti] || (&Joken.generate_jti/0)
+
+    unless is_integer(default_exp) and is_binary(default_iss) and is_function(generate_jti) and
+             is_list(skip) do
+      raise Joken.Error, :invalid_default_claims
+    end
+
+    gen_exp_func = fn -> current_time() + default_exp end
 
     Enum.reduce(@default_generated_claims, %{}, fn claim, acc ->
       if claim in skip do
@@ -319,7 +322,7 @@ defmodule Joken.Config do
       else
         case claim do
           :exp ->
-            add_claim(acc, "exp", fn -> current_time() + default_exp end, &(&1 > current_time()))
+            add_claim(acc, "exp", gen_exp_func, &(&1 > current_time()))
 
           :iat ->
             add_claim(acc, "iat", fn -> current_time() end)
@@ -334,7 +337,7 @@ defmodule Joken.Config do
             add_claim(acc, "aud", fn -> default_iss end, &(&1 == default_iss))
 
           :jti ->
-            add_claim(acc, "jti", &Joken.generate_jti/0)
+            add_claim(acc, "jti", generate_jti)
         end
       end
     end)
@@ -343,24 +346,24 @@ defmodule Joken.Config do
   @doc """
   add_claim
   """
-  def add_claim(config, key, generate_fun \\ nil, validate_fun \\ nil)
+  def add_claim(config, claim_key, generate_fun \\ nil, validate_fun \\ nil, options \\ [])
 
-  def add_claim(config, key, nil, nil)
-      when is_map(config) and is_atom(key),
-      do: raise(Joken.Error, :claim_configuration_not_valid)
-
-  def add_claim(config, key, generate_fun, validate_fun)
-      when is_map(config) and is_binary(key) do
-    claim = %Joken.Claim{generate: generate_fun, validate: validate_fun}
-    Map.put(config, key, claim)
+  def add_claim(config, claim_key, nil, nil, _options)
+      when is_map(config) and is_atom(claim_key) do
+    raise Joken.Error, :claim_configuration_not_valid
   end
 
-  defp parse_signer(mod, key) do
+  def add_claim(config, claim_key, generate_fun, validate_fun, options)
+      when is_map(config) and is_binary(claim_key) do
+    claim = %Joken.Claim{generate: generate_fun, validate: validate_fun, options: options}
+    Map.put(config, claim_key, claim)
+  end
+
+  defp parse_signer(mod, signer_key) do
     signer =
-      key
-      |> case do
+      case signer_key do
         nil -> mod.__default_signer__()
-        key -> Signer.parse_config(key)
+        signer_key -> Signer.parse_config(signer_key)
       end
 
     if is_nil(signer), do: raise(Joken.Error, :no_default_signer)

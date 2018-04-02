@@ -9,6 +9,7 @@ defmodule Joken.Mixfile do
       version: @version,
       name: "Joken",
       elixir: "~> 1.5",
+      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       consolidate_protocols: Mix.env() != :test,
       description: description(),
@@ -34,6 +35,9 @@ defmodule Joken.Mixfile do
     ]
   end
 
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
+  
   defp deps do
     [
       {:jose, "~> 1.8"},

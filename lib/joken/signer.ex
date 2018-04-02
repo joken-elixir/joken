@@ -163,50 +163,38 @@ defmodule Joken.Signer do
   end
 
   defp parse_list_config(config) do
-    signer_alg = Keyword.get(config, :signer_alg, "HS256")
-    key_pem = Keyword.get(config, :key_pem)
-    key_map = Keyword.get(config, :key_map)
-    key_secret = Keyword.get(config, :key_octet)
+    signer_alg = config[:signer_alg] || "HS256"
+
+    key_pem = config[:key_pem]
+    key_map = config[:key_map]
+    key_openssh = config[:key_openssh]
+    key_octet = config[:key_octet]
+
+    key_config =
+      [
+        {&JOSE.JWK.from_pem/1, key_pem},
+        {&JOSE.JWK.from_map/1, key_map},
+        {&JOSE.JWK.from_openssh_key/1, key_openssh},
+        {&JOSE.JWK.from_oct/1, key_octet}
+      ]
+      |> Enum.filter(fn {_, val} -> not is_nil(val) end)
+
+    unless Enum.count(key_config) == 1, do: raise(Joken.Error, :wrong_key_parameters)
+
+    {jwk_function, value} = List.first(key_config)
 
     cond do
-      signer_alg in @hs_algorithms ->
-        parse_signer_with_secret(signer_alg, key_secret)
-
-      signer_alg in @map_key_algorithms ->
-        parse_signer_with_pem_or_map(signer_alg, key_pem, key_map)
+      signer_alg in @algorithms ->
+        do_parse_signer(jwk_function.(value), signer_alg)
 
       true ->
-        raise(Joken.Error, :unrecognized_algorithm)
+        raise Joken.Error, :unrecognized_algorithm
     end
   end
 
-  defp parse_signer_with_secret(signer_alg, nil),
-    do: raise(Joken.Error, [:hs_no_secret, [signer_alg: signer_alg]])
-
-  defp parse_signer_with_secret(signer_alg, secret) when is_binary(secret),
+  defp do_parse_signer(jwk, signer_alg),
     do: %Signer{
-      jwk: JOSE.JWK.from_oct(secret),
-      jws: JOSE.JWS.from_map(%{"alg" => signer_alg, "typ" => "JWT"}),
-      alg: signer_alg
-    }
-
-  defp parse_signer_with_pem_or_map(signer_alg, nil, nil),
-    do: raise(Joken.Error, [:no_map_or_pem, [signer_alg: signer_alg]])
-
-  defp parse_signer_with_pem_or_map(signer_alg, key_pem, key_map)
-       when not is_nil(key_pem) and not is_nil(key_map),
-       do: raise(Joken.Error, [:provided_pem_and_map, [signer_alg: signer_alg]])
-
-  defp parse_signer_with_pem_or_map(signer_alg, key_pem, nil),
-    do: %Signer{
-      jwk: JOSE.JWK.from_pem(key_pem),
-      jws: JOSE.JWS.from_map(%{"alg" => signer_alg, "typ" => "JWT"}),
-      alg: signer_alg
-    }
-
-  defp parse_signer_with_pem_or_map(signer_alg, nil, key_map) when is_map(key_map),
-    do: %Signer{
-      jwk: JOSE.JWK.from_map(key_map),
+      jwk: jwk,
       jws: JOSE.JWS.from_map(%{"alg" => signer_alg, "typ" => "JWT"}),
       alg: signer_alg
     }
