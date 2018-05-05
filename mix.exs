@@ -42,10 +42,10 @@ defmodule Joken.Mixfile do
     [
       {:jose, "~> 1.8"},
       {:jason, "~> 1.0.0", optional: true},
-      {:benchee, "~> 0.12", only: :bench},
+      {:benchee, "~> 0.13", only: :bench},
 
       # Docs
-      {:ex_doc, "~> 0.18.2", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.18", only: :dev, runtime: false},
 
       # Test
       {:junit_formatter, "~> 2.2", only: :test},
@@ -56,7 +56,7 @@ defmodule Joken.Mixfile do
 
   defp description do
     """
-    JWT (JSON Web Token) Library for Elixir
+    JWT (JSON Web Token) library for Elixir
     """
   end
 
