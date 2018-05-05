@@ -3,11 +3,6 @@ defmodule Joken.CurrentTime.OS do
   Time source for default time based claims. Can be overriden in tests.
   """
 
-  @doc """
-  Returns current time in seconds.
-  """
-  def current_time() do
-    {mega, secs, _} = :os.timestamp()
-    mega * 1_000_000 + secs
-  end
+  @doc "Returns current time in seconds."
+  def current_time(), do: DateTime.utc_now() |> DateTime.to_unix()
 end
