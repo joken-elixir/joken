@@ -5,7 +5,7 @@ defmodule Joken.UseConfig.Test do
   alias Joken.CurrentTime.Mock
 
   setup do
-    start_supervised!(Mock)
+    {:ok, _pid} = start_supervised(Mock)
     :ok
   end
 
