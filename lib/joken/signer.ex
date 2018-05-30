@@ -63,6 +63,14 @@ defmodule Joken.Signer do
     }
   end
 
+  def create(alg, %{"pem" => pem}) when alg in @map_key_algorithms do
+    %Signer{
+      jws: JOSE.JWS.from_map(%{"alg" => alg, "typ" => "JWT"}),
+      jwk: JOSE.JWK.from_pem(pem),
+      alg: alg
+    }
+  end
+
   def create(alg, key) when is_map(key) and alg in @map_key_algorithms do
     %Signer{
       jws: JOSE.JWS.from_map(%{"alg" => alg, "typ" => "JWT"}),

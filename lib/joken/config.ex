@@ -15,7 +15,7 @@ defmodule Joken.Config do
         validate: &(&1 < Joken.Config.current_time())  
       }}
 
-  n  Since this is cumbersome and error prone, you can use this module with a more fluent API, see:
+  Since this is cumbersome and error prone, you can use this module with a more fluent API, see:
     - default_claims/1
     - add_claim/4
 
@@ -103,12 +103,10 @@ defmodule Joken.Config do
     quote do
       import Joken, only: [current_time: 0]
       import Joken.Config
-
-      @behaviour Joken.Config
-
+      alias Joken.{Signer, Claim}
       use Joken.Hooks
 
-      alias Joken.{Signer, Claim}
+      @behaviour Joken.Config
 
       key = unquote(options)[:default_signer] || :default_signer
       @joken_default_signer Joken.Signer.parse_config(key)
@@ -123,8 +121,10 @@ defmodule Joken.Config do
 
       Extra claims must be a map with keys as binaries. Ex: %{"sub" => "some@one.com"}
       """
-      @impl Joken.Config
       def generate_claims(extra_claims \\ %{}),
+
+      @impl Joken.Config
+      def generate_claims(extra_claims),
         do: Joken.Config.generate_claims(__MODULE__, extra_claims)
 
       @doc """
@@ -139,8 +139,10 @@ defmodule Joken.Config do
         3. If no key was passed for the use macro then we will use the one configured as 
         `:default_signer` in the configuration.
       """
+      def encode_and_sign(claims, key \\ nil)
+
       @impl Joken.Config
-      def encode_and_sign(claims, key \\ nil),
+      def encode_and_sign(claims, key),
         do: Joken.Config.encode_and_sign(__MODULE__, claims, key)
 
       @doc """
@@ -158,8 +160,10 @@ defmodule Joken.Config do
       - `{:error, [message: message, claim: key, claim_val: claim_value]}` where message can be used
       on the frontend (it does not contain which claim nor which value failed).
       """
+      def verify(bearer_token, key \\ nil)
+      
       @impl Joken.Config
-      def verify(bearer_token, key \\ nil) when is_atom(key),
+      def verify(bearer_token, key) when is_atom(key),
         do: Joken.Config.verify(__MODULE__, bearer_token, key)
 
       @doc """
