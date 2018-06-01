@@ -121,7 +121,7 @@ defmodule Joken.Config do
 
       Extra claims must be a map with keys as binaries. Ex: %{"sub" => "some@one.com"}
       """
-      def generate_claims(extra_claims \\ %{}),
+      def generate_claims(extra_claims \\ %{})
 
       @impl Joken.Config
       def generate_claims(extra_claims),
@@ -151,8 +151,9 @@ defmodule Joken.Config do
       The signer used is (in order of precedence):
 
       1. The signer in the configuration with the given `key`.
-      2. The signer passed in the `use Joken.Config` through the `default_signer` key.
-      3. The default signer in configuration (the one with the key `default_signer`).
+      2. The `Joken.Signer` instance passed to the method.
+      3. The signer passed in the `use Joken.Config` through the `default_signer` key.
+      4. The default signer in configuration (the one with the key `default_signer`).
 
       It returns either:
 
@@ -160,17 +161,16 @@ defmodule Joken.Config do
       - `{:error, [message: message, claim: key, claim_val: claim_value]}` where message can be used
       on the frontend (it does not contain which claim nor which value failed).
       """
-      def verify(bearer_token, key \\ nil)
-      
       @impl Joken.Config
-      def verify(bearer_token, key) when is_atom(key),
+      def verify(bearer_token, key \\ nil),
         do: Joken.Config.verify(__MODULE__, bearer_token, key)
 
       @doc """
       Runs validations on the already verified token. 
       """
       @impl Joken.Config
-      def validate(claims), do: Joken.Config.validate(__MODULE__, claims)
+      def validate(claims, context \\ %{}),
+        do: Joken.Config.validate(__MODULE__, claims, context)
 
       defoverridable token_config: 0,
                      generate_claims: 1,
@@ -198,14 +198,14 @@ defmodule Joken.Config do
       end
 
       @doc "Combines verify/2 and validate/1"
-      def verify_and_validate(bearer_token, key \\ nil) do
+      def verify_and_validate(bearer_token, key \\ nil, context \\ %{}) do
         verify(bearer_token, key)
-        |> validate()
+        |> validate(context)
       end
 
-      @doc "Same as verify_and_update/2 but raises if error"
-      def verify_and_validate!(extra_claims \\ %{}, key \\ nil) do
-        {status, result} = verify_and_validate(extra_claims, key)
+      @doc "Same as verify_and_validate/2 but raises if error"
+      def verify_and_validate!(bearer_token, key \\ nil, context \\ %{}) do
+        {status, result} = verify_and_validate(bearer_token, key, context)
 
         case status do
           :ok ->
@@ -228,7 +228,7 @@ defmodule Joken.Config do
     claim_map
   end
 
-  def validate(mod, claim_map) do
+  def validate(mod, claim_map, context) do
     require Logger
 
     config = mod.token_config()
@@ -238,8 +238,8 @@ defmodule Joken.Config do
     result =
       Enum.reduce_while(claim_map, nil, fn {key, claim_val}, _acc ->
         # When there is a function for validating the token
-        with %Claim{validate: val_func} when not is_nil(val_func) <- config[key],
-             true <- val_func.(claim_val) do
+        with %Claim{validate: val_func} when not is_nil(val_func) <- config[key] do
+          val_func.(claim_val, context)
           {:cont, :ok}
         else
           # When there is no configuration for the claim
@@ -359,8 +359,27 @@ defmodule Joken.Config do
 
   def add_claim(config, claim_key, generate_fun, validate_fun, options)
       when is_map(config) and is_binary(claim_key) do
+    validate_fun = if validate_fun, do: wrap_validate_fun(validate_fun), else: validate_fun
+
     claim = %Joken.Claim{generate: generate_fun, validate: validate_fun, options: options}
     Map.put(config, claim_key, claim)
+  end
+
+  # This ensures that all validate functions are called with arity 2 and gives some
+  # more helpful message in case of errors
+  defp wrap_validate_fun(fun) do
+    {:arity, arity} = :erlang.fun_info(fun, :arity)
+
+    case arity do
+      1 ->
+        fn val, _ctx -> fun.(val) end
+
+      2 ->
+        fun
+
+      true ->
+        raise Joken.Error, message: :bad_validate_fun_arity
+    end
   end
 
   defp parse_signer(mod, signer_key) do

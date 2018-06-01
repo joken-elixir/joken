@@ -60,4 +60,31 @@ defmodule Joken.UseConfig.Test do
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.YSy8oSoFcYMXK2Gn2vcdsSRGtxnYHQ1KGeVOHO_tSbc"}
     end
   end
+
+  describe "__MODULE__.verify_and_validate" do
+    test "can verify and validate a generated token" do
+      defmodule(SimpleVerifyAndValidate, do: use(Joken.Config))
+
+      jwt = SimpleVerifyAndValidate.generate_and_sign!()
+
+      assert {:ok, _claims} = SimpleVerifyAndValidate.verify_and_validate(jwt)
+    end
+
+    test "can validate a token with a context" do
+      defmodule ValidateWithContext do
+        use Joken.Config
+
+        def token_config do
+          %{}
+          # Validate function with arity 2
+          |> add_claim("custom", fn -> "custom" end, &(&1 == &2.custom))
+        end
+      end
+
+      jwt = ValidateWithContext.generate_and_sign!()
+
+      assert {:ok, %{"custom" => "custom"}} =
+               ValidateWithContext.verify_and_validate(jwt, nil, %{custom: "custom"})
+    end
+  end
 end

@@ -27,4 +27,17 @@ defmodule Joken.Signer.Test do
       Signer.parse_config(:ed25519)
     end
   end
+
+  test "can create a signer with alg and pem" do
+    pem = Application.get_env(:joken, :pem_rs256)[:key_pem]
+    signer = Signer.create("RS512", %{"pem" => pem})
+
+    assert %Signer{
+             alg: "RS512",
+             jws: %JOSE.JWS{
+               alg: {:jose_jws_alg_rsa_pkcs1_v1_5, :RS512}
+             },
+             jwk: %JOSE.JWK{}
+           } = signer
+  end
 end

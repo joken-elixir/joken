@@ -128,4 +128,16 @@ defmodule Joken.Error do
 
     #{result}
     """
+
+  def message(%__MODULE__{reason: :bad_validate_fun_arity}),
+    do: """
+    Claim validate function must have either arity 1 or 2.
+
+    When arity is 1, it receives the claim value in a given JWT.
+
+    When it is 2, besides the claim value, it receives a context map. You can pass dynamic
+    values on this context and pass it to the validate function.
+
+    See `Joken.Config.validate/3` for more information on Context
+    """
 end
