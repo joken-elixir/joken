@@ -186,7 +186,7 @@ defmodule Joken.Config do
 
       @doc "Same as generate_and_sign/2 but raises if not :ok"
       def generate_and_sign!(extra_claims \\ %{}, key \\ nil) do
-        {status, result} = generate_and_sign(extra_claims, key)
+        {status, result, claims} = generate_and_sign(extra_claims, key)
 
         case status do
           :ok ->

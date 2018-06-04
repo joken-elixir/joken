@@ -19,7 +19,8 @@ defmodule Joken.UseConfig.Test do
 
       assert DefaultSignerConfig.generate_and_sign() ==
                {:ok,
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mwiDnq8rTFp5Oyy5i7pT8qktTB4tZOAfiJXTEbEqn2g"}
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mwiDnq8rTFp5Oyy5i7pT8qktTB4tZOAfiJXTEbEqn2g",
+                %{}}
     end
 
     test "can pass specific signer" do
@@ -31,7 +32,8 @@ defmodule Joken.UseConfig.Test do
 
       assert SpecificSignerConfig.generate_and_sign() ==
                {:ok,
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.P4Lqll22jQQJ1eMJikvNg5HKG-cKB0hUZA9BZFIG7Jk"}
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.P4Lqll22jQQJ1eMJikvNg5HKG-cKB0hUZA9BZFIG7Jk",
+                %{}}
     end
 
     test "can pass a `Joken.Signer` instance" do
@@ -45,7 +47,8 @@ defmodule Joken.UseConfig.Test do
 
       assert SignerInstanceConfig.generate_and_sign(%{}, signer) ==
                {:ok,
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.JXJ_RWHq_C9ZJbkrRGRg7NxSFm2hnVu5ToEa8Nx6OiU"}
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.JXJ_RWHq_C9ZJbkrRGRg7NxSFm2hnVu5ToEa8Nx6OiU",
+                %{}}
     end
 
     test "can receive extra claims" do
@@ -57,7 +60,8 @@ defmodule Joken.UseConfig.Test do
 
       assert ExtraClaimsConfig.generate_and_sign(%{"name" => "John Doe"}) ==
                {:ok,
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.YSy8oSoFcYMXK2Gn2vcdsSRGtxnYHQ1KGeVOHO_tSbc"}
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.YSy8oSoFcYMXK2Gn2vcdsSRGtxnYHQ1KGeVOHO_tSbc",
+                %{"name" => "John Doe"}}
     end
   end
 

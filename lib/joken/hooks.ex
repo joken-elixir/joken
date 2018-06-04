@@ -29,7 +29,7 @@ defmodule Joken.Hooks do
       def before_validate(claims, claims_config), do: {:ok, claims, claims_config}
 
       def after_generate(claims), do: {:ok, claims}
-      def after_sign(token, claims, signer), do: {:ok, token}
+      def after_sign(token, claims, signer), do: {:ok, token, claims}
       def after_verify(token, claims, signer), do: {:ok, claims}
       def after_validate(validate_result, claims, claims_config), do: {:ok, validate_result}
 

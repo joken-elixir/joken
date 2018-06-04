@@ -112,9 +112,10 @@ defmodule Joken.Config.Test do
       end
 
       check all input_map <- generator do
-        {:ok, token} = PropertyEncodeDecode.generate_and_sign(input_map)
+        {:ok, token, gen_claims} = PropertyEncodeDecode.generate_and_sign(input_map)
         {:ok, claims} = PropertyEncodeDecode.verify_and_validate(token)
 
+        assert claims == gen_claims
         assert_map_contains_other(claims, input_map)
       end
     end
