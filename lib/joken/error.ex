@@ -65,6 +65,22 @@ defmodule Joken.Error do
     See configuration docs for possible values of <key_params>.
     """
 
+  def message(%__MODULE__{reason: :invalid_default_claims}),
+    do: """
+    Invalid argument to default claims. Verify the types of the arguments to
+    Joken.Config.default_claims/1.
+    """
+
+  def message(%__MODULE__{reason: :bad_validate_fun_arity}),
+    do: """
+    Invalid argument to validate function. 
+
+    It must be either arity 1 or 2 where:
+
+    1st argument - value of the claim in the passed token
+    2nd argument - context passed to validate
+    """
+
   def message(%__MODULE__{reason: :unrecognized_algorithm}),
     do: """
     Couldn't recognize the signer algorithm. 
@@ -72,31 +88,6 @@ defmodule Joken.Error do
     Possible values are: 
 
     #{inspect(Joken.Signer.algorithms())}
-    """
-
-  def message(%__MODULE__{reason: [:hs_no_secret, [signer_alg: signer_alg]]}),
-    do: """
-    #{signer_alg} algorithm must have a `key_octet` parameter in its configuration.
-
-    The `key_secret` is the "password" used for signing your tokens in HS*** algorithms.
-    """
-
-  def message(%__MODULE__{reason: [:no_map_or_pem, [signer_alg: signer_alg]]}),
-    do: """
-    "#{signer_alg} algorithm needs either a `key_map`, a `key_pem` or a `key_openssh`
-    in its configuration.
-
-    #{@pem_or_map}
-    """
-
-  def message(%__MODULE__{reason: [:provided_pem_and_map, [signer_alg: signer_alg]]}),
-    do: """
-    #{signer_alg} is badly configured. It can NOT use BOTH a `key_map`, a `key_pem` and a 
-    `key_openssh`.
-
-    Please, provide only one of them.
-
-    #{@pem_or_map}
     """
 
   def message(%__MODULE__{reason: :claim_not_valid}),
@@ -122,13 +113,6 @@ defmodule Joken.Error do
         CustomClaimTest.generate_and_sign %{"a claim without configuration" => "any value"}
     """
 
-  def message(%__MODULE__{reason: [:bad_generate_and_sign, [result: result]]}),
-    do: """
-    An error was raised while generating and signing.
-
-    #{result}
-    """
-
   def message(%__MODULE__{reason: :bad_validate_fun_arity}),
     do: """
     Claim validate function must have either arity 1 or 2.
@@ -139,5 +123,13 @@ defmodule Joken.Error do
     values on this context and pass it to the validate function.
 
     See `Joken.Config.validate/3` for more information on Context
+    """
+
+  def message(%__MODULE__{reason: :wrong_key_parameters}),
+    do: """
+    Couldn't create a signer because there are missing parameters.
+
+    Check the Joken.Signer.parse_config/2 documentation for the types of parameters needed
+    for each type of algorithm.
     """
 end

@@ -1,6 +1,6 @@
 defmodule Joken.Signer.Test do
   use ExUnit.Case, async: true
-  alias Joken.Signer
+  alias Joken.{Signer, Error}
 
   doctest Signer
 
@@ -39,5 +39,36 @@ defmodule Joken.Signer.Test do
              },
              jwk: %JOSE.JWK{}
            } = signer
+  end
+
+  test "can create a signer from a map of a key" do
+    map = Application.get_env(:joken, :rs256)[:key_map]
+    signer = Signer.create("RS256", map)
+
+    assert %Signer{
+             alg: "RS256",
+             jws: %JOSE.JWS{
+               alg: {:jose_jws_alg_rsa_pkcs1_v1_5, :RS256}
+             },
+             jwk: %JOSE.JWK{}
+           } = signer
+  end
+
+  test "raise with invalid algorithm" do
+    assert_raise Error, Error.message(%Error{reason: :unrecognized_algorithm}), fn ->
+      Signer.create("any algorithm", %{})
+    end
+  end
+
+  test "raise when parsing invalid algorithm from configuration" do
+    assert_raise Error, Error.message(%Error{reason: :unrecognized_algorithm}), fn ->
+      Signer.parse_config(:bad_algorithm)
+    end
+  end
+
+  test "raise with missing parameters" do
+    assert_raise Error, Error.message(%Error{reason: :wrong_key_parameters}), fn ->
+      Signer.parse_config(:missing_config_key)
+    end
   end
 end

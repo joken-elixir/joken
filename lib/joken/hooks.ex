@@ -6,19 +6,23 @@ defmodule Joken.Hooks do
   @type claims_config :: %{binary() => Joken.Claim.t()}
   @type claims :: %{binary() => term()}
   @type token :: binary()
-  @type validate_result :: {:ok, claims()} | {:error, term()}
+  @type error_tuple :: {:error, term()}
+  @type validate_result :: {:ok, claims()} | error_tuple()
 
   @callback before_generate(extra :: claims(), claims_config()) ::
-              {:ok, extra :: claims(), claims_config()}
-  @callback before_sign(claims(), Signer.t()) :: {:ok, claims(), Signer.t()}
-  @callback before_verify(token(), Signer.t()) :: {:ok, token(), Signer.t()}
-  @callback before_validate(claims(), claims_config()) :: {:ok, claims(), claims_config()}
+              {:ok, extra :: claims(), claims_config()} | error_tuple()
+  @callback before_sign(claims(), Signer.t()) :: {:ok, claims(), Signer.t()} | error_tuple()
+  @callback before_verify(token(), Signer.t()) :: {:ok, token(), Signer.t()} | error_tuple()
+  @callback before_validate(claims(), claims_config()) ::
+              {:ok, claims(), claims_config()} | error_tuple()
 
-  @callback after_generate(claims()) :: {:ok, claims()}
-  @callback after_sign(token(), claims(), Signer.t()) :: {:ok, token()}
-  @callback after_verify(token(), claims(), Signer.t()) :: {:ok, claims()}
+  @callback after_generate(claims()) :: {:ok, claims()} | error_tuple()
+  @callback after_sign(token(), claims(), Signer.t()) ::
+              {:ok, token(), claims(), Signer.t()} | error_tuple()
+  @callback after_verify(token(), claims(), Signer.t()) ::
+              {:ok, claims(), Signer.t()} | error_tuple()
   @callback after_validate(validate_result(), claims(), claims_config()) ::
-              {:ok, validate_result()}
+              {:ok, validate_result(), claims(), claims_config()} | error_tuple()
 
   defmacro __using__(_opts) do
     quote do
@@ -29,9 +33,11 @@ defmodule Joken.Hooks do
       def before_validate(claims, claims_config), do: {:ok, claims, claims_config}
 
       def after_generate(claims), do: {:ok, claims}
-      def after_sign(token, claims, signer), do: {:ok, token, claims}
-      def after_verify(token, claims, signer), do: {:ok, claims}
-      def after_validate(validate_result, claims, claims_config), do: {:ok, validate_result}
+      def after_sign(token, claims, signer), do: {:ok, token, claims, signer}
+      def after_verify(token, claims, signer), do: {:ok, claims, claims, signer}
+
+      def after_validate(validate_result, claims, claims_config),
+        do: {:ok, validate_result, claims, claims_config}
 
       defoverridable before_generate: 2,
                      before_sign: 2,

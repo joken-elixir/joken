@@ -50,6 +50,8 @@ defmodule Joken do
       token = MyAuth.generate_and_sign(%{"user_id" => "1234567890"})
       {:ok, _claim_map} = MyAuth.verify_and_validate(token)
   """
+  alias Joken.{Signer, Claim}
+  require Logger
 
   @current_time_adapter Application.get_env(:joken, :current_time_adapter, Joken.CurrentTime.OS)
 
@@ -100,5 +102,167 @@ defmodule Joken do
     >>
 
     Base.hex_encode32(binary, case: :lower)
+  end
+
+  def verify(bearer_token, signer, hooks \\ [])
+
+  def verify(bearer_token, signer, hooks) when is_binary(bearer_token) and is_atom(signer),
+    do: verify(bearer_token, parse_signer(signer), hooks)
+
+  def verify(bearer_token, signer = %Signer{}, hooks) when is_binary(bearer_token) do
+    with {:ok, bearer_token, signer} <- before_verify(bearer_token, signer, hooks),
+         claim_map <- Signer.verify(bearer_token, signer),
+         {:ok, claim_map} = after_verify(bearer_token, claim_map, signer, hooks) do
+      {:ok, claim_map}
+    end
+  end
+
+  def validate(token_config, claims_map, context, hooks \\ []) do
+    with {:ok, claims_map, config} <- before_validate(claims_map, token_config, hooks),
+         result <- reduce_validations(token_config, claims_map, context),
+         result <- parse_validate_result(result, claims_map),
+         {:ok, result} <- after_validate(result, claims_map, config, hooks) do
+      result
+    else
+      {:error, key, claim_val} ->
+        {:error, message: "Invalid token", claim: key, claim_val: claim_val}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp parse_validate_result(result, claim_map) do
+    case result do
+      :ok ->
+        {:ok, claim_map}
+
+      {:error, key, claim_val} ->
+        {:error, message: "Invalid token", claim: key, claim_val: claim_val}
+    end
+  end
+
+  def generate_claims(token_config, extra_claims, hooks \\ []) do
+    with {:ok, extra_claims, token_config} <- before_generate(extra_claims, token_config, hooks),
+         claims <- Enum.reduce(token_config, extra_claims, &Claim.__generate_claim__/2),
+         {:ok, claims} <- after_generate(claims, hooks) do
+      {:ok, claims}
+    end
+  end
+
+  def encode_and_sign(claims, signer, hooks \\ [])
+
+  def encode_and_sign(claims, signer, hooks) when is_atom(signer),
+    do: encode_and_sign(claims, parse_signer(signer), hooks)
+
+  def encode_and_sign(claims, signer = %Signer{}, hooks) do
+    with {:ok, claims, signer} <- before_sign(claims, signer, hooks),
+         token <- Signer.sign(claims, signer),
+         {:ok, token} <- after_sign(token, claims, signer, hooks) do
+      {:ok, token, claims}
+    end
+  end
+
+  defp parse_signer(signer_key) do
+    signer = Signer.parse_config(signer_key)
+
+    if is_nil(signer),
+      do: raise(Joken.Error, :no_default_signer),
+      else: signer
+  end
+
+  defp reduce_validations(config, claim_map, context) do
+    Enum.reduce_while(claim_map, nil, fn {key, claim_val}, _acc ->
+      # When there is a function for validating the token
+      with %Claim{validate: val_func} when not is_nil(val_func) <- config[key],
+           true <- val_func.(claim_val, context) do
+        {:cont, :ok}
+      else
+        # When there is no configuration for the claim
+        nil ->
+          {:cont, :ok}
+
+        # When there is a configuration but no validation function
+        %Claim{validate: nil} ->
+          {:cont, :ok}
+
+        # When it fails validation
+        false ->
+          Logger.debug(fn ->
+            """
+            Claim %{"#{key}" => #{inspect(claim_val)}} did not pass validation.
+
+            Current time: #{inspect(Joken.current_time())}
+            """
+          end)
+
+          {:halt, {:error, key, claim_val}}
+      end
+    end)
+  end
+
+  defp before_verify(bearer_token, signer, hooks),
+    do: run(hooks, :before_verify, [bearer_token, signer])
+
+  defp before_validate(claims_map, token_config, hooks),
+    do: run(hooks, :before_validate, [claims_map, token_config])
+
+  defp before_generate(extra_claims, token_config, hooks),
+    do: run(hooks, :before_generate, [extra_claims, token_config])
+
+  defp before_sign(claims, signer, hooks),
+    do: run(hooks, :before_sign, [claims, signer])
+
+  defp after_verify(bearer_token, claims_map, signer, hooks) do
+    with {:ok, _bearer_token, claims_map, _signer} <-
+           run(hooks, :after_verify, [bearer_token, claims_map, signer]) do
+      {:ok, claims_map}
+    end
+  end
+
+  defp after_validate(result, claims_map, config, hooks) do
+    with {:ok, result, _claims_map, _config} <-
+           run(hooks, :after_validate, [result, claims_map, config]) do
+      {:ok, result}
+    end
+  end
+
+  defp after_generate(claims, hooks),
+    do: run(hooks, :after_generate, [claims])
+
+  defp after_sign(token, claims, signer, hooks) do
+    with {:ok, token, _claims, _signer} <- run(hooks, :after_sign, [token, claims, signer]) do
+      {:ok, token}
+    end
+  end
+
+  defp run(hooks, fun, args) do
+    result =
+      Enum.reduce_while(
+        hooks,
+        {:ok, args},
+        fn hook, {:ok, args} ->
+          case apply(hook, fun, args) do
+            {:ok, arg} ->
+              {:cont, {:ok, [arg]}}
+
+            {:ok, arg1, arg2} ->
+              {:cont, {:ok, [arg1, arg2]}}
+
+            {:ok, arg1, arg2, arg3} ->
+              {:cont, {:ok, [arg1, arg2, arg3]}}
+
+            {:error, reason} ->
+              {:halt, {:error, reason}}
+
+            _ ->
+              {:halt, {:error, :wrong_callback_return}}
+          end
+        end
+      )
+
+    with {:ok, args} <- result do
+      List.to_tuple([:ok | args])
+    end
   end
 end

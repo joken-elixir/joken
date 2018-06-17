@@ -1,7 +1,7 @@
 defmodule Joken.Config.Test do
   use ExUnit.Case, async: true
   use ExUnitProperties
-  alias Joken.{Config, CurrentTime.Mock}
+  alias Joken.{Config, CurrentTime.Mock, Error}
 
   setup do
     {:ok, _pid} = start_supervised(Mock)
@@ -84,6 +84,25 @@ defmodule Joken.Config.Test do
       jti_claim = Config.default_claims(generate_jti: fn -> "Hi" end)["jti"]
 
       assert jti_claim.generate.() == "Hi"
+    end
+
+    test "raises with invalid data types" do
+      raise_fun = fn -> Config.default_claims(generate_jti: 123) end
+      assert_raise Error, Error.message(%Error{reason: :invalid_default_claims}), raise_fun
+    end
+  end
+
+  describe "add_claim" do
+    test "must provide a validate function or a generate function" do
+      assert_raise Error, Error.message(%Error{reason: :claim_configuration_not_valid}), fn ->
+        Joken.Config.add_claim(%{}, "claim_key", nil, nil, [])
+      end
+    end
+
+    test "validate_function must be of arity 1 or 2" do
+      assert_raise Error, Error.message(%Error{reason: :bad_validate_fun_arity}), fn ->
+        Joken.Config.add_claim(%{}, "claim_key", nil, fn _arg1, _arg2, _arg3 -> true end, [])
+      end
     end
   end
 

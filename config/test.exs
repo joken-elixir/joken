@@ -78,4 +78,11 @@ config :joken,
     luAQI=
     -----END OPENSSH PRIVATE KEY-----    
     """
+  ],
+  missing_config_key: [
+    signer_alg: "HS256"
+  ],
+  bad_algorithm: [
+    signer_alg: "any algorithm",
+    key_octet: "secret"
   ]

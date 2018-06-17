@@ -79,6 +79,10 @@ defmodule Joken.Signer do
     }
   end
 
+  def create(_, _) do
+    raise Joken.Error, :unrecognized_algorithm
+  end
+
   @doc """
   Signs a map of claims with the given Joken.Signer.
 
