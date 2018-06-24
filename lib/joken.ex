@@ -1,18 +1,23 @@
 defmodule Joken do
   @moduledoc """
-  Joken is a library for generating, signing, validating and verifying JWT tokens.
+  Joken is a library for working with standard JSON Web Tokens.
+
+  It provides 4 basic operations:
+
+  - Verify: the act of confirming the signature of the JWT;
+  - Validate: processing validation logic on the set of claims;
+  - Claim generation: generate dynamic value at token creation time;
+  - Signature creation: encoding header and claims and generate a signature of their value.
 
   ## Architecture
 
-  The core of Joken is `JOSE` library which provides all facilities to sign and verify tokens.
-  Joken is a simpler Elixir API that provides a few facilities:
+  The core of Joken is `JOSE`, a library which provides all facilities to sign and verify tokens.
+  Joken brings an easier Elixir API with some added functionality:
 
-    - Validating claims. You can set up functions for validating custom claims in a portable way.
-    - `config.exs` friendly. Define your signer configuration straight in your `config.exs` (even 
-    for pem encoded keys or open ssh keys). This might help having different keys for development
-    and production. 
-    - Portable configuration. You can simply `use Joken.Config` in a module and it will give you
-    default generate and verify functions. This encapsulates better your token code.
+    - Validating claims. JOSE does not provide validation other than signature verification.
+    - `config.exs` friendly. You can optionally define your signer configuration straight in your 
+    `config.exs`.
+    - Portable configuration. All your token logic can be encapsulated in a module with behaviours. 
     - Enhanced errors. Joken strives to be as informative as it can when errors happen be it at 
     compilation or at validation time.
     - Debug friendly. When a token fails validation, a `Logger` debug message will show which claim 
@@ -24,35 +29,70 @@ defmodule Joken do
 
   ## Usage
 
-  Joken has 2 concepts:
+  Joken has 3 basic concepts:
 
-    - A token claim configuration
-    - A signer configuration
+    - Portable token configuration
+    - Signer configuration
+    - Hooks
 
-  The claim configuration is a map of binary keys to `Joken.Claim` structs and is used to dynamically
-  generate and validate tokens.
+  The portable token configuration is a map of binary keys to `Joken.Claim` structs and is used to 
+  dynamically generate and validate tokens.
 
-  A signer is an instance of `Joken.Signer` that encapsulates the algorithm used to sign and verify a
-  token.
+  A signer is an instance of `Joken.Signer` that encapsulates the algorithm and the key configuration 
+  used to sign and verify a token.
 
-  Please, refer to `Joken.Config` for more details on usage of both concepts. Here is a simple example:
+  A hook is an implementation of the behaviour `Joken.Hooks` for easy plugging into the lifecycle of
+  Joken operations.
 
-      defmodule MyAuth do
-        use Joken.Config, default_signer: :pem_rs256
-      
-        @impl true
-        def token_config do
-          default_claims()
-          |> add_claim("role", fn -> "USER" end, &(&1 in ["ADMIN", "USER"]))
-        end
-      end
-      
-      token = MyAuth.generate_and_sign(%{"user_id" => "1234567890"})
-      {:ok, _claim_map} = MyAuth.verify_and_validate(token)
+  There are 2 forms of using Joken:
+
+  1. Pure data structures. You can create your token configuration and signer and use them with this 
+  module for all 4 operations: verify, validate, generate and sign.
+
+      iex> token_config = %{}
+      iex> %{ token_config | "scope" => %Joken.Claim{
+      ...> generate_function: fn -> "user" end,
+      ...> validate_function: &(&1 in ["user", "admin"])
+      ...> }}
+      iex> signer = Joken.Signer.create("HS256", "my secret")
+      iex> claims = Joken.generate_claims(token_config, %{"extra"=> "claim"})
+      iex> {:ok, jwt, claims} = Joken.encode_and_sign(claims, signer)
+
+  2. With the encapsulated module approach using `Joken.Config`. See the docs for `Joken.Config` for 
+  more details.
+
+      iex> defmodule MyAppToken do
+      ...>   use Joken.Config, default_signer: :pem_rs256
+      ...>
+      ...>   @impl Joken.Config
+      ...>   def token_config do
+      ...>     default_claims()
+      ...>     |> add_claim("role", fn -> "USER" end, &(&1 in ["ADMIN", "USER"]))
+      ...>   end
+      ...> end
+      iex> {:ok, token, _claims} = MyAppToken.generate_and_sign(%{"user_id" => "1234567890"})
+      iex> {:ok, _claim_map} = MyAppToken.verify_and_validate(token)
   """
   alias Joken.{Signer, Claim}
   require Logger
 
+  @typedoc """
+  A signer argument that can be a key in the configuration or an instance of `Joken.Signer`.
+  """
+  @type signer_arg() :: atom() | Joken.Signer.t()
+
+  @typedoc "A binary representing a bearer token."
+  @type bearer_token() :: binary()
+
+  @typedoc "A map with binary keys that represents a claim set."
+  @type claims() :: %{binary() => term()}
+
+  @typedoc "A portable configuration of claims for generation and validation."
+  @type token_config :: %{binary() => Joken.Claim.t()}
+
+  @typep error_reason() :: atom() | binary() | Keyword.t()
+
+  # This ensures we provide an easy to setup test environment
   @current_time_adapter Application.get_env(:joken, :current_time_adapter, Joken.CurrentTime.OS)
 
   @doc """
@@ -66,6 +106,7 @@ defmodule Joken do
 
   See Joken's own tests for an example of how to override this with a customizable time mock.
   """
+  @spec current_time() :: pos_integer()
   def current_time, do: @current_time_adapter.current_time()
 
   @doc """
@@ -76,6 +117,7 @@ defmodule Joken do
   will be used. Even though there is a use case for this, be extra careful to handle data without 
   validation.
   """
+  @spec peek_header(bearer_token()) :: claims()
   def peek_header(token) when is_binary(token) do
     %JOSE.JWS{alg: {_, alg}, fields: fields} = JOSE.JWT.peek_protected(token)
     Map.put(fields, "alg", Atom.to_string(alg))
@@ -89,11 +131,18 @@ defmodule Joken do
   will be used. Even though there is a use case for this, be extra careful to handle data without 
   validation.
   """
+  @spec peek_claims(bearer_token()) :: claims()
   def peek_claims(token) when is_binary(token) do
     %JOSE.JWT{fields: fields} = JOSE.JWT.peek_payload(token)
     fields
   end
 
+  @doc """
+  Default function for generating `jti` claims. This was inspired by the `Plug.RequestId` generation.
+  It avoids using `strong_rand_bytes` as it is known to have some contention when running with many 
+  schedulers.
+  """
+  @spec generate_jti() :: binary()
   def generate_jti do
     binary = <<
       System.system_time(:nanoseconds)::64,
@@ -104,6 +153,11 @@ defmodule Joken do
     Base.hex_encode32(binary, case: :lower)
   end
 
+  @doc """
+  Verifies a bearer_token using the given signer and executes hooks if any are given.
+  """
+  @spec verify(bearer_token(), signer_arg(), [module]) ::
+          {:ok, claims()} | {:error, error_reason()}
   def verify(bearer_token, signer, hooks \\ [])
 
   def verify(bearer_token, signer, hooks) when is_binary(bearer_token) and is_atom(signer),
@@ -117,6 +171,16 @@ defmodule Joken do
     end
   end
 
+  @doc """
+  Validates the claim map with the given token configuration and the context.
+
+  Context can by any term. It is always passed as the second argument to the validate 
+  function.
+
+  It also executes hooks if any are given.
+  """
+  @spec validate(token_config(), claims(), term(), [module]) ::
+          {:ok, claims()} | {:error, error_reason()}
   def validate(token_config, claims_map, context, hooks \\ []) do
     with {:ok, claims_map, config} <- before_validate(claims_map, token_config, hooks),
          result <- reduce_validations(token_config, claims_map, context),
@@ -142,6 +206,13 @@ defmodule Joken do
     end
   end
 
+  @doc """
+  Generates claims with the given token configuration and merges them with the given extra claims. 
+
+  It also executes hooks if any are given.
+  """
+  @spec generate_claims(token_config(), claims(), [module]) ::
+          {:ok, claims} | {:error, error_reason()}
   def generate_claims(token_config, extra_claims, hooks \\ []) do
     with {:ok, extra_claims, token_config} <- before_generate(extra_claims, token_config, hooks),
          claims <- Enum.reduce(token_config, extra_claims, &Claim.__generate_claim__/2),
@@ -150,6 +221,12 @@ defmodule Joken do
     end
   end
 
+  @doc """
+  Encodes and generates a token from the given claim map and signs the result with the given signer.
+
+  It also executes hooks if any are given.
+  """
+  @spec encode_and_sign(claims, signer_arg, [module]) :: {:ok, bearer_token, claims}
   def encode_and_sign(claims, signer, hooks \\ [])
 
   def encode_and_sign(claims, signer, hooks) when is_atom(signer),

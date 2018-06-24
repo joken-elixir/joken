@@ -3,6 +3,14 @@ defmodule Joken.Claim do
   Structure for a dynamic claim. It is used for holding functions that generate 
   and validate claims.
   """
+
+  @type t :: %__MODULE__{
+          generate: fun() | nil,
+          validate: fun() | nil,
+          options: list()
+        }
+
+  # We have options here for customizing error messages and other possible extras
   defstruct generate: nil,
             validate: nil,
             options: []

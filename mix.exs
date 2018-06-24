@@ -37,7 +37,7 @@ defmodule Joken.Mixfile do
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
-  
+
   defp deps do
     [
       {:jose, "~> 1.8"},
@@ -46,6 +46,9 @@ defmodule Joken.Mixfile do
 
       # Docs
       {:ex_doc, "~> 0.18", only: :dev, runtime: false},
+
+      # Dialyzer
+      {:dialyxir, "~> 1.0.0-rc2", only: :dev, runtime: false},
 
       # Test
       {:junit_formatter, "~> 2.2", only: :test},

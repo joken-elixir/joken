@@ -2,10 +2,7 @@ defmodule Joken.Signer do
   @moduledoc """
   Interface between Joken and JOSE for signing and verifying tokens.
   """
-  alias Joken.Signer
-  alias JOSE.JWS
-  alias JOSE.JWT
-  alias JOSE.JWK
+  alias JOSE.{JWS, JWT, JWK}
 
   @hs_algorithms ["HS256", "HS384", "HS512"]
   @rs_algorithms ["RS256", "RS384", "RS512"]
@@ -17,12 +14,17 @@ defmodule Joken.Signer do
 
   @algorithms @hs_algorithms ++ @map_key_algorithms
 
-  @type jwk :: %JWK{}
-  @type jws :: %JWS{}
+  @typedoc "A key may be an octet or a map with parameters according to JWK (JSON Web Key)"
+  @type key :: binary() | map()
 
+  @typedoc """
+  A `Joken.Signer` instance is a JWS (JSON Web Signature) and JWK (JSON Web Key) struct.
+
+  It also contains an `alg` field for performance reasons.
+  """
   @type t :: %__MODULE__{
-          jwk: jwk,
-          jws: jws,
+          jwk: %JWK{},
+          jws: %JWS{},
           alg: binary()
         }
 
@@ -31,6 +33,7 @@ defmodule Joken.Signer do
   @doc """
   All supported algorithms.
   """
+  @spec algorithms() :: [binary()]
   def algorithms, do: @algorithms
 
   @doc """
@@ -55,26 +58,29 @@ defmodule Joken.Signer do
       }
       
   """
+  @spec create(binary(), key()) :: __MODULE__.t()
+  def create(alg, key)
+
   def create(alg, secret) when is_binary(secret) and alg in @hs_algorithms do
-    %Signer{
-      jws: JOSE.JWS.from_map(%{"alg" => alg, "typ" => "JWT"}),
-      jwk: JOSE.JWK.from_oct(secret),
+    %__MODULE__{
+      jws: JWS.from_map(%{"alg" => alg, "typ" => "JWT"}),
+      jwk: JWK.from_oct(secret),
       alg: alg
     }
   end
 
   def create(alg, %{"pem" => pem}) when alg in @map_key_algorithms do
-    %Signer{
-      jws: JOSE.JWS.from_map(%{"alg" => alg, "typ" => "JWT"}),
-      jwk: JOSE.JWK.from_pem(pem),
+    %__MODULE__{
+      jws: JWS.from_map(%{"alg" => alg, "typ" => "JWT"}),
+      jwk: JWK.from_pem(pem),
       alg: alg
     }
   end
 
   def create(alg, key) when is_map(key) and alg in @map_key_algorithms do
-    %Signer{
-      jws: JOSE.JWS.from_map(%{"alg" => alg, "typ" => "JWT"}),
-      jwk: JOSE.JWK.from_map(key),
+    %__MODULE__{
+      jws: JWS.from_map(%{"alg" => alg, "typ" => "JWT"}),
+      jwk: JWK.from_map(key),
       alg: alg
     }
   end
@@ -95,7 +101,8 @@ defmodule Joken.Signer do
       "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.e3hyn_oaaA2lxMlqH1UPo8STN-a_sszl8B2_s6tY9aT_YBAmfd7BXJOPsOMl7x2wXeKMQaNBVjna2tA0UiO_m3SpwiYgoTcU65D6OgkzugmLD_DhjDK1YCOKlm7So1uhbkb_QCuo4Ij5scsQqwv7hkxo4IximGBeH9LAvPhPTaGmYJMI7_tWIld2TlY6tNUQP4n0qctXsI3hjvGzdvuQW-tRnzAQCC4TYe-mJgFa033NSHeiX-sZB-SuYlWi7DJqDTiwlb_beVdqWpxxtFDA005Iw6FZTpH9Rs1LVwJU5t3RN5iWB-z4ZI-kKsGUGLNrAZ7btV6Ow2FMAdj9TXmNpQ"
 
   """
-  def sign(claims, %Signer{jwk: jwk, jws: jws}) when is_map(claims) do
+  @spec sign(Joken.claims(), __MODULE__.t()) :: Joken.bearer_token()
+  def sign(claims, %__MODULE__{jwk: jwk, jws: jws}) when is_map(claims) do
     {_, compacted_token} = JWT.sign(jwk, jws, claims) |> JWS.compact()
     compacted_token
   end
@@ -112,7 +119,8 @@ defmodule Joken.Signer do
       %{"name" => "John Doe"}
       
   """
-  def verify(token, %Signer{alg: alg, jwk: jwk}) when is_binary(token) do
+  @spec verify(Joken.bearer_token(), __MODULE__.t()) :: Joken.claims()
+  def verify(token, %__MODULE__{alg: alg, jwk: jwk}) when is_binary(token) do
     {true, %JWT{fields: claims}, _} = JWT.verify_strict(jwk, [alg], token)
     claims
   end
@@ -161,6 +169,7 @@ defmodule Joken.Signer do
           ]
 
   """
+  @spec parse_config(atom()) :: __MODULE__.t() | nil
   def parse_config(key \\ :default_key) do
     case Application.get_env(:joken, key) do
       key_config when is_binary(key_config) ->
@@ -184,10 +193,10 @@ defmodule Joken.Signer do
 
     key_config =
       [
-        {&JOSE.JWK.from_pem/1, key_pem},
-        {&JOSE.JWK.from_map/1, key_map},
-        {&JOSE.JWK.from_openssh_key/1, key_openssh},
-        {&JOSE.JWK.from_oct/1, key_octet}
+        {&JWK.from_pem/1, key_pem},
+        {&JWK.from_map/1, key_map},
+        {&JWK.from_openssh_key/1, key_openssh},
+        {&JWK.from_oct/1, key_octet}
       ]
       |> Enum.filter(fn {_, val} -> not is_nil(val) end)
 
@@ -205,9 +214,9 @@ defmodule Joken.Signer do
   end
 
   defp do_parse_signer(jwk, signer_alg),
-    do: %Signer{
+    do: %__MODULE__{
       jwk: jwk,
-      jws: JOSE.JWS.from_map(%{"alg" => signer_alg, "typ" => "JWT"}),
+      jws: JWS.from_map(%{"alg" => signer_alg, "typ" => "JWT"}),
       alg: signer_alg
     }
 end

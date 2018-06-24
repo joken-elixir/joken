@@ -4,5 +4,6 @@ defmodule Joken.CurrentTime.OS do
   """
 
   @doc "Returns current time in seconds."
+  @spec current_time() :: pos_integer()
   def current_time(), do: DateTime.utc_now() |> DateTime.to_unix()
 end
