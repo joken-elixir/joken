@@ -23,9 +23,9 @@ defmodule Joken.Signer do
   It also contains an `alg` field for performance reasons.
   """
   @type t :: %__MODULE__{
-          jwk: %JWK{},
-          jws: %JWS{},
-          alg: binary()
+          jwk: JWK.t() | nil,
+          jws: JWS.t() | nil,
+          alg: binary() | nil
         }
 
   defstruct jwk: nil, jws: nil, alg: nil
@@ -103,7 +103,8 @@ defmodule Joken.Signer do
   """
   @spec sign(Joken.claims(), __MODULE__.t()) ::
           {:ok, Joken.bearer_token()} | {:error, Joken.error_reason()}
-  def sign(claims, %__MODULE__{jwk: jwk, jws: jws = %JWS{alg: {alg, _}}}) when is_map(claims) do
+  def sign(claims, %__MODULE__{alg: _, jwk: jwk, jws: %JWS{alg: {alg, _}} = jws})
+      when is_map(claims) do
     with result = {%{alg: ^alg}, _} <- JWT.sign(jwk, jws, claims),
          {_, compacted_token} <- JWS.compact(result) do
       {:ok, compacted_token}
@@ -122,7 +123,8 @@ defmodule Joken.Signer do
       {:ok, %{"name" => "John Doe"}}
       
   """
-  @spec verify(Joken.bearer_token(), __MODULE__.t()) :: Joken.claims()
+  @spec verify(Joken.bearer_token(), __MODULE__.t()) ::
+          Joken.claims() | {:error, Joken.error_reason()}
   def verify(token, %__MODULE__{alg: alg, jwk: jwk}) when is_binary(token) do
     with {true, %JWT{fields: claims}, _} <- JWT.verify_strict(jwk, [alg], token) do
       {:ok, claims}

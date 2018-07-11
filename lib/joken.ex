@@ -90,7 +90,7 @@ defmodule Joken do
   @typedoc "A portable configuration of claims for generation and validation."
   @type token_config :: %{binary => Joken.Claim.t()}
 
-  @typep error_reason :: atom | binary | Keyword.t()
+  @type error_reason :: atom | binary | Keyword.t()
 
   # This ensures we provide an easy to setup test environment
   @current_time_adapter Application.get_env(:joken, :current_time_adapter, Joken.CurrentTime.OS)
@@ -236,7 +236,7 @@ defmodule Joken do
 
   defp parse_status(:ok), do: :ok
   defp parse_status({:ok, _}), do: :ok
-  defp parse_status(res = {:error, _}), do: res
+  defp parse_status({:error, _} = res), do: res
 
   defp parse_signer(signer_key) do
     signer = Signer.parse_config(signer_key)

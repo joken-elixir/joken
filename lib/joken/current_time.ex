@@ -1,4 +1,6 @@
 defmodule Joken.CurrentTime do
+  @moduledoc "Behaviour for fetching current time"
+
   @doc """
   Returns the current time in seconds
 

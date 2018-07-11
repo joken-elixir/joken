@@ -12,7 +12,6 @@ otp_release:
 script:
   - mix credo
   - mix format --check-formatted
-  - mix deps.get --only docs
-  - MIX_ENV=docs mix docs # generate docs to check if it is not breaking.
+  - mix docs # generate docs to check if it is not breaking.
   - MIX_ENV=test mix coveralls.travis
-  - MIX_ENV=prod mix dialyzer --halt-exit-status
+  - mix dialyzer --halt-exit-status

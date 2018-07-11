@@ -7,7 +7,7 @@ case Mix.env() do
 
     # Override mock adapter
     config :joken, current_time_adapter: Joken.CurrentTime.OS
-    
+
   :docs ->
     :ok
 
