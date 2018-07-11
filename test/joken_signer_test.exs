@@ -71,4 +71,16 @@ defmodule Joken.Signer.Test do
       Signer.parse_config(:missing_config_key)
     end
   end
+
+  test "return error with wrong signer for token" do
+    valid_signer = Signer.create("HS256", "secret")
+    invalid_signer = Signer.create("HS256", "otherSecret")
+
+    {:ok, token, _claims} = Joken.encode_and_sign(%{}, valid_signer)
+    assert {:error, :signature_error} == Joken.verify(token, invalid_signer)
+  end
+
+  test "return error with invalid signer" do
+    assert {:error, :empty_signer} == Joken.encode_and_sign(%{}, %Signer{})
+  end
 end

@@ -4,14 +4,23 @@
 
 [Documentation](http://hexdocs.pm/joken/)
 
-Joken is a JWT (Json Web Token) library based upon the awesome [`erlang-jose`](https://github.com/potatosalad/erlang-jose/). Features:
+Joken is a JWT (Json Web Token) library centered on 4 core operations:
+  - Generation of claims: for instance, time based claims.
+  - Signing: using a `Joken.Signer`
+  - Verifying: also using a `Joken.Signer`
+  - Validation: running custom validations for received claims
+  
+These core functions are not coupled so that you can use Joken only for verying and validating incoming tokens or only for generating tokens for other consumers.
 
-  - Ease of key configuration. We provide built-in support with Elixir's `Mix.Config` system. See our configuration guide for more details.
-  - Portable configuration by leveraging `Joken.Config`. 
-  - Built-in claim generation and validation. `erlang-jose` is responsible only for signing and verifying token signatures. Here we provide extra tools for claim validation and generation.
-  - Better error handling. We provide `ExUnit` like error messages for claim validation. 
-  - A good perfomance analysis for ensuring this hot-path in APIs won't be your bottleneck. Please see our perfomance documentation to check what we are talking about.
-  - Good defaults. Joken comes with chosen good defaults for parsing Json and generating claims.
+It is based upon the awesome [`erlang-jose`](https://github.com/potatosalad/erlang-jose/). Besides having a friendlier Elixir API we include some extras:
+
+  - Ease of key configuration. We provide optional built-in support with Elixir's `Mix.Config` system. See our configuration guide for more details;
+  - Portable configuration using `Joken.Claim`;
+  - Encapsulate your token logic in a module with `Joken.Config`;
+  - Built-in claim generation and validation. `erlang-jose` is responsible only for signing and verifying token signatures. Here we provide extra tools for claims validation and generation;
+  - Better error handling. We provide `ExUnit` like error messages for claim validation and configuration errors;
+  - A good perfomance analysis for ensuring this hot-path in APIs won't be your bottleneck. Please see our perfomance documentation to check what we are talking about;
+  - Good defaults. Joken comes with chosen good defaults for parsing JSON (Jason) and generating claims;
   - Hooks for extending Joken functionality. All core actions in Joken have a corresponding hook for extending its functionality. See our hooks guide.
   
 ## JWT algorithms
@@ -32,6 +41,12 @@ As easy as:
 ``` elixir
 # config/dev.exs 
 config :joken, default_signer: "secret"
+```
+
+Optionally, a signer instance: 
+
+``` elixir
+signer = Joken.Signer.create("HS256", "secret")
 ```
 
 2. A token module:
@@ -57,11 +72,24 @@ token_with_default_plus_custom_claims = MyApp.Token.generate_and_sign!(extra_cla
 claims = MyApp.Token.verify_and_validate!(token, another_key)
 ```
 
+Or with explicitly signer:
+
+``` elixir
+signer = Joken.Signer.create("HS256", "secret")
+
+{:ok, token_with_default_claims} = MyApp.Token.generate_and_sign(%{}, signer)
+
+extra_claims = %{"user_id" => "some_id"}
+token_with_default_plus_custom_claims = MyApp.Token.generate_and_sign!(extra_claims, signer)
+
+{:ok, claims} = MyApp.Token.verify_and_validate(token, signer)
+```
+
 The default is to use HS256 with the configured binary as the key. It will generate:
 
 - aud: defaults to "Joken"
 - iss: defaults to "Joken"
-- jti: defaults to `Joken.generate_jti`
+- jti: defaults to `&Joken.generate_jti/0`
 - exp: defaults to 2hs
 - nbf: defaults to current time
 - iat: defaults to current time

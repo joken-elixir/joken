@@ -81,7 +81,7 @@ defmodule Joken.UseConfig.Test do
         def token_config do
           %{}
           # Validate function with arity 2
-          |> add_claim("custom", fn -> "custom" end, &(&1 == &2.custom))
+          |> add_claim("custom", fn -> "custom" end, fn val, _claims, ctx -> val == ctx.custom end)
         end
       end
 

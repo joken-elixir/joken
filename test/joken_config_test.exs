@@ -12,7 +12,7 @@ defmodule Joken.Config.Test do
     property "any given issuer will be validated" do
       check all issuer <- binary() do
         iss_claim = Config.default_claims(iss: issuer)["iss"]
-        assert iss_claim.validate.(issuer, %{})
+        assert iss_claim.validate.(issuer, %{}, %{})
       end
     end
 
@@ -51,19 +51,19 @@ defmodule Joken.Config.Test do
 
       exp_claim = Config.default_claims()["exp"]
       # 1 second expiration
-      assert exp_claim.validate.(Joken.current_time() + 1, %{})
+      assert exp_claim.validate.(Joken.current_time() + 1, %{}, %{})
 
       # -1 second expiration (always expired)
-      refute exp_claim.validate.(Joken.current_time() - 1, %{})
+      refute exp_claim.validate.(Joken.current_time() - 1, %{}, %{})
 
       # 0 second expiration (always expired)
-      refute exp_claim.validate.(Joken.current_time(), %{})
+      refute exp_claim.validate.(Joken.current_time(), %{}, %{})
     end
 
     test "default iss validates properly" do
       exp_claim = Config.default_claims()["iss"]
-      assert exp_claim.validate.("Joken", %{})
-      refute exp_claim.validate.("Another", %{})
+      assert exp_claim.validate.("Joken", %{}, %{})
+      refute exp_claim.validate.("Another", %{}, %{})
     end
 
     test "default nbf validates properly" do
@@ -71,13 +71,13 @@ defmodule Joken.Config.Test do
       exp_claim = Config.default_claims()["nbf"]
 
       # Not before current time
-      assert exp_claim.validate.(Joken.current_time(), %{})
+      assert exp_claim.validate.(Joken.current_time(), %{}, %{})
 
       # not before a second ago
-      assert exp_claim.validate.(Joken.current_time() - 1, %{})
+      assert exp_claim.validate.(Joken.current_time() - 1, %{}, %{})
 
       # not before a second in the future
-      refute exp_claim.validate.(Joken.current_time() + 1, %{})
+      refute exp_claim.validate.(Joken.current_time() + 1, %{}, %{})
     end
 
     test "can switch default jti generation function" do
@@ -101,7 +101,13 @@ defmodule Joken.Config.Test do
 
     test "validate_function must be of arity 1 or 2" do
       assert_raise Error, Error.message(%Error{reason: :bad_validate_fun_arity}), fn ->
-        Joken.Config.add_claim(%{}, "claim_key", nil, fn _arg1, _arg2, _arg3 -> true end, [])
+        Joken.Config.add_claim(
+          %{},
+          "claim_key",
+          nil,
+          fn _arg1, _arg2, _arg3, _arg4 -> true end,
+          []
+        )
       end
     end
   end

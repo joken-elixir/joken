@@ -2,16 +2,17 @@ sudo: false # to use faster container based build environment
 language: elixir
 
 elixir:
-  - 1.5.3
-  - 1.6.4
+  - 1.6.6
 
 otp_release:
   - 19.3
   - 20.3
+  - 21.0
 
-after_script:
-  - MIX_ENV=dev mix credo
+script:
+  - mix credo
+  - mix format --check-formatted
   - mix deps.get --only docs
   - MIX_ENV=docs mix docs # generate docs to check if it is not breaking.
-  - MIX_ENV=test mix bench
   - MIX_ENV=test mix coveralls.travis
+  - MIX_ENV=prod mix dialyzer --halt-exit-status

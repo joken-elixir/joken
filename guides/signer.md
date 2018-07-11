@@ -84,6 +84,12 @@ MIICWwIBAAKBgQDdlatRjRjogo3WojgGHFHYLugdUWAY9iR3fy4arWNA1KoS8kVw33cJibXr8bvwUAUp
 """
 ```
 
+If you are creating a signer explicitly, you need to pass the pem in a map with the key pem. Example:
+
+``` elixir
+signer = Joken.Signer.create(%{"pem" => key_pem})
+```
+
 Inside a PEM you can put several things. It may hold more than just a private key. For Joken, though, it might get a bit funky if you pass a PEM with several things in it. After all, we are trying to read a key from it and we are not actually a library for being compliant with PEM standard.
 
 ## Private vs Public keys
@@ -94,15 +100,17 @@ This is the main benefit. And sure is a great one :)
 
 So, if you only call verify functions, you don't need the private key. But, if you call sign functions, you will need the private key. 
 
-One thing that might seem confusing is that with a private key you can **SIGN** and **VERIFY**. WTH??? Yep, private keys usually contain the public key too inside of them. So, you can sign and verify all the same with the same key.
+One thing that might seem confusing is that with some private keys you can **SIGN** and **VERIFY**. WTH??? Yep, some private keys contain the public key too inside of them (for example with RSA keys). So, you can sign and verify all the same with the same key.
 
 ## Benchmarks
 
 Another misterious thing about the encoding of things is that it is preferable to use the PEM format instead of passing a map of keys with all the values. Performance wise it is just faster. You can run the benchmarks your self. They are in the benchmarks folder.
 
+Why is that so? Well, to use the key we need to parse it into the erlang expected type that is not PEM nor JWKs maps. BUT, erlang can handle PEMs natively while it can't handle JWKs.
+
 ## Dynamic signers
 
-All functions that receive a key argument may be passed an instance of a `Joken.Signer` in its place. This is a convenience for when you need a dynamic configuration. It shouldn't be the most common use case bu it is there all the same.
+All functions that receive a key argument may be passed an instance of a `Joken.Signer` in its place. This is a convenience for when you need a dynamic configuration as when you are retrieving the key from an endpoint. 
 
 Example:
 
@@ -117,6 +125,4 @@ MyCustomAuth.generate_and_sign()
 # Explicit Signer instance
 MyCustomAuth.generate_and_sign(%{"some" => "extra claim"}, Joken.Signer.create("HS512", "secret"))
 ```
-
-Be careful if this is on your hot path. Creating a signer that way is not expensive, but should be avoided if you can cache it some place.
 

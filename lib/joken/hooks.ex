@@ -30,72 +30,100 @@ defmodule Joken.Hooks do
   """
   alias Joken.Signer
 
-  @type error_tuple :: {:error, term()}
+  @type error_tuple :: {:error, term}
 
-  @type validate_result :: {:ok, Joken.claims()} | error_tuple()
+  @type halt_tuple :: {:halt, term}
+
+  @type validate_result :: {:ok, Joken.claims()} | error_tuple
+
+  @type hook_options :: Keyword.t()
+
+  @type status :: :ok | error_tuple
 
   @doc "Called before `Joken.generate_claims/3`"
-  @callback before_generate(extra :: Joken.claims(), Joken.token_config()) ::
-              {:ok, extra :: Joken.claims(), Joken.token_config()} | error_tuple()
+  @callback before_generate(hook_options, extra :: Joken.claims(), Joken.token_config()) ::
+              {status, extra :: Joken.claims(), Joken.token_config()} | halt_tuple
 
   @doc "Called before `Joken.encode_and_sign/3`"
-  @callback before_sign(Joken.claims(), Signer.t()) ::
-              {:ok, Joken.claims(), Signer.t()} | error_tuple()
+  @callback before_sign(hook_options, Joken.claims(), Signer.t()) ::
+              {status, Joken.claims(), Signer.t()} | halt_tuple
 
   @doc "Called before `Joken.verify/3`"
-  @callback before_verify(Joken.bearer_token(), Signer.t()) ::
-              {:ok, Joken.bearer_token(), Signer.t()} | error_tuple()
+  @callback before_verify(hook_options, Joken.bearer_token(), Signer.t()) ::
+              {status, Joken.bearer_token(), Signer.t()} | halt_tuple
 
   @doc "Called before `Joken.validate/4`"
-  @callback before_validate(Joken.claims(), Joken.token_config()) ::
-              {:ok, Joken.claims(), Joken.token_config()} | error_tuple()
+  @callback before_validate(hook_options, Joken.claims(), Joken.token_config()) ::
+              {status, Joken.claims(), Joken.token_config()} | halt_tuple
 
   @doc "Called after `Joken.generate_claims/3`"
-  @callback after_generate(Joken.claims()) :: {:ok, Joken.claims()} | error_tuple()
+  @callback after_generate(hook_options, Joken.claims()) :: {status, Joken.claims()} | halt_tuple
 
   @doc "Called after `Joken.encode_and_sign/3`"
-  @callback after_sign(Joken.bearer_token(), Joken.claims(), Signer.t()) ::
-              {:ok, Joken.bearer_token(), Joken.claims(), Signer.t()} | error_tuple()
+  @callback after_sign(
+              hook_options,
+              status,
+              Joken.bearer_token(),
+              Joken.claims(),
+              Signer.t()
+            ) :: {status, Joken.bearer_token(), Joken.claims(), Signer.t()} | halt_tuple
 
   @doc "Called after `Joken.verify/3`"
-  @callback after_verify(Joken.bearer_token(), Joken.claims(), Signer.t()) ::
-              {:ok, Joken.claims(), Signer.t()} | error_tuple()
+  @callback after_verify(
+              hook_options,
+              status,
+              Joken.bearer_token(),
+              Joken.claims(),
+              Signer.t()
+            ) :: {status, Joken.claims(), Signer.t()} | halt_tuple
 
   @doc "Called after `Joken.validate/4`"
-  @callback after_validate(validate_result(), Joken.claims(), Joken.token_config()) ::
-              {:ok, validate_result(), Joken.claims(), Joken.token_config()} | error_tuple()
+  @callback after_validate(
+              hook_options,
+              status,
+              Joken.claims(),
+              Joken.token_config()
+            ) :: {status, Joken.claims(), Joken.token_config()} | halt_tuple
 
   defmacro __using__(_opts) do
     quote do
       @behaviour Joken.Hooks
 
       @impl true
-      def before_generate(extra_claims, claims_config), do: {:ok, extra_claims, claims_config}
-      @impl true
-      def before_sign(claims, signer), do: {:ok, claims, signer}
-      @impl true
-      def before_verify(token, signer), do: {:ok, token, signer}
-      @impl true
-      def before_validate(claims, claims_config), do: {:ok, claims, claims_config}
+      def before_generate(_hook_options, extra_claims, claims_config),
+        do: {:ok, extra_claims, claims_config}
 
       @impl true
-      def after_generate(claims), do: {:ok, claims}
+      def before_sign(_hook_options, claims, signer), do: {:ok, claims, signer}
       @impl true
-      def after_sign(token, claims, signer), do: {:ok, token, claims, signer}
+      def before_verify(_hook_options, token, signer), do: {:ok, token, signer}
       @impl true
-      def after_verify(token, claims, signer), do: {:ok, claims, claims, signer}
-      @impl true
-      def after_validate(validate_result, claims, claims_config),
-        do: {:ok, validate_result, claims, claims_config}
+      def before_validate(_hook_options, claims, claims_config),
+        do: {:ok, claims, claims_config}
 
-      defoverridable before_generate: 2,
-                     before_sign: 2,
-                     before_verify: 2,
-                     before_validate: 2,
-                     after_generate: 1,
-                     after_sign: 3,
-                     after_verify: 3,
-                     after_validate: 3
+      @impl true
+      def after_generate(_hook_options, claims), do: {:ok, claims}
+
+      @impl true
+      def after_sign(_hook_options, status, token, claims, signer),
+        do: {status, token, claims, signer}
+
+      @impl true
+      def after_verify(_hook_options, status, token, claims, signer),
+        do: {status, claims, claims, signer}
+
+      @impl true
+      def after_validate(_hook_options, status, claims, claims_config),
+        do: {status, claims, claims_config}
+
+      defoverridable before_generate: 3,
+                     before_sign: 3,
+                     before_verify: 3,
+                     before_validate: 3,
+                     after_generate: 2,
+                     after_sign: 5,
+                     after_verify: 5,
+                     after_validate: 4
     end
   end
 end

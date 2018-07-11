@@ -41,14 +41,17 @@ defmodule Joken.Mixfile do
   defp deps do
     [
       {:jose, "~> 1.8"},
-      {:jason, "~> 1.0.0", optional: true},
+      {:jason, "~> 1.1", optional: true},
       {:benchee, "~> 0.13", only: :bench},
 
       # Docs
       {:ex_doc, "~> 0.18", only: :dev, runtime: false},
 
       # Dialyzer
-      {:dialyxir, "~> 1.0.0-rc2", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.0.0-rc3", only: :dev, runtime: false},
+
+      # Credo
+      {:credo, "~> 0.9", only: [:dev, :test], runtime: false},
 
       # Test
       {:junit_formatter, "~> 2.2", only: :test},
@@ -81,6 +84,7 @@ defmodule Joken.Mixfile do
       extras: [
         "guides/introduction.md",
         "guides/configuration.md",
+        "guides/testing.md",
         "guides/signer.md",
         {"CHANGELOG.md", [title: "Changelog"]}
       ],

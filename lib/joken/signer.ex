@@ -28,7 +28,7 @@ defmodule Joken.Signer do
           alg: binary()
         }
 
-  defstruct [:jwk, :jws, :alg]
+  defstruct jwk: nil, jws: nil, alg: nil
 
   @doc """
   All supported algorithms.
@@ -95,16 +95,19 @@ defmodule Joken.Signer do
   ## Examples
 
       iex> Joken.Signer.sign(%{"name" => "John Doe"}, Joken.Signer.create("HS256", "secret"))
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.xuEv8qrfXu424LZk8bVgr9MQJUIrp1rHcPyZw_KSsds"
+      {:ok, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.xuEv8qrfXu424LZk8bVgr9MQJUIrp1rHcPyZw_KSsds"}
 
       iex> Joken.Signer.sign(%{"name" => "John Doe"}, Joken.Signer.parse_config(:rs256))
-      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.e3hyn_oaaA2lxMlqH1UPo8STN-a_sszl8B2_s6tY9aT_YBAmfd7BXJOPsOMl7x2wXeKMQaNBVjna2tA0UiO_m3SpwiYgoTcU65D6OgkzugmLD_DhjDK1YCOKlm7So1uhbkb_QCuo4Ij5scsQqwv7hkxo4IximGBeH9LAvPhPTaGmYJMI7_tWIld2TlY6tNUQP4n0qctXsI3hjvGzdvuQW-tRnzAQCC4TYe-mJgFa033NSHeiX-sZB-SuYlWi7DJqDTiwlb_beVdqWpxxtFDA005Iw6FZTpH9Rs1LVwJU5t3RN5iWB-z4ZI-kKsGUGLNrAZ7btV6Ow2FMAdj9TXmNpQ"
+      {:ok, "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.e3hyn_oaaA2lxMlqH1UPo8STN-a_sszl8B2_s6tY9aT_YBAmfd7BXJOPsOMl7x2wXeKMQaNBVjna2tA0UiO_m3SpwiYgoTcU65D6OgkzugmLD_DhjDK1YCOKlm7So1uhbkb_QCuo4Ij5scsQqwv7hkxo4IximGBeH9LAvPhPTaGmYJMI7_tWIld2TlY6tNUQP4n0qctXsI3hjvGzdvuQW-tRnzAQCC4TYe-mJgFa033NSHeiX-sZB-SuYlWi7DJqDTiwlb_beVdqWpxxtFDA005Iw6FZTpH9Rs1LVwJU5t3RN5iWB-z4ZI-kKsGUGLNrAZ7btV6Ow2FMAdj9TXmNpQ"}
 
   """
-  @spec sign(Joken.claims(), __MODULE__.t()) :: Joken.bearer_token()
-  def sign(claims, %__MODULE__{jwk: jwk, jws: jws}) when is_map(claims) do
-    {_, compacted_token} = JWT.sign(jwk, jws, claims) |> JWS.compact()
-    compacted_token
+  @spec sign(Joken.claims(), __MODULE__.t()) ::
+          {:ok, Joken.bearer_token()} | {:error, Joken.error_reason()}
+  def sign(claims, %__MODULE__{jwk: jwk, jws: jws = %JWS{alg: {alg, _}}}) when is_map(claims) do
+    with result = {%{alg: ^alg}, _} <- JWT.sign(jwk, jws, claims),
+         {_, compacted_token} <- JWS.compact(result) do
+      {:ok, compacted_token}
+    end
   end
 
   @doc """
@@ -113,16 +116,20 @@ defmodule Joken.Signer do
   ## Examples
 
       iex> Joken.Signer.verify("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.xuEv8qrfXu424LZk8bVgr9MQJUIrp1rHcPyZw_KSsds", Joken.Signer.create("HS256", "secret"))
-      %{"name" => "John Doe"}
+      {:ok, %{"name" => "John Doe"}}
       
       iex> Joken.Signer.verify("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.e3hyn_oaaA2lxMlqH1UPo8STN-a_sszl8B2_s6tY9aT_YBAmfd7BXJOPsOMl7x2wXeKMQaNBVjna2tA0UiO_m3SpwiYgoTcU65D6OgkzugmLD_DhjDK1YCOKlm7So1uhbkb_QCuo4Ij5scsQqwv7hkxo4IximGBeH9LAvPhPTaGmYJMI7_tWIld2TlY6tNUQP4n0qctXsI3hjvGzdvuQW-tRnzAQCC4TYe-mJgFa033NSHeiX-sZB-SuYlWi7DJqDTiwlb_beVdqWpxxtFDA005Iw6FZTpH9Rs1LVwJU5t3RN5iWB-z4ZI-kKsGUGLNrAZ7btV6Ow2FMAdj9TXmNpQ", Joken.Signer.parse_config(:rs256))
-      %{"name" => "John Doe"}
+      {:ok, %{"name" => "John Doe"}}
       
   """
   @spec verify(Joken.bearer_token(), __MODULE__.t()) :: Joken.claims()
   def verify(token, %__MODULE__{alg: alg, jwk: jwk}) when is_binary(token) do
-    {true, %JWT{fields: claims}, _} = JWT.verify_strict(jwk, [alg], token)
-    claims
+    with {true, %JWT{fields: claims}, _} <- JWT.verify_strict(jwk, [alg], token) do
+      {:ok, claims}
+    else
+      {false, _, _} ->
+        {:error, :signature_error}
+    end
   end
 
   @doc """
@@ -204,12 +211,10 @@ defmodule Joken.Signer do
 
     {jwk_function, value} = List.first(key_config)
 
-    cond do
-      signer_alg in @algorithms ->
-        do_parse_signer(jwk_function.(value), signer_alg)
-
-      true ->
-        raise Joken.Error, :unrecognized_algorithm
+    if signer_alg in @algorithms do
+      do_parse_signer(jwk_function.(value), signer_alg)
+    else
+      raise Joken.Error, :unrecognized_algorithm
     end
   end
 

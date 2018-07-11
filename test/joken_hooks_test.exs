@@ -12,7 +12,7 @@ defmodule Joken.HooksTest do
     use Joken.Hooks
 
     @impl Joken.Hooks
-    def before_sign(claims, signer) do
+    def before_sign(_options, claims, signer) do
       IO.puts("TestHook.before_sign/2")
       {:ok, claims, signer}
     end
@@ -25,7 +25,7 @@ defmodule Joken.HooksTest do
       add_hook(TestHook)
     end
 
-    assert AddHookTest.__hooks__() == [TestHook, AddHookTest]
+    assert AddHookTest.__hooks__() == [{TestHook, []}, AddHookTest]
   end
 
   test "own hooks are executed" do
@@ -33,7 +33,7 @@ defmodule Joken.HooksTest do
       use Joken.Config
 
       @impl Joken.Hooks
-      def before_generate(extra_claims, claims_config) do
+      def before_generate(_options, extra_claims, claims_config) do
         IO.puts("before_generate")
         {:ok, extra_claims, claims_config}
       end
@@ -49,7 +49,7 @@ defmodule Joken.HooksTest do
       add_hook(TestHook)
 
       @impl Joken.Hooks
-      def before_generate(extra_claims, claims_config) do
+      def before_generate(_options, extra_claims, claims_config) do
         IO.puts("before_generate")
         {:ok, extra_claims, claims_config}
       end
@@ -59,12 +59,12 @@ defmodule Joken.HooksTest do
              "before_generate\nTestHook.before_sign/2\n"
   end
 
-  test "before_ hook can abort execution" do
+  test "before_hook can abort execution" do
     defmodule BeforeHookCanAbort do
       use Joken.Config
 
       @impl Joken.Hooks
-      def before_sign(_claims, _signer) do
+      def before_sign(_options, _claims, _signer) do
         {:error, :abort}
       end
     end
@@ -74,19 +74,17 @@ defmodule Joken.HooksTest do
     end)
   end
 
-  test "after_ hook can abort execution" do
+  test "after_hook can abort execution" do
     defmodule AfterHookCanAbort do
       use Joken.Config
 
       @impl Joken.Hooks
-      def after_sign(_token, _claims, _signer) do
-        {:error, :abort}
+      def after_sign(_options, _status, _token, _claims, _signer) do
+        {:halt, :abort}
       end
     end
 
-    capture_io(fn ->
-      assert AfterHookCanAbort.generate_and_sign() == {:error, :abort}
-    end)
+    assert AfterHookCanAbort.generate_and_sign() == {:halt, :abort}
   end
 
   test "wrong callback returns :unexpected" do
@@ -94,11 +92,65 @@ defmodule Joken.HooksTest do
       use Joken.Config
 
       @impl Joken.Hooks
-      def after_sign(_token, _claims, _signer), do: :ok
+      def after_sign(_options, _status, _token, _claims, _signer), do: :ok
     end
 
-    capture_io(fn ->
-      assert WrongCallbackReturn.generate_and_sign() == {:error, :wrong_callback_return}
-    end)
+    assert WrongCallbackReturn.generate_and_sign() == {:error, :error_in_after_hook}
+  end
+
+  test "can add hook with options" do
+    defmodule HookWithOptions do
+      use Joken.Hooks
+
+      @impl true
+      def before_generate(options, extra_claims, token_config) do
+        IO.puts("Run with options: #{inspect(options)}")
+        {:ok, extra_claims, token_config}
+      end
+    end
+
+    defmodule UseHookWithOptions do
+      use Joken.Config
+
+      add_hook(HookWithOptions, option1: 1)
+
+      def token_config, do: %{}
+    end
+
+    assert capture_io(&UseHookWithOptions.generate_and_sign!/0) ==
+             "Run with options: [option1: 1]\n"
+  end
+
+  @tag :capture_log
+  test "error in validate propagates to after_validate" do
+    defmodule ValidateErrorHook do
+      use Joken.Hooks
+
+      @impl true
+      def after_validate(_options, {:error, reason}, _claims_map, _token_config) do
+        IO.puts("Got error: #{inspect(reason)}")
+        {:halt, :validate_error}
+      end
+    end
+
+    defmodule UseValidateErrorHook do
+      use Joken.Config
+
+      add_hook(ValidateErrorHook)
+
+      def token_config do
+        %{}
+        |> add_claim("test", fn -> "TEST" end, &(&1 == "PRODUCTION"))
+      end
+    end
+
+    token = UseValidateErrorHook.generate_and_sign!()
+
+    fun = fn ->
+      assert UseValidateErrorHook.verify_and_validate(token) == {:halt, :validate_error}
+    end
+
+    assert capture_io(fun) ==
+             "Got error: [message: \"Invalid token\", claim: \"test\", claim_val: \"TEST\"]\n"
   end
 end

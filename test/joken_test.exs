@@ -1,6 +1,7 @@
 defmodule JokenTest do
   use ExUnit.Case, async: true
   import ExUnit.CaptureLog
+  import Joken.Config, only: [add_claim: 4, default_claims: 1]
   alias Joken.CurrentTime.Mock
 
   setup do
@@ -52,12 +53,22 @@ defmodule JokenTest do
 
   describe "claim validation" do
     test "debug message is shown when claim validation fails" do
-      token_config = Joken.Config.default_claims(skip: [:exp, :nbf, :iat, :jti, :aud])
+      token_config = default_claims(skip: [:exp, :nbf, :iat, :jti, :aud])
 
-      assert capture_log(fn ->
-               assert {:error, [message: "Invalid token", claim: "iss", claim_val: "someone"]} ==
-                        Joken.validate(token_config, %{"iss" => "someone"}, %{})
-             end) =~ "Claim %{\"iss\" => \"someone\"} did not pass validation.\n\nCurrent time: "
+      validate_fun = fn ->
+        assert {:error, [message: "Invalid token", claim: "iss", claim_val: "someone"]} ==
+                 Joken.validate(token_config, %{"iss" => "someone"}, %{})
+      end
+
+      assert capture_log(validate_fun) =~
+               "Claim %{\"iss\" => \"someone\"} did not pass validation.\n\nCurrent time: "
+    end
+
+    test "can make multi claim validation" do
+      token_config = %{} |> add_claim("claim1", nil, &(&1 == &2["claim2"]))
+
+      assert {:ok, %{"claim2" => "value", "claim1" => "value"}} ==
+               Joken.validate(token_config, %{"claim2" => "value", "claim1" => "value"}, %{})
     end
   end
 end

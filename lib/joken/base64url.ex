@@ -17,13 +17,15 @@ defmodule :base64url do
   def encode(term) when is_binary(term),
     do: Base.url_encode64(term, ignore: :whitespace, padding: false)
 
-  def encode(term) when is_list(term), do: :erlang.iolist_to_binary(term) |> encode()
+  def encode(term) when is_list(term),
+    do: term |> :erlang.iolist_to_binary() |> encode()
 
   @doc false
   def decode(term) when is_binary(term),
     do: Base.url_decode64!(term, ignore: :whitespace, padding: false)
 
-  def decode(term) when is_list(term), do: :erlang.iolist_to_binary(term) |> decode()
+  def decode(term) when is_list(term),
+    do: term |> :erlang.iolist_to_binary() |> decode()
 end
 
 # Turn back module conflicts

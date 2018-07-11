@@ -109,7 +109,7 @@ defmodule Joken.Config do
     3. If no key was passed for the use macro then we will use the one configured as 
     `:default_signer` in the configuration.
   """
-  @callback encode_and_sign(Joken.claims(), key :: atom() | nil) :: Joken.bearer_token()
+  @callback encode_and_sign(Joken.claims(), key :: atom | nil) :: Joken.bearer_token()
 
   @doc """
   Verifies token's signature using a Joken.Signer.
@@ -246,9 +246,9 @@ defmodule Joken.Config do
   So, if you want to only override one lifecycle callback, you can simply override it
   on the module that uses `Joken.Config`.
   """
-  defmacro add_hook(hook_module) do
+  defmacro add_hook(hook_module, options \\ []) do
     quote do
-      @hooks [unquote(hook_module) | @hooks]
+      @hooks [unquote({hook_module, options}) | @hooks]
     end
   end
 
@@ -314,7 +314,7 @@ defmodule Joken.Config do
       iex> claim = %Joken.Claims{generate: generate_fun, validate: validate_fun}
       iex> config = Map.put(config, "claim key", claim)
   """
-  @spec add_claim(Joken.token_config(), binary(), fun() | nil, fun() | nil, Keyword.t()) ::
+  @spec add_claim(Joken.token_config(), binary, fun | nil, fun | nil, Keyword.t()) ::
           Joken.token_config()
   def add_claim(config, claim_key, generate_fun \\ nil, validate_fun \\ nil, options \\ [])
 
@@ -338,9 +338,12 @@ defmodule Joken.Config do
 
     case arity do
       1 ->
-        fn val, _ctx -> fun.(val) end
+        fn val, _claims, _ctx -> fun.(val) end
 
       2 ->
+        fn val, claims, _ctx -> fun.(val, claims) end
+
+      3 ->
         fun
 
       _ ->

@@ -1,13 +1,59 @@
 # Configuration
 
-Joken allows you to configure every aspect of its features:
+## Token configuration
 
-1. Claim generation and validation
-2. Key configuration (used for signing and verifying)
-3. Override default behaviour
-4. Extend its functionality with hooks
+One of Joken's basic concept is a map of configuration. This map has binary keys that are the claims names and `Joken.Claim` instances with what to do during generation or validation.
 
-The way you can configure Joken is through options to `use Joken.Config`, overriding functions or through config.exs.
+Here is an example:
+
+``` elixir
+# Empty token configuration
+token_config = %{}
+
+# Let's create a Joken.Claim
+iss = %Joken.Claim{
+         generate: fn -> "My issuer" end, 
+         validate: fn claim_val, claims, context -> claim_val == "My issuer" end
+      }
+
+# Now let's add it to our token config
+token_config = Map.put(token_config, "iss", iss)
+```
+
+This configuration map is referred to as `token_config`. Since creating it is cumbersome, we provide some helpers:
+
+``` elixir
+# Same result as the first example:
+token_config = %{} |> Joken.Config.add_claim("iss", fn -> "My issuer" end, &(&1 == "My issuer"))
+```
+
+You need at least one of the functions (validate or generate). One example of leaving one of them emty is when you are only validating tokens. In this case you might leave generate functions empty.
+
+With your `token_config` created, you can pass it to functions like: `Joken.generate/3` or `Joken.validate/4`.
+
+## Signer configuration
+
+Signer is an instance of `Joken.Signer`. You can create one like this:
+
+``` elixir
+signer = Joken.Signer.create("HS256", "my secret")
+```
+
+This is an explicit signer creation. You can configure a signer in mix `config.exs` too. Please see the docs on `Joken.Signer` for the accepted parameters.
+
+## Module approach
+
+In Joken 2.0 you can enpasulate all your token logic in a module with `Joken.Config`. You do that like this:
+
+``` elixir
+defmodule MyAppToken do
+  use Joken.Config
+  
+  # other functions here...
+end
+```
+
+This is the recommended approach. With this macro you get some generated functions that passes your `token_config` automatically to Joken's functions. It also implements the `Joken.Hooks` behaviour so you can overrid any of its callbacks. Also, by default, it will look for a signer from mix config with the `default_signer` key.
 
 Let's see this in more depth below.
 
@@ -24,7 +70,7 @@ end
 With this configuration, you get:
 
 - A key configuration named `:default_signer`
-- Your claims generation and validation will delegate to `Joken.Config.default_claims/1`
+- Your `token_config` will be created by `Joken.Config.default_claims/1`
 
 So, if you call `MyApp.Token.generate_and_sign/2` **and** you have a key configured with the value `:default_signer` you'll get a token with:
 
@@ -37,34 +83,9 @@ So, if you call `MyApp.Token.generate_and_sign/2` **and** you have a key configu
 
 It is important to notice that this configuration is used for claims we want to either generate dynamically (like all time based claims) or validate (like "iss" claim that we want to ensure is the same we use to generate our tokens).
 
-All claims in this configuration have a binary key and a `Joken.Claim` value with a function for generating the claim data and a function with one parameter for validating the claim. These are called during token generation and validation respectively.
-
 ### Overriding `token_config/0`
 
 You can customize token generation and validation by overriding the function `token_config/0` in your module. Example:
-
-``` elixir
-defmodule MyApp.Token do
-  use Joken.Config
-  
-  # must return a map with binary keys and Joken.Claim as values
-  def token_config do
-    %{}
-    |> Map.put("my_key", %Joken.Claim{
-        generate: fn -> "My custom claim",
-        validate: fn incoming_claim_value -> incoming_claim_value == "My custom claim"
-    })
-  end
-end
-
-{:ok, token} = MyApp.Token.generate_and_sign()
-
-{:ok, claims} = MyApp.Token.verify_and_validate(token)
-
-claims = %{"my_key" => "My custom claim"}
-```
-
-Since creating a Joken.Claim is cumbersome, we provide a helper function already imported in this module `Joken.Config.add_claim/4`. 
 
 ``` elixir
 defmodule MyApp.Token do
@@ -83,9 +104,4 @@ end
 claims = %{"my_key" => "My custom claim"}
 ```
 
-Both configurations are equivalent here. 
-
-## Signer configuration
-
-Please refer to signer guide.
-
+Please see `Joken.Config` docs for more info on the generated callbacks.

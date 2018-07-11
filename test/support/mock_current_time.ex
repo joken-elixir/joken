@@ -1,4 +1,6 @@
 defmodule Joken.CurrentTime.Mock do
+  @moduledoc "Mock implementation of current time with time freezing."
+
   use Agent
 
   def start_link(name) do
