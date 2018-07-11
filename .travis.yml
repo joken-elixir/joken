@@ -14,4 +14,4 @@ script:
   - mix format --check-formatted
   - mix docs # generate docs to check if it is not breaking.
   - MIX_ENV=test mix coveralls.travis
-  - mix dialyzer --halt-exit-status
+  - mix dialyzer
