@@ -156,15 +156,16 @@ defmodule Joken.Config.Test do
         result = Map.fetch(target, key)
 
         case result do
-          {:ok, cur_value} ->
-            unless value == cur_value do
-              raise """
-              Value for key #{key} differs. 
+          {:ok, cur_value} when value == cur_value ->
+            :ok
 
-              Expected: #{inspect(value)}
-              Got:      #{inspect(cur_value)}
-              """
-            end
+          {:ok, cur_value} when value != cur_value ->
+            raise """
+            Value for key #{key} differs. 
+
+            Expected: #{inspect(value)}
+            Got:      #{inspect(cur_value)}
+            """
 
           val ->
             raise """

@@ -12,9 +12,9 @@ defmodule Joken.HooksTest do
     use Joken.Hooks
 
     @impl Joken.Hooks
-    def before_sign(_options, claims, signer) do
-      IO.puts("TestHook.before_sign/2")
-      {:ok, claims, signer}
+    def before_sign(_options, _status, claims, signer) do
+      IO.puts("TestHook.before_sign/4")
+      {:cont, {:ok, claims, signer}}
     end
   end
 
@@ -33,9 +33,9 @@ defmodule Joken.HooksTest do
       use Joken.Config
 
       @impl Joken.Hooks
-      def before_generate(_options, extra_claims, claims_config) do
+      def before_generate(_options, _status, extra_claims, claims_config) do
         IO.puts("before_generate")
-        {:ok, extra_claims, claims_config}
+        {:cont, {:ok, extra_claims, claims_config}}
       end
     end
 
@@ -49,14 +49,14 @@ defmodule Joken.HooksTest do
       add_hook(TestHook)
 
       @impl Joken.Hooks
-      def before_generate(_options, extra_claims, claims_config) do
+      def before_generate(_options, _status, extra_claims, claims_config) do
         IO.puts("before_generate")
-        {:ok, extra_claims, claims_config}
+        {:cont, {:ok, extra_claims, claims_config}}
       end
     end
 
     assert capture_io(&AddedHooksAreExecuted.generate_and_sign/0) ==
-             "before_generate\nTestHook.before_sign/2\n"
+             "before_generate\nTestHook.before_sign/4\n"
   end
 
   test "before_hook can abort execution" do
@@ -64,14 +64,12 @@ defmodule Joken.HooksTest do
       use Joken.Config
 
       @impl Joken.Hooks
-      def before_sign(_options, _claims, _signer) do
-        {:error, :abort}
+      def before_sign(_options, _status, _claims, _signer) do
+        {:halt, {:error, :abort}}
       end
     end
 
-    capture_io(fn ->
-      assert BeforeHookCanAbort.generate_and_sign() == {:error, :abort}
-    end)
+    assert BeforeHookCanAbort.generate_and_sign() == {:error, :abort}
   end
 
   test "after_hook can abort execution" do
@@ -80,11 +78,11 @@ defmodule Joken.HooksTest do
 
       @impl Joken.Hooks
       def after_sign(_options, _status, _token, _claims, _signer) do
-        {:halt, :abort}
+        {:halt, {:error, :abort}}
       end
     end
 
-    assert AfterHookCanAbort.generate_and_sign() == {:halt, :abort}
+    assert AfterHookCanAbort.generate_and_sign() == {:error, :abort}
   end
 
   test "wrong callback returns :unexpected" do
@@ -95,7 +93,7 @@ defmodule Joken.HooksTest do
       def after_sign(_options, _status, _token, _claims, _signer), do: :ok
     end
 
-    assert WrongCallbackReturn.generate_and_sign() == {:error, :error_in_after_hook}
+    assert WrongCallbackReturn.generate_and_sign() == {:error, :wrong_hook_callback}
   end
 
   test "can add hook with options" do
@@ -103,9 +101,9 @@ defmodule Joken.HooksTest do
       use Joken.Hooks
 
       @impl true
-      def before_generate(options, extra_claims, token_config) do
+      def before_generate(options, status, extra_claims, token_config) do
         IO.puts("Run with options: #{inspect(options)}")
-        {:ok, extra_claims, token_config}
+        {:cont, {status, extra_claims, token_config}}
       end
     end
 
@@ -129,7 +127,7 @@ defmodule Joken.HooksTest do
       @impl true
       def after_validate(_options, {:error, reason}, _claims_map, _token_config) do
         IO.puts("Got error: #{inspect(reason)}")
-        {:halt, :validate_error}
+        {:halt, {:error, :validate_error}}
       end
     end
 
@@ -147,7 +145,7 @@ defmodule Joken.HooksTest do
     token = UseValidateErrorHook.generate_and_sign!()
 
     fun = fn ->
-      assert UseValidateErrorHook.verify_and_validate(token) == {:halt, :validate_error}
+      assert UseValidateErrorHook.verify_and_validate(token) == {:error, :validate_error}
     end
 
     assert capture_io(fun) ==

@@ -53,7 +53,11 @@ defmodule JokenTest do
 
   describe "claim validation" do
     test "debug message is shown when claim validation fails" do
-      token_config = default_claims(skip: [:exp, :nbf, :iat, :jti, :aud])
+      token_config =
+        %{}
+        |> add_claim("iss", fn -> "not someone" end, fn val ->
+          val == "not someone"
+        end)
 
       validate_fun = fn ->
         assert {:error, [message: "Invalid token", claim: "iss", claim_val: "someone"]} ==

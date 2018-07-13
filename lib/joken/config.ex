@@ -274,6 +274,10 @@ defmodule Joken.Config do
       raise Joken.Error, :invalid_default_claims
     end
 
+    generate_config(skip, default_exp, default_iss, generate_jti)
+  end
+
+  defp generate_config(skip, default_exp, default_iss, generate_jti) do
     gen_exp_func = fn -> current_time() + default_exp end
 
     Enum.reduce(@default_generated_claims, %{}, fn claim, acc ->

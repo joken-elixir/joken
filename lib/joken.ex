@@ -189,8 +189,7 @@ defmodule Joken do
   @spec validate(token_config, claims, term, [module]) :: {:ok, claims} | {:error, error_reason}
   def validate(token_config, claims_map, context, hooks \\ []) do
     with {:ok, claims_map, config} <- before_validate(claims_map, token_config, hooks),
-         result <- reduce_validations(token_config, claims_map, context),
-         status <- parse_status(result),
+         status <- reduce_validations(token_config, claims_map, context),
          {:ok, claims} <- after_validate(status, claims_map, config, hooks) do
       {:ok, claims}
     end
@@ -246,6 +245,10 @@ defmodule Joken do
       else: signer
   end
 
+  defp reduce_validations(_config, %{} = claims, _context) when map_size(claims) == 0 do
+    :ok
+  end
+
   defp reduce_validations(config, claim_map, context) do
     Enum.reduce_while(claim_map, nil, fn {key, claim_val}, _acc ->
       # When there is a function for validating the token
@@ -277,48 +280,48 @@ defmodule Joken do
   end
 
   defp before_verify(bearer_token, signer, hooks) do
-    run(
+    run_hooks(
       hooks,
       {:ok, bearer_token, signer},
-      fn hook, options, {_status, bearer_token, signer} ->
-        hook.before_verify(options, bearer_token, signer)
+      fn hook, options, {status, bearer_token, signer} ->
+        hook.before_verify(options, status, bearer_token, signer)
       end
     )
   end
 
   defp before_validate(claims_map, token_config, hooks) do
-    run(
+    run_hooks(
       hooks,
       {:ok, claims_map, token_config},
-      fn hook, options, {_status, claims_map, token_config} ->
-        hook.before_validate(options, claims_map, token_config)
+      fn hook, options, {status, claims_map, token_config} ->
+        hook.before_validate(options, status, claims_map, token_config)
       end
     )
   end
 
   defp before_generate(extra_claims, token_config, hooks) do
-    run(
+    run_hooks(
       hooks,
       {:ok, extra_claims, token_config},
-      fn hook, options, {_status, extra_claims, token_config} ->
-        hook.before_generate(options, extra_claims, token_config)
+      fn hook, options, {status, extra_claims, token_config} ->
+        hook.before_generate(options, status, extra_claims, token_config)
       end
     )
   end
 
   defp before_sign(claims, signer, hooks) do
-    run(
+    run_hooks(
       hooks,
       {:ok, claims, signer},
-      fn hook, options, {_status, claims, signer} ->
-        hook.before_sign(options, claims, signer)
+      fn hook, options, {status, claims, signer} ->
+        hook.before_sign(options, status, claims, signer)
       end
     )
   end
 
   defp after_verify(status, bearer_token, claims_map, signer, hooks) do
     result =
-      run_after_hook(
+      run_hooks(
         hooks,
         {status, bearer_token, claims_map, signer},
         fn hook, options, {status, bearer_token, claims_map, signer} ->
@@ -333,7 +336,7 @@ defmodule Joken do
 
   defp after_validate(status, claims_map, config, hooks) do
     result =
-      run_after_hook(
+      run_hooks(
         hooks,
         {status, claims_map, config},
         fn hook, options, {status, claims_map, config} ->
@@ -347,18 +350,18 @@ defmodule Joken do
   end
 
   defp after_generate(claims, hooks) do
-    run_after_hook(
+    run_hooks(
       hooks,
       {:ok, claims},
-      fn hook, options, {:ok, claims} ->
-        hook.after_generate(options, claims)
+      fn hook, options, {status, claims} ->
+        hook.after_generate(options, status, claims)
       end
     )
   end
 
   defp after_sign(status, bearer_token, claims, signer, hooks) do
     result =
-      run_after_hook(
+      run_hooks(
         hooks,
         {status, bearer_token, claims, signer},
         fn hook, options, {status, bearer_token, claims, signer} ->
@@ -371,56 +374,45 @@ defmodule Joken do
     end
   end
 
-  defp run_after_hook(hooks, args, fun) do
-    result = run(hooks, args, fun)
-    status = fetch_status(result)
+  defp run_hooks([], args, _fun), do: args |> check_status()
 
-    case status do
-      :ok ->
-        result
-
-      :error ->
-        {:error, :error_in_after_hook}
-
-      {:error, reason} ->
-        {:error, reason}
-
-      :halt ->
-        result
-
-      _ ->
-        {:error, :wrong_hook_callback_return}
-    end
-  end
-
-  defp run(hooks, args, fun) do
-    Enum.reduce_while(hooks, args, fn hook, args ->
+  defp run_hooks(hooks, args, fun) do
+    hooks
+    |> Enum.reduce_while(args, fn hook, args ->
       {hook, options} = unwrap_hook(hook)
+
       result = fun.(hook, options, args)
-      status = fetch_status(result)
 
-      case status do
-        :ok ->
+      case result do
+        {:cont, result} ->
           {:cont, result}
 
-        :error ->
-          {:cont, result}
-
-        {:error, _} ->
-          {:cont, result}
-
-        :halt ->
+        {:halt, result} ->
           {:halt, result}
 
         _ ->
           {:halt, {:error, :wrong_hook_callback}}
       end
     end)
+    |> check_status()
   end
 
-  defp fetch_status(result) when is_tuple(result), do: elem(result, 0)
-  defp fetch_status(:ok), do: {:halt, :wrong_hook_callback}
-  defp fetch_status(result), do: result
+  defp check_status(result) when is_tuple(result) do
+    case elem(result, 0) do
+      :ok ->
+        result
+
+      :error ->
+        {:error, elem(result, 1)}
+
+      # When, for example, validation fails and hooks don't change status
+      {:error, _reason} = err ->
+        err
+
+      _ ->
+        {:error, :wrong_hook_status}
+    end
+  end
 
   defp unwrap_hook({_hook_module, _opts} = hook), do: hook
   defp unwrap_hook(hook) when is_atom(hook), do: {hook, []}
