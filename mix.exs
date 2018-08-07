@@ -45,7 +45,7 @@ defmodule Joken.Mixfile do
       {:benchee, "~> 0.13", only: :bench},
 
       # Docs
-      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.18.4", only: :dev, runtime: false},
 
       # Dialyzer
       {:dialyxir, "~> 1.0.0-rc3", only: :dev, runtime: false},
