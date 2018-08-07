@@ -49,29 +49,33 @@ defmodule Joken do
   1. Pure data structures. You can create your token configuration and signer and use them with this 
   module for all 4 operations: verify, validate, generate and sign.
 
-      iex> token_config = %{}
-      iex> %{ token_config | "scope" => %Joken.Claim{
-      ...> generate_function: fn -> "user" end,
-      ...> validate_function: &(&1 in ["user", "admin"])
-      ...> }}
-      iex> signer = Joken.Signer.create("HS256", "my secret")
-      iex> claims = Joken.generate_claims(token_config, %{"extra"=> "claim"})
-      iex> {:ok, jwt, claims} = Joken.encode_and_sign(claims, signer)
+  ```
+  iex> token_config = %{} # empty config
+  iex> token_config = Map.put(token_config, "scope", %Joken.Claim{
+  ...> generate_function: fn -> "user" end,
+  ...> validate_function: fn val, _claims, _context -> val in ["user", "admin"] end
+  ...> })
+  iex> signer = Joken.Signer.create("HS256", "my secret")
+  iex> claims = Joken.generate_claims(token_config, %{"extra"=> "claim"})
+  iex> {:ok, jwt, claims} = Joken.encode_and_sign(claims, signer)
+  ```
 
   2. With the encapsulated module approach using `Joken.Config`. See the docs for `Joken.Config` for 
   more details.
 
-      iex> defmodule MyAppToken do
-      ...>   use Joken.Config, default_signer: :pem_rs256
-      ...>
-      ...>   @impl Joken.Config
-      ...>   def token_config do
-      ...>     default_claims()
-      ...>     |> add_claim("role", fn -> "USER" end, &(&1 in ["ADMIN", "USER"]))
-      ...>   end
-      ...> end
-      iex> {:ok, token, _claims} = MyAppToken.generate_and_sign(%{"user_id" => "1234567890"})
-      iex> {:ok, _claim_map} = MyAppToken.verify_and_validate(token)
+  ```
+  iex> defmodule MyAppToken do
+  ...>   use Joken.Config, default_signer: :pem_rs256
+  ...>
+  ...>   @impl Joken.Config
+  ...>   def token_config do
+  ...>     default_claims()
+  ...>     |> add_claim("role", fn -> "USER" end, &(&1 in ["ADMIN", "USER"]))
+  ...>   end
+  ...> end
+  iex> {:ok, token, _claims} = MyAppToken.generate_and_sign(%{"user_id" => "1234567890"})
+  iex> {:ok, _claim_map} = MyAppToken.verify_and_validate(token)
+  ```
   """
   alias Joken.{Signer, Claim}
   require Logger
@@ -90,7 +94,8 @@ defmodule Joken do
   @typedoc "A portable configuration of claims for generation and validation."
   @type token_config :: %{binary => Joken.Claim.t()}
 
-  @type error_reason :: atom | binary | Keyword.t()
+  @typedoc "Error reason which might contain dynamic data for helping understand the cause"
+  @type error_reason :: atom | Keyword.t()
 
   # This ensures we provide an easy to setup test environment
   @current_time_adapter Application.get_env(:joken, :current_time_adapter, Joken.CurrentTime.OS)
@@ -153,6 +158,40 @@ defmodule Joken do
     Base.hex_encode32(binary, case: :lower)
   end
 
+  @doc "Combines generate with encode_and_sign"
+  @spec generate_and_sign(token_config, claims, signer_arg, [module]) ::
+          {:ok, bearer_token, claims} | {:error, error_reason}
+  def generate_and_sign(
+        token_config,
+        extra_claims \\ %{},
+        signer_arg \\ :default_signer,
+        hooks \\ []
+      ) do
+    with {:ok, claims} <- generate_claims(token_config, extra_claims, hooks),
+         {:ok, token, claims} <- encode_and_sign(claims, signer_arg, hooks) do
+      {:ok, token, claims}
+    end
+  end
+
+  @doc "Same as generate_and_sign/4 but raises if result is an error"
+  @spec generate_and_sign!(token_config, claims, signer_arg, [module]) :: binary
+  def generate_and_sign!(
+        token_config,
+        extra_claims \\ %{},
+        signer_arg \\ :default_signer,
+        hooks \\ []
+      ) do
+    result = generate_and_sign(token_config, extra_claims, signer_arg, hooks)
+
+    case result do
+      {:ok, token, _claims} ->
+        token
+
+      {:error, reason} ->
+        raise Joken.Error, [:bad_generate_and_sign, reason: reason]
+    end
+  end
+
   @doc """
   Verifies a bearer_token using the given signer and executes hooks if any are given.
   """
@@ -187,11 +226,47 @@ defmodule Joken do
   It also executes hooks if any are given.
   """
   @spec validate(token_config, claims, term, [module]) :: {:ok, claims} | {:error, error_reason}
-  def validate(token_config, claims_map, context, hooks \\ []) do
+  def validate(token_config, claims_map, context \\ nil, hooks \\ []) do
     with {:ok, claims_map, config} <- before_validate(claims_map, token_config, hooks),
          status <- reduce_validations(token_config, claims_map, context),
          {:ok, claims} <- after_validate(status, claims_map, config, hooks) do
       {:ok, claims}
+    end
+  end
+
+  @doc "Combines verify and validate operations"
+  @spec verify_and_validate(token_config, bearer_token, signer_arg, term, [module]) ::
+          {:ok, claims} | {:error, error_reason}
+  def verify_and_validate(
+        token_config,
+        bearer_token,
+        signer \\ :default_signer,
+        context \\ nil,
+        hooks \\ []
+      ) do
+    with {:ok, claims} <- verify(bearer_token, signer, hooks),
+         {:ok, claims} <- validate(token_config, claims, context, hooks) do
+      {:ok, claims}
+    end
+  end
+
+  @doc "Same as verify_and_validate/4 but raises on error"
+  @spec verify_and_validate!(token_config, bearer_token, term, [module]) :: claims
+  def verify_and_validate!(
+        token_config,
+        bearer_token,
+        signer \\ :default_signer,
+        context \\ nil,
+        hooks \\ []
+      ) do
+    result = verify_and_validate(token_config, bearer_token, signer, context, hooks)
+
+    case result do
+      {:ok, claims} ->
+        claims
+
+      {:error, reason} ->
+        raise Joken.Error, [:bad_verify_and_validate, reason: reason]
     end
   end
 
@@ -200,8 +275,14 @@ defmodule Joken do
 
   It also executes hooks if any are given.
   """
-  @spec generate_claims(token_config, claims, [module]) :: {:ok, claims} | {:error, error_reason}
-  def generate_claims(token_config, extra_claims, hooks \\ []) do
+  @spec generate_claims(token_config, claims | nil, [module]) ::
+          {:ok, claims} | {:error, error_reason}
+
+  def generate_claims(token_config, extra \\ %{}, hooks \\ [])
+
+  def generate_claims(token_config, nil, hooks), do: generate_claims(token_config, %{}, hooks)
+
+  def generate_claims(token_config, extra_claims, hooks) do
     with {:ok, extra_claims, token_config} <- before_generate(extra_claims, token_config, hooks),
          claims <- Enum.reduce(token_config, extra_claims, &Claim.__generate_claim__/2),
          {:ok, claims} <- after_generate(claims, hooks) do

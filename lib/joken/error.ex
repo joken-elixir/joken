@@ -24,6 +24,16 @@ defmodule Joken.Error do
     See configuration docs for possible values of <key_params>.
     """
 
+  def message(%__MODULE__{reason: [:bad_generate_and_sign, reason: result]}),
+    do: """
+    Error while calling `generate_and_sign!`. Reason: #{inspect(result)}.
+    """
+
+  def message(%__MODULE__{reason: [:bad_verify_and_validate, reason: result]}),
+    do: """
+    Error while calling `verify_and_validate!`. Reason: #{inspect(result)}.
+    """
+
   def message(%__MODULE__{reason: :invalid_default_claims}),
     do: """
     Invalid argument to default claims. Verify the types of the arguments to

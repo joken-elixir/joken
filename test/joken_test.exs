@@ -75,4 +75,42 @@ defmodule JokenTest do
                Joken.validate(token_config, %{"claim2" => "value", "claim1" => "value"}, %{})
     end
   end
+
+  describe "error" do
+    test "is raised when generate_and_sign! returns error" do
+      defmodule BadBeforeGenerate do
+        use Joken.Hooks
+
+        @impl true
+        def before_generate(_opts, _status, _extra_claims, _token_config),
+          do: {:halt, {:error, :my_reason}}
+      end
+
+      assert_raise(
+        Joken.Error,
+        "Error while calling `generate_and_sign!`. Reason: :my_reason.\n",
+        fn ->
+          Joken.generate_and_sign!(nil, nil, nil, [BadBeforeGenerate])
+        end
+      )
+    end
+
+    test "is raised when verify_and_validate! returns error" do
+      defmodule BadBeforeVerify do
+        use Joken.Hooks
+
+        @impl true
+        def before_verify(_opts, _status, _token, _signer),
+          do: {:halt, {:error, :my_reason}}
+      end
+
+      assert_raise(
+        Joken.Error,
+        "Error while calling `verify_and_validate!`. Reason: :my_reason.\n",
+        fn ->
+          Joken.verify_and_validate!(nil, "", nil, nil, [BadBeforeVerify])
+        end
+      )
+    end
+  end
 end

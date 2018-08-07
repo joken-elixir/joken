@@ -12,7 +12,7 @@ defmodule Joken.Config do
     
       %{"exp" => %Joken.Claim{
         generate: fn -> Joken.Config.current_time() + (2 * 60 * 60) end,
-        validate: &(&1 < Joken.Config.current_time())  
+        validate: fn val, _claims, _context -> val < Joken.Config.current_time() end  
       }}
 
   Since this is cumbersome and error prone, you can use this module with a more fluent API, see:
@@ -52,6 +52,7 @@ defmodule Joken.Config do
       defmodule MyCustomClaimsAuth do
         use Joken.Config
 
+        @impl true
         def token_config do
           %{} # empty claim map
           |> add_claim("name", fn -> "John Doe" end, &(&1 == "John Doe"))
@@ -190,46 +191,20 @@ defmodule Joken.Config do
                      validate: 1
 
       @doc "Combines generate_claims/1 and encode_and_sign/2"
-      def generate_and_sign(extra_claims \\ %{}, key \\ nil) do
-        with {:ok, claims} <- generate_claims(extra_claims),
-             {:ok, token, claims} <- encode_and_sign(claims, key) do
-          {:ok, token, claims}
-        end
-      end
+      def generate_and_sign(extra_claims \\ %{}, key \\ __default_signer__()),
+        do: Joken.generate_and_sign(token_config(), extra_claims, key, __hooks__())
 
       @doc "Same as generate_and_sign/2 but raises if not :ok"
-      def generate_and_sign!(extra_claims \\ %{}, key \\ nil) do
-        {status, result, claims} = generate_and_sign(extra_claims, key)
-
-        case status do
-          :ok ->
-            result
-
-          :error ->
-            raise(Joken.Error, [:bad_encode_and_sign, result: result])
-        end
-      end
+      def generate_and_sign!(extra_claims \\ %{}, key \\ __default_signer__()),
+        do: Joken.generate_and_sign!(token_config(), extra_claims, key, __hooks__())
 
       @doc "Combines verify/2 and validate/1"
-      def verify_and_validate(bearer_token, key \\ nil, context \\ %{}) do
-        with {:ok, claims} <- verify(bearer_token, key),
-             {:ok, claims} <- validate(claims, context) do
-          {:ok, claims}
-        end
-      end
+      def verify_and_validate(bearer_token, context \\ %{}, key \\ __default_signer__()),
+        do: Joken.verify_and_validate(token_config(), bearer_token, key, context, __hooks__())
 
       @doc "Same as verify_and_validate/2 but raises if error"
-      def verify_and_validate!(bearer_token, key \\ nil, context \\ %{}) do
-        {status, result} = verify_and_validate(bearer_token, key, context)
-
-        case status do
-          :ok ->
-            result
-
-          :error ->
-            raise Joken.Error, :claim_not_valid
-        end
-      end
+      def verify_and_validate!(bearer_token, context \\ %{}, key \\ __default_signer__()),
+        do: Joken.verify_and_validate!(token_config(), bearer_token, key, context, __hooks__())
     end
   end
 

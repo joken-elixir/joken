@@ -64,6 +64,15 @@ defmodule Joken.Hooks do
       end
 
   Now if we call `HookToken.generate_claims/1` it will call our callback.
+
+  Also, in `Joken.Config` a macro is imported for adding hooks with options. Example:
+
+
+      defmodule ManyHooks do
+        use Joken.Config
+
+        add_hook(JokenJwks, jwks_url: "http://someserver.com/.well-known/certs")
+      end
   """
   alias Joken.Signer
 

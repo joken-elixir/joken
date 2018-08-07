@@ -88,7 +88,7 @@ defmodule Joken.UseConfig.Test do
       jwt = ValidateWithContext.generate_and_sign!()
 
       assert {:ok, %{"custom" => "custom"}} =
-               ValidateWithContext.verify_and_validate(jwt, nil, %{custom: "custom"})
+               ValidateWithContext.verify_and_validate(jwt, %{custom: "custom"})
     end
   end
 end

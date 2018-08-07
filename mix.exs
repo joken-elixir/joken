@@ -45,7 +45,7 @@ defmodule Joken.Mixfile do
       {:benchee, "~> 0.13", only: :bench},
 
       # Docs
-      {:ex_doc, "~> 0.18", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
 
       # Dialyzer
       {:dialyxir, "~> 1.0.0-rc3", only: :dev, runtime: false},
@@ -84,8 +84,10 @@ defmodule Joken.Mixfile do
       extras: [
         "guides/introduction.md",
         "guides/configuration.md",
-        "guides/testing.md",
         "guides/signer.md",
+        "guides/testing.md",
+        "guides/common_use_cases.md",
+        "guides/migration_from_1.md",
         {"CHANGELOG.md", [title: "Changelog"]}
       ],
       main: "introduction"

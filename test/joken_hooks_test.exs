@@ -151,4 +151,18 @@ defmodule Joken.HooksTest do
     assert capture_io(fun) ==
              "Got error: [message: \"Invalid token\", claim: \"test\", claim_val: \"TEST\"]\n"
   end
+
+  test "empty hooks is a pass through implementation" do
+    # no overridden callback
+    defmodule(EmptyHook, do: use(Joken.Hooks))
+
+    defmodule TokenWithEmptyHook do
+      use Joken.Config
+      add_hook(EmptyHook)
+    end
+
+    assert %{"iss" => "Joken", "aud" => "Joken"} =
+             TokenWithEmptyHook.generate_and_sign!()
+             |> TokenWithEmptyHook.verify_and_validate!()
+  end
 end
