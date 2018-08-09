@@ -15,7 +15,7 @@ Add Joken to your deps:
 ``` elixir
 def deps do
   # .. other deps
-  {:joken, "~> 2.0"}
+  {:joken, "~> 2.0-rc0"}
 end
 ```
 
