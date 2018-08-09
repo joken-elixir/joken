@@ -1,467 +1,500 @@
 defmodule Joken do
-  alias Joken.Token
-  alias Joken.Signer
-  alias Joken.Claims
-
   @moduledoc """
-  Joken is the main API for configuring JWT token generation and
+  Joken is a library for working with standard JSON Web Tokens.
+
+  It provides 4 basic operations:
+
+  - Verify: the act of confirming the signature of the JWT;
+  - Validate: processing validation logic on the set of claims;
+  - Claim generation: generate dynamic value at token creation time;
+  - Signature creation: encoding header and claims and generate a signature of their value.
+
+  ## Architecture
+
+  The core of Joken is `JOSE`, a library which provides all facilities to sign and verify tokens.
+  Joken brings an easier Elixir API with some added functionality:
+
+    - Validating claims. JOSE does not provide validation other than signature verification.
+    - `config.exs` friendly. You can optionally define your signer configuration straight in your 
+    `config.exs`.
+    - Portable configuration. All your token logic can be encapsulated in a module with behaviours. 
+    - Enhanced errors. Joken strives to be as informative as it can when errors happen be it at 
+    compilation or at validation time.
+    - Debug friendly. When a token fails validation, a `Logger` debug message will show which claim 
+    failed validation with which value. The return value, though for security reasons, does not 
+    contain these information.
+    - Performance. We have a benchmark suite for identifying where we can have a better performance. 
+    From this analysis came: Jason adapter for JOSE, redefinition of :base64url module and other 
+    minor tweaks. 
+
+  ## Usage
+
+  Joken has 3 basic concepts:
+
+    - Portable token configuration
+    - Signer configuration
+    - Hooks
+
+  The portable token configuration is a map of binary keys to `Joken.Claim` structs and is used to 
+  dynamically generate and validate tokens.
+
+  A signer is an instance of `Joken.Signer` that encapsulates the algorithm and the key configuration 
+  used to sign and verify a token.
+
+  A hook is an implementation of the behaviour `Joken.Hooks` for easy plugging into the lifecycle of
+  Joken operations.
+
+  There are 2 forms of using Joken:
+
+  1. Pure data structures. You can create your token configuration and signer and use them with this 
+  module for all 4 operations: verify, validate, generate and sign.
+
+  ```
+  iex> token_config = %{} # empty config
+  iex> token_config = Map.put(token_config, "scope", %Joken.Claim{
+  ...> generate_function: fn -> "user" end,
+  ...> validate_function: fn val, _claims, _context -> val in ["user", "admin"] end
+  ...> })
+  iex> signer = Joken.Signer.create("HS256", "my secret")
+  iex> claims = Joken.generate_claims(token_config, %{"extra"=> "claim"})
+  iex> {:ok, jwt, claims} = Joken.encode_and_sign(claims, signer)
+  ```
+
+  2. With the encapsulated module approach using `Joken.Config`. See the docs for `Joken.Config` for 
+  more details.
+
+  ```
+  iex> defmodule MyAppToken do
+  ...>   use Joken.Config, default_signer: :pem_rs256
+  ...>
+  ...>   @impl Joken.Config
+  ...>   def token_config do
+  ...>     default_claims()
+  ...>     |> add_claim("role", fn -> "USER" end, &(&1 in ["ADMIN", "USER"]))
+  ...>   end
+  ...> end
+  iex> {:ok, token, _claims} = MyAppToken.generate_and_sign(%{"user_id" => "1234567890"})
+  iex> {:ok, _claim_map} = MyAppToken.verify_and_validate(token)
+  ```
+  """
+  alias Joken.{Signer, Claim}
+  require Logger
+
+  @typedoc """
+  A signer argument that can be a key in the configuration or an instance of `Joken.Signer`.
+  """
+  @type signer_arg :: atom | Joken.Signer.t()
+
+  @typedoc "A binary representing a bearer token."
+  @type bearer_token :: binary
+
+  @typedoc "A map with binary keys that represents a claim set."
+  @type claims :: %{binary => term}
+
+  @typedoc "A portable configuration of claims for generation and validation."
+  @type token_config :: %{binary => Joken.Claim.t()}
+
+  @typedoc "Error reason which might contain dynamic data for helping understand the cause"
+  @type error_reason :: atom | Keyword.t()
+
+  # This ensures we provide an easy to setup test environment
+  @current_time_adapter Application.get_env(:joken, :current_time_adapter, Joken.CurrentTime.OS)
+
+  @doc """
+  Retrieves current time in seconds. 
+
+  This implementation uses an adapter so that you can replace it on your tests. The adapter is
+  set through `config.exs`. Example:
+
+      config :joken, 
+        current_time_adapter: Joken.CurrentTime.OS
+
+  See Joken's own tests for an example of how to override this with a customizable time mock.
+  """
+  @spec current_time() :: pos_integer
+  def current_time(), do: @current_time_adapter.current_time()
+
+  @doc """
+  Decodes the header of a token without validation.
+
+  **Use this with care!** This DOES NOT validate the token signature and therefore the token might 
+  be invalid. The common use case for this function is when you need info to decide on which signer 
+  will be used. Even though there is a use case for this, be extra careful to handle data without 
   validation.
-
-  All you need to generate a token is a `Joken.Token` struct with proper values.
-  There you can set:
-  - json_module: choose your JSON library (currently supports Poison | JSX)
-  - signer: a map that tells the underlying system how to sign and verify your
-  tokens
-  - validations: a map of claims keys to function validations
-  - claims: the map of values you want encoded in a token
-  - claims_generators: a map of functions for generating claims on each call
-  - token: the compact representation of a JWT token
-  - error: message indicating why a sign/verify operation failed
-
-  To help you fill that configuration struct properly, use the functions in this
-  module.
   """
-
-  @doc """
-  Generates a `Joken.Token` with the following defaults:
-  - Poison as the json_module
-  - claims: exp(now + 2 hours), iat(now), nbf(now - 100ms) and iss ("Joken")
-  - validations for default :
-    - with_validation("exp", &(&1 > current_time))
-    - with_validation("iat", &(&1 <= current_time))
-    - with_validation("nbf", &(&1 < current_time))
-  """
-  @spec token() :: Token.t
-  def token() do
-    %Token{}
-    |> with_json_module(Poison)
-    |> with_exp
-    |> with_iat
-    |> with_nbf
-    |> with_validation("exp", &(&1 > current_time()))
-    |> with_validation("iat", &(&1 <= current_time()))
-    |> with_validation("nbf", &(&1 < current_time()))
+  @spec peek_header(bearer_token) :: claims
+  def peek_header(token) when is_binary(token) do
+    %JOSE.JWS{alg: {_, alg}, fields: fields} = JOSE.JWT.peek_protected(token)
+    Map.put(fields, "alg", Atom.to_string(alg))
   end
 
   @doc """
-  Generates a `Joken.Token` with either a custom payload or a compact token.
-  Defaults Poison as the json module.
-  """
-  @spec token(binary | map) :: Token.t
-  def token(payload) when is_map(payload) do
-    %Token{claims: payload}
-    |> with_json_module(Poison)
-  end
-  def token(encoded_token) when is_binary(encoded_token) do
-    %Token{token: encoded_token}
-    |> with_json_module(Poison)
-  end
+  Decodes the claim set of a token without validation.
 
-  @doc """
-  Configures the default JSON module for Joken.
+  **Use this with care!** This DOES NOT validate the token signature and therefore the token might 
+  be invalid. The common use case for this function is when you need info to decide on which signer 
+  will be used. Even though there is a use case for this, be extra careful to handle data without 
+  validation.
   """
-  @spec with_json_module(Token.t, atom) :: Token.t
-  def with_json_module(token_struct = %Token{}, module) when is_atom(module) do
-    JOSE.json_module(module)
-    %{token_struct | json_module: module}
+  @spec peek_claims(bearer_token) :: claims
+  def peek_claims(token) when is_binary(token) do
+    %JOSE.JWT{fields: fields} = JOSE.JWT.peek_payload(token)
+    fields
   end
 
   @doc """
-  Sets the given compact token into the given `Joken.Token` struct.
+  Default function for generating `jti` claims. This was inspired by the `Plug.RequestId` generation.
+  It avoids using `strong_rand_bytes` as it is known to have some contention when running with many 
+  schedulers.
   """
-  @spec with_compact_token(Token.t, binary) :: Token.t
-  def with_compact_token(token_struct = %Token{}, compact)
-    when is_binary(compact) do
-    %{token_struct| token: compact}
+  @spec generate_jti() :: binary
+  def generate_jti do
+    binary = <<
+      System.system_time(:nanoseconds)::64,
+      :erlang.phash2({node(), self()}, 16_777_216)::24,
+      :erlang.unique_integer()::32
+    >>
+
+    Base.hex_encode32(binary, case: :lower)
+  end
+
+  @doc "Combines generate with encode_and_sign"
+  @spec generate_and_sign(token_config, claims, signer_arg, [module]) ::
+          {:ok, bearer_token, claims} | {:error, error_reason}
+  def generate_and_sign(
+        token_config,
+        extra_claims \\ %{},
+        signer_arg \\ :default_signer,
+        hooks \\ []
+      ) do
+    with {:ok, claims} <- generate_claims(token_config, extra_claims, hooks),
+         {:ok, token, claims} <- encode_and_sign(claims, signer_arg, hooks) do
+      {:ok, token, claims}
+    end
+  end
+
+  @doc "Same as generate_and_sign/4 but raises if result is an error"
+  @spec generate_and_sign!(token_config, claims, signer_arg, [module]) :: binary
+  def generate_and_sign!(
+        token_config,
+        extra_claims \\ %{},
+        signer_arg \\ :default_signer,
+        hooks \\ []
+      ) do
+    result = generate_and_sign(token_config, extra_claims, signer_arg, hooks)
+
+    case result do
+      {:ok, token, _claims} ->
+        token
+
+      {:error, reason} ->
+        raise Joken.Error, [:bad_generate_and_sign, reason: reason]
+    end
   end
 
   @doc """
-  Adds `"exp"` claim with a default generated value of now + 2hs.
+  Verifies a bearer_token using the given signer and executes hooks if any are given.
   """
-  @spec with_exp(Token.t) :: Token.t
-  def with_exp(token_struct = %Token{}) do
-    token_struct
-    |> with_claim_generator("exp", fn -> current_time() + (2 * 60 * 60) end)
+  @spec verify(bearer_token, signer_arg, [module]) :: {:ok, claims} | {:error, error_reason}
+  def verify(bearer_token, signer, hooks \\ [])
+
+  def verify(bearer_token, nil, hooks) when is_binary(bearer_token) and is_list(hooks),
+    do: verify(bearer_token, %Signer{}, hooks)
+
+  def verify(bearer_token, signer, hooks) when is_binary(bearer_token) and is_atom(signer),
+    do: verify(bearer_token, parse_signer(signer), hooks)
+
+  def verify(bearer_token, signer = %Signer{}, hooks) when is_binary(bearer_token) do
+    with {:ok, bearer_token, signer} <- before_verify(bearer_token, signer, hooks),
+         :ok <- check_signer_not_empty(signer),
+         result = {:ok, claim_map} <- Signer.verify(bearer_token, signer),
+         status <- parse_status(result),
+         {:ok, claims_map} <- after_verify(status, bearer_token, claim_map, signer, hooks) do
+      {:ok, claims_map}
+    end
+  end
+
+  defp check_signer_not_empty(%Signer{alg: nil}), do: {:error, :empty_signer}
+  defp check_signer_not_empty(%Signer{}), do: :ok
+
+  @doc """
+  Validates the claim map with the given token configuration and the context.
+
+  Context can by any term. It is always passed as the second argument to the validate 
+  function.
+
+  It also executes hooks if any are given.
+  """
+  @spec validate(token_config, claims, term, [module]) :: {:ok, claims} | {:error, error_reason}
+  def validate(token_config, claims_map, context \\ nil, hooks \\ []) do
+    with {:ok, claims_map, config} <- before_validate(claims_map, token_config, hooks),
+         status <- reduce_validations(token_config, claims_map, context),
+         {:ok, claims} <- after_validate(status, claims_map, config, hooks) do
+      {:ok, claims}
+    end
+  end
+
+  @doc "Combines verify and validate operations"
+  @spec verify_and_validate(token_config, bearer_token, signer_arg, term, [module]) ::
+          {:ok, claims} | {:error, error_reason}
+  def verify_and_validate(
+        token_config,
+        bearer_token,
+        signer \\ :default_signer,
+        context \\ nil,
+        hooks \\ []
+      ) do
+    with {:ok, claims} <- verify(bearer_token, signer, hooks),
+         {:ok, claims} <- validate(token_config, claims, context, hooks) do
+      {:ok, claims}
+    end
+  end
+
+  @doc "Same as verify_and_validate/4 but raises on error"
+  @spec verify_and_validate!(token_config, bearer_token, term, [module]) :: claims
+  def verify_and_validate!(
+        token_config,
+        bearer_token,
+        signer \\ :default_signer,
+        context \\ nil,
+        hooks \\ []
+      ) do
+    result = verify_and_validate(token_config, bearer_token, signer, context, hooks)
+
+    case result do
+      {:ok, claims} ->
+        claims
+
+      {:error, reason} ->
+        raise Joken.Error, [:bad_verify_and_validate, reason: reason]
+    end
   end
 
   @doc """
-  Adds `"exp"` claim with a given value.
+  Generates claims with the given token configuration and merges them with the given extra claims. 
+
+  It also executes hooks if any are given.
   """
-  @spec with_exp(Token.t, non_neg_integer) :: Token.t
-  def with_exp(token_struct = %Token{claims: claims}, time_to_expire) do
-    %{token_struct | claims: Map.put(claims, "exp", time_to_expire)}
+  @spec generate_claims(token_config, claims | nil, [module]) ::
+          {:ok, claims} | {:error, error_reason}
+
+  def generate_claims(token_config, extra \\ %{}, hooks \\ [])
+
+  def generate_claims(token_config, nil, hooks), do: generate_claims(token_config, %{}, hooks)
+
+  def generate_claims(token_config, extra_claims, hooks) do
+    with {:ok, extra_claims, token_config} <- before_generate(extra_claims, token_config, hooks),
+         claims <- Enum.reduce(token_config, extra_claims, &Claim.__generate_claim__/2),
+         {:ok, claims} <- after_generate(claims, hooks) do
+      {:ok, claims}
+    end
   end
 
   @doc """
-  Adds `"iat"` claim with a default generated value of now.
-  """
-  @spec with_iat(Token.t) :: Token.t
-  def with_iat(token_struct = %Token{}) do
-    token_struct
-    |> with_claim_generator("iat", fn -> current_time() end)
-  end
-  @doc """
-  Adds `"iat"` claim with a given value.
-  """
-  @spec with_iat(Token.t, non_neg_integer) :: Token.t
-  def with_iat(token_struct = %Token{claims: claims}, time_issued_at) do
-    %{token_struct | claims: Map.put(claims, "iat", time_issued_at)}
-  end
+  Encodes and generates a token from the given claim map and signs the result with the given signer.
 
-  @doc """
-  Adds `"nbf"` claim with a default generated value of now - 1s.
+  It also executes hooks if any are given.
   """
-  @spec with_nbf(Token.t) :: Token.t
-  def with_nbf(token_struct = %Token{}) do
-    token_struct
-    |> with_claim_generator("nbf", fn -> current_time() - 1 end)
-  end
+  @spec encode_and_sign(claims, signer_arg, [module]) :: {:ok, bearer_token, claims}
+  def encode_and_sign(claims, signer, hooks \\ [])
 
-  @doc """
-  Adds `"nbf"` claim with a given value.
-  """
-  @spec with_nbf(Token.t, non_neg_integer) :: Token.t
-  def with_nbf(token_struct = %Token{claims: claims}, time_not_before) do
-    %{token_struct | claims: Map.put(claims, "nbf", time_not_before)}
+  def encode_and_sign(claims, nil, hooks),
+    do: encode_and_sign(claims, %Signer{}, hooks)
+
+  def encode_and_sign(claims, signer, hooks) when is_atom(signer),
+    do: encode_and_sign(claims, parse_signer(signer), hooks)
+
+  def encode_and_sign(claims, %Signer{} = signer, hooks) do
+    with {:ok, claims, signer} <- before_sign(claims, signer, hooks),
+         :ok <- check_signer_not_empty(signer),
+         result = {_, token} <- Signer.sign(claims, signer),
+         status <- parse_status(result),
+         {:ok, token, claims} <- after_sign(status, token, claims, signer, hooks) do
+      {:ok, token, claims}
+    end
   end
 
-  @doc """
-  Adds `"iss"` claim with a given value.
-  """
-  @spec with_iss(Token.t, any) :: Token.t
-  def with_iss(token_struct = %Token{claims: claims}, issuer) do
-    %{token_struct | claims: Map.put(claims, "iss", issuer)}
+  defp parse_status(:ok), do: :ok
+  defp parse_status({:ok, _}), do: :ok
+  defp parse_status({:error, _} = res), do: res
+
+  defp parse_signer(signer_key) do
+    signer = Signer.parse_config(signer_key)
+
+    if is_nil(signer),
+      do: raise(Joken.Error, :no_default_signer),
+      else: signer
   end
 
-  @doc """
-  Adds `"sub"` claim with a given value.
-  """
-  @spec with_sub(Token.t, any) :: Token.t
-  def with_sub(token_struct = %Token{claims: claims}, sub) do
-    %{token_struct | claims: Map.put(claims, "sub", sub)}
+  defp reduce_validations(_config, %{} = claims, _context) when map_size(claims) == 0 do
+    :ok
   end
 
-  @doc """
-  Adds `"aud"` claim with a given value.
-  """
-  @spec with_aud(Token.t, any) :: Token.t
-  def with_aud(token_struct = %Token{claims: claims}, aud) do
-    %{token_struct | claims: Map.put(claims, "aud", aud)}
+  defp reduce_validations(config, claim_map, context) do
+    Enum.reduce_while(claim_map, nil, fn {key, claim_val}, _acc ->
+      # When there is a function for validating the token
+      with %Claim{validate: val_func} when not is_nil(val_func) <- config[key],
+           true <- val_func.(claim_val, claim_map, context) do
+        {:cont, :ok}
+      else
+        # When there is no configuration for the claim
+        nil ->
+          {:cont, :ok}
+
+        # When there is a configuration but no validation function
+        %Claim{validate: nil} ->
+          {:cont, :ok}
+
+        # When it fails validation
+        false ->
+          Logger.debug(fn ->
+            """
+            Claim %{"#{key}" => #{inspect(claim_val)}} did not pass validation.
+
+            Current time: #{inspect(Joken.current_time())}
+            """
+          end)
+
+          {:halt, {:error, message: "Invalid token", claim: key, claim_val: claim_val}}
+      end
+    end)
   end
 
-  @doc """
-  Adds `"jti"` claim with a given value.
-  """
-  @spec with_jti(Token.t, any) :: Token.t
-  def with_jti(token_struct = %Token{claims: claims}, jti) do
-    %{token_struct | claims: Map.put(claims, "jti", jti)}
+  defp before_verify(bearer_token, signer, hooks) do
+    run_hooks(
+      hooks,
+      {:ok, bearer_token, signer},
+      fn hook, options, {status, bearer_token, signer} ->
+        hook.before_verify(options, status, bearer_token, signer)
+      end
+    )
   end
 
-  @doc """
-  Adds a custom claim with a given value.
-  """
-  @spec with_claim(Token.t, String.t, any) :: Token.t
-  def with_claim(token_struct = %Token{claims: claims}, claim_key, claim_value)
-    when is_binary(claim_key) do
-    %{token_struct | claims: Map.put(claims, claim_key, claim_value)}
+  defp before_validate(claims_map, token_config, hooks) do
+    run_hooks(
+      hooks,
+      {:ok, claims_map, token_config},
+      fn hook, options, {status, claims_map, token_config} ->
+        hook.before_validate(options, status, claims_map, token_config)
+      end
+    )
   end
 
-  @doc """
-  Adds the given map or struct as the claims for this token
-  """
-  @spec with_claims(Token.t, %{String.t => any}) :: Token.t
-  def with_claims(token_struct = %Token{}, claims) do
-    %{token_struct | claims: Claims.to_claims(claims)}
+  defp before_generate(extra_claims, token_config, hooks) do
+    run_hooks(
+      hooks,
+      {:ok, extra_claims, token_config},
+      fn hook, options, {status, extra_claims, token_config} ->
+        hook.before_generate(options, status, extra_claims, token_config)
+      end
+    )
   end
 
-  @doc """
-  Adds a claim generation function. This is intended for dynamic values.
-  """
-  @spec with_claim_generator(Token.t, String.t, function) :: Token.t
-  def with_claim_generator(token_struct = %Token{claims_generation: generators},
-                           claim, fun) when is_binary(claim)
-                                        and is_function(fun) do
-    %{token_struct | claims_generation: Map.put(generators, claim, fun)}
+  defp before_sign(claims, signer, hooks) do
+    run_hooks(
+      hooks,
+      {:ok, claims, signer},
+      fn hook, options, {status, claims, signer} ->
+        hook.before_sign(options, status, claims, signer)
+      end
+    )
   end
 
-  @doc """
-  Adds the specified key and value to the JOSE header
-  """
-  @spec with_header_arg(Token.t, String.t, any) :: Token.t
-  def with_header_arg(token_struct = %Token{header: header}, key, value)
-    when is_binary(key) do
+  defp after_verify(status, bearer_token, claims_map, signer, hooks) do
+    result =
+      run_hooks(
+        hooks,
+        {status, bearer_token, claims_map, signer},
+        fn hook, options, {status, bearer_token, claims_map, signer} ->
+          hook.after_verify(options, status, bearer_token, claims_map, signer)
+        end
+      )
 
-    %{token_struct | header: Map.put(header, key, value)}
+    with {:ok, _bearer_token, claims_map, _signer} <- result do
+      {:ok, claims_map}
+    end
   end
 
-  @doc """
-  Adds the specified map as the JOSE header.
-  """
-  @spec with_header_args(Token.t, %{String.t => any}) :: Token.t
-  def with_header_args(token_struct = %Token{}, header) do
-    %{token_struct | header: header}
+  defp after_validate(status, claims_map, config, hooks) do
+    result =
+      run_hooks(
+        hooks,
+        {status, claims_map, config},
+        fn hook, options, {status, claims_map, config} ->
+          hook.after_validate(options, status, claims_map, config)
+        end
+      )
+
+    with {:ok, claims, _config} <- result do
+      {:ok, claims}
+    end
   end
 
-  # convenience functions
+  defp after_generate(claims, hooks) do
+    run_hooks(
+      hooks,
+      {:ok, claims},
+      fn hook, options, {status, claims} ->
+        hook.after_generate(options, status, claims)
+      end
+    )
+  end
 
-  # None
-  @doc "See Joken.Signer.hs/2"
-  def none(secret), do: Signer.none(secret)
+  defp after_sign(status, bearer_token, claims, signer, hooks) do
+    result =
+      run_hooks(
+        hooks,
+        {status, bearer_token, claims, signer},
+        fn hook, options, {status, bearer_token, claims, signer} ->
+          hook.after_sign(options, status, bearer_token, claims, signer)
+        end
+      )
 
-  # HMAC SHA functions
-  @doc "See Joken.Signer.hs/2"
-  def hs256(secret), do: Signer.hs("HS256", secret)
+    with {:ok, bearer_token, claims, _signer} <- result do
+      {:ok, bearer_token, claims}
+    end
+  end
 
-  @doc "See Joken.Signer.hs/2"
-  def hs384(secret), do: Signer.hs("HS384", secret)
+  defp run_hooks([], args, _fun), do: args |> check_status()
 
-  @doc "See Joken.Signer.hs/2"
-  def hs512(secret), do: Signer.hs("HS512", secret)
+  defp run_hooks(hooks, args, fun) do
+    hooks
+    |> Enum.reduce_while(args, fn hook, args ->
+      {hook, options} = unwrap_hook(hook)
 
-  # EdDSA
-  @doc "See Joken.Signer.eddsa/2"
-  def ed25519(key), do: Signer.eddsa("Ed25519", key)
+      result = fun.(hook, options, args)
 
-  @doc "See Joken.Signer.eddsa/2"
-  def ed25519ph(key), do: Signer.eddsa("Ed25519ph", key)
+      case result do
+        {:cont, result} ->
+          {:cont, result}
 
-  @doc "See Joken.Signer.eddsa/2"
-  def ed448(key), do: Signer.eddsa("Ed448", key)
+        {:halt, result} ->
+          {:halt, result}
 
-  @doc "See Joken.Signer.eddsa/2"
-  def ed448ph(key), do: Signer.eddsa("Ed448ph", key)
+        _ ->
+          {:halt, {:error, :wrong_hook_callback}}
+      end
+    end)
+    |> check_status()
+  end
 
-  #
-  @doc "See Joken.Signer.es/2"
-  def es256(key), do: Signer.es("ES256", key)
+  defp check_status(result) when is_tuple(result) do
+    case elem(result, 0) do
+      :ok ->
+        result
 
-  @doc "See Joken.Signer.es/2"
-  def es384(key), do: Signer.es("ES384", key)
+      :error ->
+        {:error, elem(result, 1)}
 
-  @doc "See Joken.Signer.es/2"
-  def es512(key), do: Signer.es("ES512", key)
+      # When, for example, validation fails and hooks don't change status
+      {:error, _reason} = err ->
+        err
 
-  # RSASSA-PKCS1-v1_5 SHA
-  @doc "See Joken.Signer.rs/2"
-  def rs256(key), do: Signer.rs("RS256", key)
-
-  @doc "See Joken.Signer.rs/2"
-  def rs384(key), do: Signer.rs("RS384", key)
-
-  @doc "See Joken.Signer.rs/2"
-  def rs512(key), do: Signer.rs("RS512", key)
-
-  #  RSASSA-PSS using SHA and MGF1 with SHA
-  @doc "See Joken.Signer.ps/2"
-  def ps256(key), do: Signer.ps("PS256", key)
-
-  @doc "See Joken.Signer.ps/2"
-  def ps384(key), do: Signer.ps("PS384", key)
-
-  @doc "See Joken.Signer.ps/2"
-  def ps512(key), do: Signer.ps("PS512", key)
-
-  @doc """
-  Adds a signer to a token configuration.
-
-  This **DOES NOT** call `sign/1`, `sign/2` or `verify/4`.
-  It only sets the signer in the token configuration.
-  """
-  @spec with_signer(Token.t, Signer.t) :: Token.t
-  def with_signer(token_struct = %Token{}, signer = %Signer{}),
-    do: %{token_struct | signer: signer}
-
-  @doc """
-  Signs a given set of claims. If signing is successful it will put the compact
-  token in the configuration's token field and move generated claims into the
-  claims set. Otherwise, it will fill the error field.
-  """
-  @spec sign(Token.t) :: Token.t
-  def sign(token_struct), do: Signer.sign(token_struct)
-
-  @doc """
-  Same as `sign/1` but overrides any signer that was set in the configuration.
-  """
-  @spec sign(Token.t, Signer.t) :: Token.t
-  def sign(token_struct, signer), do: Signer.sign(token_struct, signer)
-
-  @doc "Convenience function to retrieve the compact token"
-  @spec get_compact(Token.t) :: binary | nil
-  def get_compact(%Token{token: compact_token}), do: compact_token
-
-  @doc """
-  Convenience function to retrieve the claim set. Generated claims will only
-  become available after signing the token.
-  """
-  @spec get_claims(Token.t) :: map
-  def get_claims(%Token{claims: claims}), do: claims
-
-  @doc "Convenience function to retrieve the error"
-  @spec get_error(Token.t) :: binary | nil
-  def get_error(%Token{error: error}), do: error
-
-  @doc "Returns either the claims or the error"
-  @spec get_data(Token.t) :: {:ok, map} | {:error, binary}
-  def get_data(token_struct = %Token{}) do
-    case token_struct.error do
-      nil ->
-        {:ok, token_struct.claims}
       _ ->
-        {:error, token_struct.error}
+        {:error, :wrong_hook_status}
     end
   end
 
-  @doc """
-  Adds a validation for a given claim key.
-
-  Validation works by applying the given function to the value of the matching
-  claim key or list of claim keys in the token payload.
-
-  If it is successful (e.g. the function returns a truthy value) the value is added
-  to the claims. If it fails (e.g. the function return nil or false) no claims
-  are added, and an error message is added to an `"errors"` field. Also one of
-  the errors is used for the `"error"` field.
-
-  By default, the error message for a failed validation is `"Invalid payload"`,
-  however an optional argument can be provided, which is used as the error instead.
-
-  **SECURITY WARNING**: As a word of caution, be careful that your custom error messages
-  do not leak detailed security implementations to your end users.
-
-  If a claim key in the payload does not have a validation, it **WILL BE ADDED**
-  to the claim set.  If a claim key has a validation, but it is not present in
-  the payload, verification will fail with the default or provided error message.
-
-  example validation:
-  ```
-  validated_token = token
-    |> with_validation("admin", &(&1 == true), "Must be admin")
-    |> with_validation("userId", &(&1 != 7))
-    |> with_signer(hs256("example"))
-    |> verify
-  ```
-  when used with the following tokens:
-  ```
-  #if token.claims == %{"admin" => true, "userId" => 6} then
-  validated_token == %{ claims: %{"admin" => true, "userId" => 6}, error: nil, errors: nil}
-
-  #if token.claims == %{"admin" => true, "userId" => 7} then
-  validated_token == %{
-    claims: nil,
-    error: "Invalid payload",
-    errors: ["Invalid payload"]
-  }
-
-  #if token == %{"userId" => 7} then
-  validated_token == %{
-    claims: nil,
-    error: #Order is not preserved, so this could be either of the two errors
-    errors: ["Must be admin", "Invalid payload"]
-  }
-
-  other example with multi-claim validation
-
-  validated_token = token
-    |> with_validation(["a", "b"], &(&1 == &2))
-    |> with_signer(hs256("example"))
-    |> verify
-
-  #if token == %{"a" => 1, "b" => 2} then
-  validated_token == %{
-    claims: nil,
-    error: "Invalid payload"
-    errors: ["Invalid payload"]
-  }
-  ```
-  """
-  @spec with_validation(Token.t, String.t | [String.t], function, String.t | nil) :: Token.t
-  def with_validation(token_struct, claim, function, msg \\ nil)
-  def with_validation(token_struct = %Token{validations: validations},
-                      claim, function, msg)
-    when is_function(function) and is_binary(claim) do
-
-    %{token_struct | validations: Map.put(validations, claim, {function, msg})}
-  end
-
-  def with_validation(token_struct = %Token{validations: validations},
-                      claims, function, msg)
-    when is_function(function) and is_list(claims) do
-
-    %{token_struct | validations: Map.put(validations, claims, {function, msg})}
-  end
-
-  @doc """
-  Removes a validation for this token.
-  """
-  @spec without_validation(Token.t, String.t) :: Token.t
-  def without_validation(token_struct = %Token{validations: validations}, claim)
-    when is_binary(claim) do
-    %{token_struct | validations: Map.delete(validations, claim)}
-  end
-
-  @doc """
-  Runs verification on the token set in the configuration.
-
-  It first checks the signature comparing the header with the one found in the
-  signer.
-
-  Then it runs validations on the decoded payload. If everything passes then the
-  configuration
-  has all the claims available in the claims map.
-
-  It can receive options to verification. Acceptable options are:
-
-  - `skip_claims`: list of claim keys to skip validation
-  - `as`: a module that Joken will use to convert the validated paylod into a
-  struct
-  """
-  @spec verify(Token.t, Signer.t | nil, list) :: Token.t
-  def verify(token_struct = %Token{}, signer \\ nil, options \\ []),
-    do: Signer.verify(token_struct, signer, options)
-
-  @doc """
-  Same as `verify/3` except that it returns either:
-  - `{:ok, claims}`
-  - `{:error, message}`
-  """
-  @spec verify!(Token.t, Signer.t | nil, list) :: {:ok, map} | {:error, binary}
-  def verify!(token_struct = %Token{}, signer \\ nil, options \\ []) do
-    token_struct
-    |> Signer.verify(signer, options)
-    |> do_verify!
-  end
-
-  @doc """
-  Returns the claims without verifying. This is useful if
-  verification and/or validation depends on data contained within
-  the claim
-  """
-  @spec peek(Token.t, list) :: map
-  def peek(token_struct = %Token{}, options \\ []),
-    do: Signer.peek(token_struct, options)
-
-  @doc """
-  Returns the header without verifying.
-  """
-  @spec peek_header(Token.t) :: map
-  def peek_header(token_struct = %Token{}),
-    do: Signer.peek_header(token_struct)
-
-  @doc """
-  Helper function to get the current time
-  """
-  def current_time() do
-    {mega, secs, _} = :os.timestamp()
-    mega * 1_000_000 + secs
-  end
-
-  ## PRIVATE
-  defp do_verify!(token_struct) do
-    if token_struct.error do
-      {:error, token_struct.error}
-    else
-      {:ok, token_struct.claims}
-    end
-  end
-
+  defp unwrap_hook({_hook_module, _opts} = hook), do: hook
+  defp unwrap_hook(hook) when is_atom(hook), do: {hook, []}
 end

@@ -1,46 +1,69 @@
 defmodule Joken.Mixfile do
   use Mix.Project
 
-  @version "1.5.0"
+  @version "2.0.0-alpha1"
 
   def project do
-    [app: :joken,
-     version: @version,
-     elixir: "~> 1.2.3 or ~> 1.3",
-     description: description(),
-     package: package(),
-     deps: deps(),
-     consolidate_protocols: Mix.env != :test,
-     test_coverage: [tool: ExCoveralls],
-     name: "Joken",
-     docs: docs_config()]
+    [
+      app: :joken,
+      version: @version,
+      name: "Joken",
+      elixir: "~> 1.5",
+      elixirc_paths: elixirc_paths(Mix.env()),
+      start_permanent: Mix.env() == :prod,
+      consolidate_protocols: Mix.env() != :test,
+      description: description(),
+      package: package(),
+      deps: deps(),
+      source_ref: "v#{@version}",
+      source_url: "https://github.com/bryanjos/joken",
+      docs: docs_config(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ]
+    ]
   end
 
   def application do
-    [applications: [:logger, :crypto, :jose]]
+    [
+      extra_applications: [:logger, :crypto],
+      mod: {Joken.Application, []}
+    ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 
   defp deps do
     [
       {:jose, "~> 1.8"},
-      {:plug, "~> 1.0", optional: true},
-      {:poison, "~> 1.5 or ~> 2.0 or ~> 3.0", optional: true},
-      {:earmark, "~> 1.0", only: :dev},
-      {:ex_doc, "~> 0.13", only: :dev},
-      {:jsx, "~> 2.0", only: :test},
-      {:benchfella, "~> 0.3", only: :test},
-      {:excoveralls, "~> 0.5", only: :test},
-      {:libdecaf, "~> 0.0", only: :test},
-      {:libsodium, "~> 0.0", only: :test},
-      {:keccakf1600, "~> 2.0", only: :test},
-      {:credo, "~> 0.3", only: [:dev, :test]}
+      {:jason, "~> 1.1", optional: true},
+      {:benchee, "~> 0.13", only: :bench},
+
+      # Docs
+      {:ex_doc, "~> 0.18.4", only: :dev, runtime: false},
+
+      # Dialyzer
+      {:dialyxir, "~> 1.0.0-rc3", only: :dev, runtime: false},
+
+      # Credo
+      {:credo, "~> 0.9", only: [:dev, :test], runtime: false},
+
+      # Test
+      {:junit_formatter, "~> 2.2", only: :test},
+      {:stream_data, "~> 0.4", only: :test},
+      {:excoveralls, "~> 0.8", only: :test}
     ]
   end
 
   defp description do
-  """
-  JWT Library for Elixir
-  """
+    """
+    JWT (JSON Web Token) library for Elixir
+    """
   end
 
   defp package do
@@ -48,16 +71,26 @@ defmodule Joken.Mixfile do
       files: ["lib", "mix.exs", "README.md", "LICENSE.txt", "CHANGELOG.md"],
       maintainers: ["Bryan Joseph", "Victor Nascimento"],
       licenses: ["Apache 2.0"],
-      links: %{"GitHub" => "https://github.com/bryanjos/joken",
-               "Docs" => "http://hexdocs.pm/joken"}
+      links: %{
+        "GitHub" => "https://github.com/bryanjos/joken",
+        "Docs" => "http://hexdocs.pm/joken"
+      }
     ]
   end
 
   defp docs_config do
-    [extras: ["README.md": [title: "Overview", path: "overview"],
-              "CHANGELOG.md": [title: "Changelog"]],
-     main: "overview",
-     source_ref: "v#{@version}",
-     source_url: "https://github.com/bryanjos/joken"]
+    [
+      extra_section: "GUIDES",
+      extras: [
+        "guides/introduction.md",
+        "guides/configuration.md",
+        "guides/signer.md",
+        "guides/testing.md",
+        "guides/common_use_cases.md",
+        "guides/migration_from_1.md",
+        {"CHANGELOG.md", [title: "Changelog"]}
+      ],
+      main: "introduction"
+    ]
   end
 end

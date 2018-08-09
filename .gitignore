@@ -6,3 +6,4 @@ erl_crash.dump
 /doc
 /docs
 /bench/snapshots
+/.elixir_ls
