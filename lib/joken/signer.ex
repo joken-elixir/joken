@@ -129,8 +129,7 @@ defmodule Joken.Signer do
     with {true, %JWT{fields: claims}, _} <- JWT.verify_strict(jwk, [alg], token) do
       {:ok, claims}
     else
-      {false, _, _} ->
-        {:error, :signature_error}
+      _ -> {:error, :signature_error}
     end
   end
 
