@@ -58,35 +58,43 @@ defmodule Joken.Signer do
       }
       
   """
-  @spec create(binary(), key()) :: __MODULE__.t()
-  def create(alg, key)
+  @spec create(binary(), key(), %{binary() => term()}) :: __MODULE__.t()
+  def create(alg, key, jose_extra_headers \\ %{})
 
-  def create(alg, secret) when is_binary(secret) and alg in @hs_algorithms do
-    %__MODULE__{
-      jws: JWS.from_map(%{"alg" => alg, "typ" => "JWT"}),
-      jwk: JWK.from_oct(secret),
-      alg: alg
-    }
+  def create(alg, secret, headers) when is_binary(secret) and alg in @hs_algorithms do
+    raw_create(
+      alg,
+      headers |> Map.merge(%{"alg" => alg, "typ" => "JWT"}) |> JWS.from_map(),
+      JWK.from_oct(secret)
+    )
   end
 
-  def create(alg, %{"pem" => pem}) when alg in @map_key_algorithms do
-    %__MODULE__{
-      jws: JWS.from_map(%{"alg" => alg, "typ" => "JWT"}),
-      jwk: JWK.from_pem(pem),
-      alg: alg
-    }
+  def create(alg, %{"pem" => pem}, headers) when alg in @map_key_algorithms do
+    raw_create(
+      alg,
+      headers |> Map.merge(%{"alg" => alg, "typ" => "JWT"}) |> JWS.from_map(),
+      JWK.from_pem(pem)
+    )
   end
 
-  def create(alg, key) when is_map(key) and alg in @map_key_algorithms do
-    %__MODULE__{
-      jws: JWS.from_map(%{"alg" => alg, "typ" => "JWT"}),
-      jwk: JWK.from_map(key),
-      alg: alg
-    }
+  def create(alg, key, headers) when is_map(key) and alg in @map_key_algorithms do
+    raw_create(
+      alg,
+      headers |> Map.merge(%{"alg" => alg, "typ" => "JWT"}) |> JWS.from_map(),
+      JWK.from_map(key)
+    )
   end
 
-  def create(_, _) do
+  def create(_, _, _) do
     raise Joken.Error, :unrecognized_algorithm
+  end
+
+  defp raw_create(alg, jws, jwk) do
+    %__MODULE__{
+      jws: jws,
+      jwk: jwk,
+      alg: alg
+    }
   end
 
   @doc """
@@ -193,6 +201,7 @@ defmodule Joken.Signer do
 
   defp parse_list_config(config) do
     signer_alg = config[:signer_alg] || "HS256"
+    headers = config[:jose_extra_headers] || %{}
 
     key_pem = config[:key_pem]
     key_map = config[:key_map]
@@ -213,16 +222,17 @@ defmodule Joken.Signer do
     {jwk_function, value} = List.first(key_config)
 
     if signer_alg in @algorithms do
-      do_parse_signer(jwk_function.(value), signer_alg)
+      do_parse_signer(jwk_function.(value), signer_alg, headers)
     else
       raise Joken.Error, :unrecognized_algorithm
     end
   end
 
-  defp do_parse_signer(jwk, signer_alg),
-    do: %__MODULE__{
-      jwk: jwk,
-      jws: JWS.from_map(%{"alg" => signer_alg, "typ" => "JWT"}),
-      alg: signer_alg
-    }
+  defp do_parse_signer(jwk, signer_alg, headers) do
+    raw_create(
+      signer_alg,
+      headers |> Map.merge(%{"alg" => signer_alg, "typ" => "JWT"}) |> JWS.from_map(),
+      jwk
+    )
+  end
 end

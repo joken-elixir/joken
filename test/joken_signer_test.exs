@@ -83,4 +83,17 @@ defmodule Joken.Signer.Test do
   test "return error with invalid signer" do
     assert {:error, :empty_signer} == Joken.encode_and_sign(%{}, %Signer{})
   end
+
+  test "can set key id on signer" do
+    key_id = "kid"
+    signer = Signer.create("HS256", "secret", %{"kid" => key_id})
+
+    {:ok, token, _claims} = Joken.encode_and_sign(%{}, signer)
+    assert %{"kid" => ^key_id, "alg" => "HS256"} = Joken.peek_header(token)
+  end
+
+  test "can parse with key_id" do
+    {:ok, token, _claims} = Joken.encode_and_sign(%{}, Signer.parse_config(:with_key_id))
+    assert %{"kid" => "my_key_id", "alg" => "HS256"} = Joken.peek_header(token)
+  end
 end
