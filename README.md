@@ -27,4 +27,4 @@ See the [LICENSE.txt](LICENCE.txt) file.
 
 ## DISCLAIMER
 
-This library would not be possible without the work of @potatosalad (Andrew Bennet). Specifically his lirabry [erlang-jose](https://github.com/potatosalad/erlang-jose/)
+This library would not be possible without the work of @potatosalad (Andrew Bennet). Specifically his library [erlang-jose](https://github.com/potatosalad/erlang-jose/)
