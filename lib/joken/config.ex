@@ -80,7 +80,6 @@ defmodule Joken.Config do
     - default_signer: a signer configuration key in config.exs (see `Joken.Signer`)
   """
   import Joken, only: [current_time: 0]
-  alias Joken.{Signer, Claim}
 
   @default_generated_claims [:exp, :iat, :nbf, :iss, :aud, :jti]
 
@@ -139,7 +138,6 @@ defmodule Joken.Config do
     quote do
       import Joken, only: [current_time: 0]
       import Joken.Config
-      alias Joken.{Signer, Claim}
       use Joken.Hooks
 
       @behaviour Joken.Config
@@ -238,6 +236,7 @@ defmodule Joken.Config do
   - aud: changes the audience claim. Default is "Joken"
   """
   @spec default_claims(Keyword.t()) :: Joken.token_config()
+  # credo:disable-for-next-line
   def default_claims(options \\ []) do
     skip = options[:skip] || []
     default_exp = options[:default_exp] || 2 * 60 * 60

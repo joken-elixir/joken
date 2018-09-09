@@ -77,7 +77,7 @@ defmodule Joken do
   iex> {:ok, _claim_map} = MyAppToken.verify_and_validate(token)
   ```
   """
-  alias Joken.{Signer, Claim}
+  alias Joken.{Claim, Signer}
   require Logger
 
   @typedoc """
@@ -112,7 +112,7 @@ defmodule Joken do
   See Joken's own tests for an example of how to override this with a customizable time mock.
   """
   @spec current_time() :: pos_integer
-  def current_time(), do: @current_time_adapter.current_time()
+  def current_time, do: @current_time_adapter.current_time()
 
   @doc """
   Decodes the header of a token without validation.

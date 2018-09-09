@@ -67,7 +67,6 @@ defmodule Joken.Hooks do
 
   Also, in `Joken.Config` a macro is imported for adding hooks with options. Example:
 
-
       defmodule ManyHooks do
         use Joken.Config
 

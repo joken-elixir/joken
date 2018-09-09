@@ -2,7 +2,7 @@ defmodule Joken.Signer do
   @moduledoc """
   Interface between Joken and JOSE for signing and verifying tokens.
   """
-  alias JOSE.{JWS, JWT, JWK}
+  alias JOSE.{JWK, JWS, JWT}
 
   @hs_algorithms ["HS256", "HS384", "HS512"]
   @rs_algorithms ["RS256", "RS384", "RS512"]

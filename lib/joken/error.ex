@@ -4,6 +4,8 @@ defmodule Joken.Error do
   """
   defexception [:reason]
 
+  alias Joken.Signer
+
   @doc false
   def exception(reason), do: %__MODULE__{reason: reason}
 
@@ -46,7 +48,7 @@ defmodule Joken.Error do
 
     Possible values are: 
 
-    #{inspect(Joken.Signer.algorithms())}
+    #{inspect(Signer.algorithms())}
     """
 
   def message(%__MODULE__{reason: :claim_not_valid}),

@@ -22,5 +22,5 @@ defmodule Joken.CurrentTime.OS do
   Uses DateTime.utc_now/0. 
   """
   @spec current_time() :: pos_integer
-  def current_time(), do: DateTime.utc_now() |> DateTime.to_unix()
+  def current_time, do: DateTime.utc_now() |> DateTime.to_unix()
 end
