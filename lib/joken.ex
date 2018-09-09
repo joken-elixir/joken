@@ -124,8 +124,11 @@ defmodule Joken do
   """
   @spec peek_header(bearer_token) :: claims
   def peek_header(token) when is_binary(token) do
-    %JOSE.JWS{alg: {_, alg}, fields: fields} = JOSE.JWT.peek_protected(token)
-    Map.put(fields, "alg", Atom.to_string(alg))
+    with {:ok, %{"protected" => header}} = expand(token) do
+      header
+      |> Base.url_decode64!(padding: false)
+      |> Jason.decode!()
+    end
   end
 
   @doc """
@@ -138,8 +141,36 @@ defmodule Joken do
   """
   @spec peek_claims(bearer_token) :: claims
   def peek_claims(token) when is_binary(token) do
-    %JOSE.JWT{fields: fields} = JOSE.JWT.peek_payload(token)
-    fields
+    with {:ok, %{"payload" => claims}} = expand(token) do
+      claims
+      |> Base.url_decode64!(padding: false)
+      |> Jason.decode!()
+    end
+  end
+
+  @doc """
+  Expands a signed token into its 3 parts: protected, payload and signature.
+
+  Protected is also called the JOSE header. It contains metadata only like:
+    - "typ": the token type
+    - "kid": an id for the key used in the signing
+    - "alg": the algorithm used to sign a token
+
+  Payload is the set of claims and signature is, well, the signature.
+  """
+  def expand(signed_token) do
+    case String.split(signed_token, ".") do
+      [header, payload, signature] ->
+        {:ok,
+         %{
+           "protected" => header,
+           "payload" => payload,
+           "signature" => signature
+         }}
+
+      _ ->
+        {:error, :token_malformed}
+    end
   end
 
   @doc """

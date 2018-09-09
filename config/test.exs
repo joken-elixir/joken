@@ -79,6 +79,11 @@ config :joken,
     -----END OPENSSH PRIVATE KEY-----    
     """
   ],
+  with_key_id: [
+    signer_alg: "HS256",
+    key_octet: "secret",
+    jose_extra_headers: %{"kid" => "my_key_id"}
+  ],
   missing_config_key: [
     signer_alg: "HS256"
   ],

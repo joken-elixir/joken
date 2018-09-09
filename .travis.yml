@@ -3,6 +3,7 @@ language: elixir
 
 elixir:
   - 1.6.6
+  - 1.7.3
 
 otp_release:
   - 19.3
@@ -12,5 +13,4 @@ otp_release:
 script:
   - mix credo
   - mix format --check-formatted
-  - mix docs # generate docs to check if it is not breaking.
   - MIX_ENV=test mix coveralls.travis
