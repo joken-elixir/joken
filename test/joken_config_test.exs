@@ -16,6 +16,13 @@ defmodule Joken.Config.Test do
       end
     end
 
+    property "any given audience will be validated" do
+      check all audience <- binary() do
+        aud_claim = Config.default_claims(aud: audience)["aud"]
+        assert aud_claim.validate.(audience, %{}, %{})
+      end
+    end
+
     test "generates exp, iss, iat, nbf claims" do
       assert Config.default_claims() |> Map.keys() == ["aud", "exp", "iat", "iss", "jti", "nbf"]
     end
@@ -42,8 +49,16 @@ defmodule Joken.Config.Test do
       assert Config.default_claims(skip: [:aud, :exp, :iat, :iss, :jti, :nbf]) == %{}
     end
 
-    test "can set a different issuer" do
-      assert Config.default_claims(iss: "Custom")["iss"].generate.() == "Custom"
+    test "defaults audience and issuer to Joken" do
+      claims = Config.default_claims()
+      assert claims["aud"].generate.() == "Joken"
+      assert claims["iss"].generate.() == "Joken"
+    end
+
+    test "can set a different audience and issuer" do
+      claims = Config.default_claims(aud: "aud", iss: "iss")
+      assert claims["aud"].generate.() == "aud"
+      assert claims["iss"].generate.() == "iss"
     end
 
     test "default exp validates properly" do

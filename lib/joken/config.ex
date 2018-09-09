@@ -235,24 +235,25 @@ defmodule Joken.Config do
   - skip: do not include claims in this list. Ex: ["iss"]
   - default_exp: changes the default expiration of the token. Default is 2 hours
   - iss: changes the issuer claim. Default is "Joken" 
-  - aud: changes the audience claim
+  - aud: changes the audience claim. Default is "Joken"
   """
   @spec default_claims(Keyword.t()) :: Joken.token_config()
   def default_claims(options \\ []) do
     skip = options[:skip] || []
     default_exp = options[:default_exp] || 2 * 60 * 60
     default_iss = options[:iss] || "Joken"
+    default_aud = options[:aud] || "Joken"
     generate_jti = options[:generate_jti] || (&Joken.generate_jti/0)
 
-    unless is_integer(default_exp) and is_binary(default_iss) and is_function(generate_jti) and
-             is_list(skip) do
+    unless is_integer(default_exp) and is_binary(default_iss) and is_binary(default_aud) and
+             is_function(generate_jti) and is_list(skip) do
       raise Joken.Error, :invalid_default_claims
     end
 
-    generate_config(skip, default_exp, default_iss, generate_jti)
+    generate_config(skip, default_exp, default_iss, default_aud, generate_jti)
   end
 
-  defp generate_config(skip, default_exp, default_iss, generate_jti) do
+  defp generate_config(skip, default_exp, default_iss, default_aud, generate_jti) do
     gen_exp_func = fn -> current_time() + default_exp end
 
     Enum.reduce(@default_generated_claims, %{}, fn claim, acc ->
@@ -273,7 +274,7 @@ defmodule Joken.Config do
             add_claim(acc, "iss", fn -> default_iss end, &(&1 == default_iss))
 
           :aud ->
-            add_claim(acc, "aud", fn -> default_iss end, &(&1 == default_iss))
+            add_claim(acc, "aud", fn -> default_aud end, &(&1 == default_aud))
 
           :jti ->
             add_claim(acc, "jti", generate_jti)
