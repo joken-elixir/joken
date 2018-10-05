@@ -17,8 +17,8 @@ defmodule Joken.Claim do
 
   @doc false
   def __generate_claim__({key, %__MODULE__{generate: gen_fun}}, acc)
-      when is_function(gen_fun) and is_binary(key) and is_map(acc) do
-    case Map.has_key?(acc, key) do
+      when is_binary(key) and is_map(acc) do
+    case Map.has_key?(acc, key) or not is_function(gen_fun, 0) do
       true ->
         acc
 
@@ -26,4 +26,6 @@ defmodule Joken.Claim do
         Map.put(acc, key, gen_fun.())
     end
   end
+
+  def __generate_claim__(_, acc), do: acc
 end

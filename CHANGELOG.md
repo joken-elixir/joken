@@ -16,4 +16,5 @@ For changes on versions 1.x look on the v1.5 branch.
 
 * Backwards incompatible changes
 
-- There is no `Joken.Plug` module anymore. Depending on requests we can bring that back, but we believe it is better to have that on a different library;
+- There is no `Joken.Plug` module anymore. Depending on requests we can bring that back, but we believe it is better to be on a different library;
+- The API surface changed a lot but you can still use Joken with the same [token pattern as versions 1.x](http://trivelop.de/2018/05/14/flow-elixir-designing-apis/). Please see our migrating guide.
