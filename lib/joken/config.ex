@@ -197,11 +197,11 @@ defmodule Joken.Config do
         do: Joken.generate_and_sign!(token_config(), extra_claims, key, __hooks__())
 
       @doc "Combines verify/2 and validate/1"
-      def verify_and_validate(bearer_token, context \\ %{}, key \\ __default_signer__()),
+      def verify_and_validate(bearer_token, key \\ __default_signer__(), context \\ %{}),
         do: Joken.verify_and_validate(token_config(), bearer_token, key, context, __hooks__())
 
       @doc "Same as verify_and_validate/2 but raises if error"
-      def verify_and_validate!(bearer_token, context \\ %{}, key \\ __default_signer__()),
+      def verify_and_validate!(bearer_token, key \\ __default_signer__(), context \\ %{}),
         do: Joken.verify_and_validate!(token_config(), bearer_token, key, context, __hooks__())
     end
   end
