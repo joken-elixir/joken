@@ -88,7 +88,72 @@ defmodule Joken.UseConfig.Test do
       jwt = ValidateWithContext.generate_and_sign!()
 
       assert {:ok, %{"custom" => "custom"}} =
-               ValidateWithContext.verify_and_validate(jwt, %{custom: "custom"})
+               ValidateWithContext.verify_and_validate(
+                 jwt,
+                 ValidateWithContext.__default_signer__(),
+                 %{custom: "custom"}
+               )
+    end
+
+    test "can pass a `Joken.Signer` instance" do
+      defmodule ValidateWithSigner do
+        use Joken.Config
+
+        def token_config, do: %{}
+      end
+
+      token =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.JXJ_RWHq_C9ZJbkrRGRg7NxSFm2hnVu5ToEa8Nx6OiU"
+
+      signer = Joken.Signer.create("HS256", "s3cret")
+
+      assert ValidateWithSigner.verify_and_validate(token, signer) == {:ok, %{}}
+    end
+  end
+
+  describe "__MODULE__.verify_and_validate!" do
+    test "can verify and validate a generated token" do
+      defmodule(SimpleVerifyAndValidateRaise, do: use(Joken.Config))
+
+      jwt = SimpleVerifyAndValidateRaise.generate_and_sign!()
+
+      assert %{} = SimpleVerifyAndValidateRaise.verify_and_validate!(jwt)
+    end
+
+    test "can validate a token with a context" do
+      defmodule ValidateWithContextRaise do
+        use Joken.Config
+
+        def token_config do
+          %{}
+          # Validate function with arity 2
+          |> add_claim("custom", fn -> "custom" end, fn val, _claims, ctx -> val == ctx.custom end)
+        end
+      end
+
+      jwt = ValidateWithContextRaise.generate_and_sign!()
+
+      assert %{"custom" => "custom"} =
+               ValidateWithContextRaise.verify_and_validate!(
+                 jwt,
+                 ValidateWithContextRaise.__default_signer__(),
+                 %{custom: "custom"}
+               )
+    end
+
+    test "can pass a `Joken.Signer` instance" do
+      defmodule ValidateWithSignerRaise do
+        use Joken.Config
+
+        def token_config, do: %{}
+      end
+
+      token =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.JXJ_RWHq_C9ZJbkrRGRg7NxSFm2hnVu5ToEa8Nx6OiU"
+
+      signer = Joken.Signer.create("HS256", "s3cret")
+
+      assert ValidateWithSignerRaise.verify_and_validate!(token, signer) == %{}
     end
   end
 end
