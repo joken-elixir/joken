@@ -18,13 +18,23 @@ defmodule JokenTest do
   describe "token introspection" do
     test "can peek header" do
       jwt = EmptyToken.generate_and_sign!()
-      assert Joken.peek_header(jwt) == %{"typ" => "JWT", "alg" => "HS256"}
+      assert Joken.peek_header(jwt) == {:ok, %{"typ" => "JWT", "alg" => "HS256"}}
+    end
+
+    test "peek header passes error up with invalid token" do
+      jwt = "not a token"
+      assert Joken.peek_header(jwt) == {:error, :token_malformed}
     end
 
     test "can peek body" do
       custom_claims = %{"my" => "claim"}
       jwt = EmptyToken.generate_and_sign!(custom_claims)
-      assert Joken.peek_claims(jwt) == custom_claims
+      assert Joken.peek_claims(jwt) == {:ok, custom_claims}
+    end
+
+    test "peek body passes error up with invalid token" do
+      jwt = "not a token"
+      assert Joken.peek_claims(jwt) == {:error, :token_malformed}
     end
   end
 

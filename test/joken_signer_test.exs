@@ -89,11 +89,11 @@ defmodule Joken.Signer.Test do
     signer = Signer.create("HS256", "secret", %{"kid" => key_id})
 
     {:ok, token, _claims} = Joken.encode_and_sign(%{}, signer)
-    assert %{"kid" => ^key_id, "alg" => "HS256"} = Joken.peek_header(token)
+    assert {:ok, %{"kid" => ^key_id, "alg" => "HS256"}} = Joken.peek_header(token)
   end
 
   test "can parse with key_id" do
     {:ok, token, _claims} = Joken.encode_and_sign(%{}, Signer.parse_config(:with_key_id))
-    assert %{"kid" => "my_key_id", "alg" => "HS256"} = Joken.peek_header(token)
+    assert {:ok, %{"kid" => "my_key_id", "alg" => "HS256"}} = Joken.peek_header(token)
   end
 end
