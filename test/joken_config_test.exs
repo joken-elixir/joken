@@ -176,7 +176,7 @@ defmodule Joken.Config.Test do
 
           {:ok, cur_value} when value != cur_value ->
             raise """
-            Value for key #{key} differs. 
+            Value for key #{key} differs.
 
             Expected: #{inspect(value)}
             Got:      #{inspect(cur_value)}

@@ -12,7 +12,7 @@ token_config = %{}
 
 # Let's create a Joken.Claim
 iss = %Joken.Claim{
-         generate: fn -> "My issuer" end, 
+         generate: fn -> "My issuer" end,
          validate: fn claim_val, claims, context -> claim_val == "My issuer" end
       }
 
@@ -48,7 +48,7 @@ In Joken 2.0 you can enpasulate all your token logic in a module with `Joken.Con
 ``` elixir
 defmodule MyAppToken do
   use Joken.Config
-  
+
   # other functions here...
 end
 ```
@@ -79,7 +79,7 @@ So, if you call `MyApp.Token.generate_and_sign/2` **and** you have a key configu
 - "nbf": defaults to `Joken.current_time/0` with validation
 - "iss": defaults to "Joken" with validation
 - "aud": defaults to "Joken" with validation
-- "jti": defaults to `Joken.generate_jti/0` 
+- "jti": defaults to `Joken.generate_jti/0`
 
 It is important to notice that this configuration is used for claims we want to either generate dynamically (like all time based claims) or validate (like "iss" claim that we want to ensure is the same we use to generate our tokens).
 
@@ -90,7 +90,7 @@ You can customize token generation and validation by overriding the function `to
 ``` elixir
 defmodule MyApp.Token do
   use Joken.Config
-  
+
   def token_config do
     %{}
     |> add_claim("my_key", fn -> "My custom claim" end, &(&1 == "My custom claim"))

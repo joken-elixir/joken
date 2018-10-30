@@ -11,16 +11,16 @@ defmodule Joken.Error do
 
   def message(%__MODULE__{reason: :no_default_signer}),
     do: """
-    Can't sign your token because couldn't create a signer. 
+    Can't sign your token because couldn't create a signer.
 
-    To create a signer we need a key in config.exs. You can define 
+    To create a signer we need a key in config.exs. You can define
     a key in your config.exs in several ways:
 
     1. For the default key, use `config :joken, default_signer: <key_params>`
     2. For other keys, use `config :joken, <key_name>: <key_params>`
 
     If you are using different than default keys, you can pass it as the second
-    argument to `generate_and_sign/2` or as a parameter for `use Joken.Config`, 
+    argument to `generate_and_sign/2` or as a parameter for `use Joken.Config`,
     example: `use Joken.Config, default_signer: <key_name>`
 
     See configuration docs for possible values of <key_params>.
@@ -44,9 +44,9 @@ defmodule Joken.Error do
 
   def message(%__MODULE__{reason: :unrecognized_algorithm}),
     do: """
-    Couldn't recognize the signer algorithm. 
+    Couldn't recognize the signer algorithm.
 
-    Possible values are: 
+    Possible values are:
 
     #{inspect(Signer.algorithms())}
     """
@@ -60,8 +60,8 @@ defmodule Joken.Error do
 
   def message(%__MODULE__{reason: :claim_configuration_not_valid}),
     do: """
-    Claim configuration is not valid. You must have either a generation function or a 
-    validation function. 
+    Claim configuration is not valid. You must have either a generation function or a
+    validation function.
 
     If both are nil you don`t need a Joken.Claim configuration. You can pass any map of values
     to `Joken.Config.generate_and_sign/3`. Verify will only use claims that have a validation
@@ -70,7 +70,7 @@ defmodule Joken.Error do
         defmodule CustomClaimTest do
           use Joken.Config
         end
-        
+
         CustomClaimTest.generate_and_sign %{"a claim without configuration" => "any value"}
     """
 

@@ -6,11 +6,11 @@ One possible solution to this problem is to have a different token configuration
 
 ## Joken time
 
-We have ifntroduced an adapter for producing any time sensitive claim values. `Joken.current_time/0` looks for the implementation it will use in the configuration. This is the adapter pattern that helps you mock time if you need to. 
+We have ifntroduced an adapter for producing any time sensitive claim values. `Joken.current_time/0` looks for the implementation it will use in the configuration. This is the adapter pattern that helps you mock time if you need to.
 
 The default implementation we use is `Joken.CurrentTime.OS`. It uses `DateTime` to fetch current time in seconds.
 
-In our tests we have a `Joken.CurrentTime.Mock` that can freeze time or advance as we want it. Please, look in our test base for one possible solution. 
+In our tests we have a `Joken.CurrentTime.Mock` that can freeze time or advance as we want it. Please, look in our test base for one possible solution.
 
 We don't ship `Joken.CurrentTime.Mock` in the library as this is only one possible way of solving this. If you already have a time mocking mechanism in your app, you can make Joken use it with:
 
