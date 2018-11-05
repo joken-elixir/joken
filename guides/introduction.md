@@ -9,7 +9,7 @@ Joken is a JWT (Json Web Token) library centered on 4 core operations:
   - Signing: using a `Joken.Signer`
   - Verifying: also using a `Joken.Signer`
   - Validation: running custom validations for received claims
-  
+
 These core functions are not coupled so that you can use Joken only for verying and validating incoming tokens or only for generating tokens for other consumers.
 
 It is based upon the awesome [`erlang-jose`](https://github.com/potatosalad/erlang-jose/). Besides having a friendlier Elixir API we include some extras:
@@ -22,14 +22,14 @@ It is based upon the awesome [`erlang-jose`](https://github.com/potatosalad/erla
   - A good perfomance analysis for ensuring this hot-path in APIs won't be your bottleneck. Please see our perfomance documentation to check what we are talking about;
   - Good defaults. Joken comes with chosen good defaults for parsing JSON (Jason) and generating claims;
   - Hooks for extending Joken functionality. All core actions in Joken have a corresponding hook for extending its functionality. See our hooks guide.
-  
+
 ## JWT algorithms
 
 Joken supports all algorithms that JOSE supports. That contains:
 
   - All HS, RS, ES, PS signing algorithms.
   - All Edwards algorithms (Ed25519, Ed25519ph, Ed448, Ed448ph)
-  
+
 See [jose JWS algorithm support](https://github.com/potatosalad/erlang-jose#json-web-signature-jws-rfc-7515) for more information.
 
 ## Usage
@@ -39,11 +39,11 @@ As easy as:
 1. A key configuration:
 
 ``` elixir
-# config/dev.exs 
+# config/dev.exs
 config :joken, default_signer: "secret"
 ```
 
-Optionally, a signer instance: 
+Optionally, a signer instance:
 
 ``` elixir
 signer = Joken.Signer.create("HS256", "secret")

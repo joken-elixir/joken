@@ -9,12 +9,12 @@ For each algorithm, a specific key format is expected. HS algorithms expect an o
 A signer is configured using the following parameters:
 
   - **signer_alg** : "HS256", "HS384" and so on
-  - **key_pem** : a binary containing a key in PEM encoding format 
+  - **key_pem** : a binary containing a key in PEM encoding format
   - **key_openssh** : a binary containing a private key in Open SSH encoding format
   - **key_map** : a map with the raw parameters of the key
   - **key_octet** : a binary used as the password for HS algorithms only
   - **key_index** : the index of the key on a pem or openssh key set defaults to 0
-  
+
 Let's see some examples:
 
 ``` elixir
@@ -27,7 +27,7 @@ Let's see some examples:
     -----END RSA PRIVATE KEY-----
     """
   ]
-  
+
   # HS512 with an octet key
   [
     signer_alg: "HS512",
@@ -98,7 +98,7 @@ Many people ask why should you use an algorithm with a private/public key pair. 
 
 This is the main benefit. And sure is a great one :)
 
-So, if you only call verify functions, you don't need the private key. But, if you call sign functions, you will need the private key. 
+So, if you only call verify functions, you don't need the private key. But, if you call sign functions, you will need the private key.
 
 One thing that might seem confusing is that with some private keys you can **SIGN** and **VERIFY**. WTH??? Yep, some private keys contain the public key too inside of them (for example with RSA keys). So, you can sign and verify all the same with the same key.
 
@@ -110,7 +110,7 @@ Why is that so? Well, to use the key we need to parse it into the erlang expecte
 
 ## Dynamic signers
 
-All functions that receive a key argument may be passed an instance of a `Joken.Signer` in its place. This is a convenience for when you need a dynamic configuration as when you are retrieving the key from an endpoint. 
+All functions that receive a key argument may be passed an instance of a `Joken.Signer` in its place. This is a convenience for when you need a dynamic configuration as when you are retrieving the key from an endpoint.
 
 Example:
 

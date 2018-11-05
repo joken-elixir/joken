@@ -15,17 +15,17 @@ defmodule Joken do
   Joken brings an easier Elixir API with some added functionality:
 
     - Validating claims. JOSE does not provide validation other than signature verification.
-    - `config.exs` friendly. You can optionally define your signer configuration straight in your 
+    - `config.exs` friendly. You can optionally define your signer configuration straight in your
     `config.exs`.
-    - Portable configuration. All your token logic can be encapsulated in a module with behaviours. 
-    - Enhanced errors. Joken strives to be as informative as it can when errors happen be it at 
+    - Portable configuration. All your token logic can be encapsulated in a module with behaviours.
+    - Enhanced errors. Joken strives to be as informative as it can when errors happen be it at
     compilation or at validation time.
-    - Debug friendly. When a token fails validation, a `Logger` debug message will show which claim 
-    failed validation with which value. The return value, though for security reasons, does not 
+    - Debug friendly. When a token fails validation, a `Logger` debug message will show which claim
+    failed validation with which value. The return value, though for security reasons, does not
     contain these information.
-    - Performance. We have a benchmark suite for identifying where we can have a better performance. 
-    From this analysis came: Jason adapter for JOSE, redefinition of :base64url module and other 
-    minor tweaks. 
+    - Performance. We have a benchmark suite for identifying where we can have a better performance.
+    From this analysis came: Jason adapter for JOSE, redefinition of :base64url module and other
+    minor tweaks.
 
   ## Usage
 
@@ -35,10 +35,10 @@ defmodule Joken do
     - Signer configuration
     - Hooks
 
-  The portable token configuration is a map of binary keys to `Joken.Claim` structs and is used to 
+  The portable token configuration is a map of binary keys to `Joken.Claim` structs and is used to
   dynamically generate and validate tokens.
 
-  A signer is an instance of `Joken.Signer` that encapsulates the algorithm and the key configuration 
+  A signer is an instance of `Joken.Signer` that encapsulates the algorithm and the key configuration
   used to sign and verify a token.
 
   A hook is an implementation of the behaviour `Joken.Hooks` for easy plugging into the lifecycle of
@@ -46,7 +46,7 @@ defmodule Joken do
 
   There are 2 forms of using Joken:
 
-  1. Pure data structures. You can create your token configuration and signer and use them with this 
+  1. Pure data structures. You can create your token configuration and signer and use them with this
   module for all 4 operations: verify, validate, generate and sign.
 
   ```
@@ -60,7 +60,7 @@ defmodule Joken do
   iex> {:ok, jwt, claims} = Joken.encode_and_sign(claims, signer)
   ```
 
-  2. With the encapsulated module approach using `Joken.Config`. See the docs for `Joken.Config` for 
+  2. With the encapsulated module approach using `Joken.Config`. See the docs for `Joken.Config` for
   more details.
 
   ```
@@ -101,12 +101,12 @@ defmodule Joken do
   @current_time_adapter Application.get_env(:joken, :current_time_adapter, Joken.CurrentTime.OS)
 
   @doc """
-  Retrieves current time in seconds. 
+  Retrieves current time in seconds.
 
   This implementation uses an adapter so that you can replace it on your tests. The adapter is
   set through `config.exs`. Example:
 
-      config :joken, 
+      config :joken,
         current_time_adapter: Joken.CurrentTime.OS
 
   See Joken's own tests for an example of how to override this with a customizable time mock.
@@ -117,9 +117,9 @@ defmodule Joken do
   @doc """
   Decodes the header of a token without validation.
 
-  **Use this with care!** This DOES NOT validate the token signature and therefore the token might 
-  be invalid. The common use case for this function is when you need info to decide on which signer 
-  will be used. Even though there is a use case for this, be extra careful to handle data without 
+  **Use this with care!** This DOES NOT validate the token signature and therefore the token might
+  be invalid. The common use case for this function is when you need info to decide on which signer
+  will be used. Even though there is a use case for this, be extra careful to handle data without
   validation.
   """
   @spec peek_header(bearer_token) :: claims
@@ -134,9 +134,9 @@ defmodule Joken do
   @doc """
   Decodes the claim set of a token without validation.
 
-  **Use this with care!** This DOES NOT validate the token signature and therefore the token might 
-  be invalid. The common use case for this function is when you need info to decide on which signer 
-  will be used. Even though there is a use case for this, be extra careful to handle data without 
+  **Use this with care!** This DOES NOT validate the token signature and therefore the token might
+  be invalid. The common use case for this function is when you need info to decide on which signer
+  will be used. Even though there is a use case for this, be extra careful to handle data without
   validation.
   """
   @spec peek_claims(bearer_token) :: claims
@@ -175,7 +175,7 @@ defmodule Joken do
 
   @doc """
   Default function for generating `jti` claims. This was inspired by the `Plug.RequestId` generation.
-  It avoids using `strong_rand_bytes` as it is known to have some contention when running with many 
+  It avoids using `strong_rand_bytes` as it is known to have some contention when running with many
   schedulers.
   """
   @spec generate_jti() :: binary
@@ -251,7 +251,7 @@ defmodule Joken do
   @doc """
   Validates the claim map with the given token configuration and the context.
 
-  Context can by any term. It is always passed as the second argument to the validate 
+  Context can by any term. It is always passed as the second argument to the validate
   function.
 
   It also executes hooks if any are given.
@@ -302,7 +302,7 @@ defmodule Joken do
   end
 
   @doc """
-  Generates claims with the given token configuration and merges them with the given extra claims. 
+  Generates claims with the given token configuration and merges them with the given extra claims.
 
   It also executes hooks if any are given.
   """

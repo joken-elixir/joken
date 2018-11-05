@@ -11,14 +11,14 @@ defmodule Joken.Hooks do
 
   When you want to let execution proceed, result must be a tuple where:
     - the first element is the status: `:ok` | `{:error, reason}`
-    - other arguments are what is expected as the arguments for the next hook in 
+    - other arguments are what is expected as the arguments for the next hook in
       the chain
 
   For example:
 
       defmodule MyHaltHook do
         use Joken.Hooks
-      
+
         @impl true
         def before_generate(_hook_options, _extra_claims, _token_config) do
           {:halt, {:error, :no_go}}
@@ -39,7 +39,7 @@ defmodule Joken.Hooks do
             {:error, :invalid_signature} = err ->
               Logger.error("Check signer!!!")
               {:halt, err}
-          
+
             :ok ->
               {:cont, {:ok, bearer_token, claims_map, signer}}
           end
@@ -49,13 +49,13 @@ defmodule Joken.Hooks do
   ## `Joken.Config`
 
   When you create a module that has `use Joken.Config` it automatically implements
-  this behaviour with overridable functions. You can simply override a callback 
-  implementation directly and it will be triggered when using any of the generated 
+  this behaviour with overridable functions. You can simply override a callback
+  implementation directly and it will be triggered when using any of the generated
   functions. Example:
 
       defmodule HookToken do
         use Joken.Config
-      
+
         @impl Joken.Hooks
         def before_generate(extra, token_config) do
           IO.puts("Before generating claims")

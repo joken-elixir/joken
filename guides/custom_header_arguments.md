@@ -2,9 +2,9 @@
 
 By default, a header in a token is only meant for static information that helps in knowing what needs to be done to properly verify the signature.
 
-Common extra claims in the header might be the key id used to sign the contents, crypto algorithms and so on. 
+Common extra claims in the header might be the key id used to sign the contents, crypto algorithms and so on.
 
-If you need to generate extra header claims, you can do that with signers. There are two ways: creating your own signers or through the configuration. 
+If you need to generate extra header claims, you can do that with signers. There are two ways: creating your own signers or through the configuration.
 
 An example of creating a custom signer with extra header claims:
 
