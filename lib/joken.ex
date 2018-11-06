@@ -124,10 +124,10 @@ defmodule Joken do
   """
   @spec peek_header(bearer_token) :: {:ok, claims} | {:error, error_reason}
   def peek_header(token) when is_binary(token) do
-    with {:ok, %{"protected" => header}} <- expand(token) do
-      header
-      |> Base.url_decode64!(padding: false)
-      |> Jason.decode()
+    with {:ok, %{"protected" => protected}} <- expand(token),
+         {:ok, decoded_str} <- Base.url_decode64(protected, padding: false),
+         {:ok, header} <- Jason.decode(decoded_str) do
+      {:ok, header}
     else
       error -> error
     end
@@ -143,10 +143,10 @@ defmodule Joken do
   """
   @spec peek_claims(bearer_token) :: {:ok, claims} | {:error, error_reason}
   def peek_claims(token) when is_binary(token) do
-    with {:ok, %{"payload" => claims}} <- expand(token) do
-      claims
-      |> Base.url_decode64!(padding: false)
-      |> Jason.decode()
+    with {:ok, %{"payload" => payload}} <- expand(token),
+         {:ok, decoded_str} <- Base.url_decode64(payload, padding: false),
+         {:ok, claims} <- Jason.decode(decoded_str) do
+      {:ok, claims}
     else
       error -> error
     end
