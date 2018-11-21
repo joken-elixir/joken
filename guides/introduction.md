@@ -2,8 +2,6 @@
 
 [![Documentation](https://img.shields.io/badge/docs-hexpm-blue.svg)](http://hexdocs.pm/joken/) [![Downloads](https://img.shields.io/hexpm/dt/joken.svg)](https://hex.pm/packages/joken) [![Build](https://travis-ci.org/bryanjos/joken.svg?branch=master)](https://travis-ci.org/bryanjos/joken)
 
-[Documentation](http://hexdocs.pm/joken/)
-
 Joken is a JWT (Json Web Token) library centered on 4 core operations:
   - Generation of claims: for instance, time based claims.
   - Signing: using a `Joken.Signer`

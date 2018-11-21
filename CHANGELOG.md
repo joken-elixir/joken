@@ -1,4 +1,4 @@
-## v2.0-rc2
+## v2.0-rc3
 
 This is a re-write with a focus on making a clearer API surface with less ambiguity and more future proof without breaking backwards compatibility once again.
 
