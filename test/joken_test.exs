@@ -92,7 +92,7 @@ defmodule JokenTest do
         use Joken.Hooks
 
         @impl true
-        def before_generate(_opts, _status, _extra_claims, _token_config),
+        def before_generate(_opts, _input),
           do: {:halt, {:error, :my_reason}}
       end
 
@@ -110,7 +110,7 @@ defmodule JokenTest do
         use Joken.Hooks
 
         @impl true
-        def before_verify(_opts, _status, _token, _signer),
+        def before_verify(_opts, _input),
           do: {:halt, {:error, :my_reason}}
       end
 
@@ -133,5 +133,13 @@ defmodule JokenTest do
 
   test "returns error while trying to expand malformed token" do
     assert {:error, :token_malformed} == Joken.expand("asd")
+  end
+
+  test "custom signer is accepted for generate_and_sign" do
+    signer = Joken.Signer.create("HS256", "custom signer")
+    custom_claim = Joken.CurrentTime.OS.current_time()
+
+    assert token = Joken.generate_and_sign!(%{}, %{"some" => custom_claim}, signer)
+    assert Joken.peek_claims(token) == {:ok, %{"some" => custom_claim}}
   end
 end

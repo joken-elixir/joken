@@ -24,19 +24,18 @@ defmodule Joken do
     failed validation with which value. The return value, though for security reasons, does not
     contain these information.
     - Performance. We have a benchmark suite for identifying where we can have a better performance.
-    From this analysis came: Jason adapter for JOSE, redefinition of :base64url module and other
-    minor tweaks.
+    From this analysis came: Jason adapter for JOSE and other minor tweaks.
 
   ## Usage
 
   Joken has 3 basic concepts:
 
-    - Portable token configuration
+    - Portable token claims configuration
     - Signer configuration
     - Hooks
 
-  The portable token configuration is a map of binary keys to `Joken.Claim` structs and is used to
-  dynamically generate and validate tokens.
+  The portable token claims configuration is a map of binary keys to `Joken.Claim` structs and is used 
+  to dynamically generate and validate tokens.
 
   A signer is an instance of `Joken.Signer` that encapsulates the algorithm and the key configuration
   used to sign and verify a token.
@@ -77,7 +76,7 @@ defmodule Joken do
   iex> {:ok, _claim_map} = MyAppToken.verify_and_validate(token)
   ```
   """
-  alias Joken.{Claim, Signer}
+  alias Joken.{Claim, Hooks, Signer}
   require Logger
 
   @typedoc """
@@ -94,8 +93,13 @@ defmodule Joken do
   @typedoc "A portable configuration of claims for generation and validation."
   @type token_config :: %{binary => Joken.Claim.t()}
 
-  @typedoc "Error reason which might contain dynamic data for helping understand the cause"
+  @typedoc "Error reason which might contain dynamic data for helping understand the cause."
   @type error_reason :: atom | Keyword.t()
+
+  @type generate_result :: {:ok, claims} | {:error, error_reason}
+  @type sign_result :: {:ok, bearer_token, claims} | {:error, error_reason}
+  @type verify_result :: {:ok, claims} | {:error, error_reason}
+  @type validate_result :: {:ok, claims} | {:error, error_reason}
 
   # This ensures we provide an easy to setup test environment
   @current_time_adapter Application.get_env(:joken, :current_time_adapter, Joken.CurrentTime.OS)
@@ -193,7 +197,7 @@ defmodule Joken do
     Base.hex_encode32(binary, case: :lower)
   end
 
-  @doc "Combines generate with encode_and_sign"
+  @doc "Combines `generate_claims/3` with `encode_and_sign/3`"
   @spec generate_and_sign(token_config, claims, signer_arg, [module]) ::
           {:ok, bearer_token, claims} | {:error, error_reason}
   def generate_and_sign(
@@ -208,8 +212,9 @@ defmodule Joken do
     end
   end
 
-  @doc "Same as generate_and_sign/4 but raises if result is an error"
-  @spec generate_and_sign!(token_config, claims, signer_arg, [module]) :: binary
+  @doc "Same as `generate_and_sign/4` but raises if result is an error"
+  @spec generate_and_sign!(token_config, claims, signer_arg, [module]) ::
+          bearer_token | no_return()
   def generate_and_sign!(
         token_config,
         extra_claims \\ %{},
@@ -230,7 +235,7 @@ defmodule Joken do
   @doc """
   Verifies a bearer_token using the given signer and executes hooks if any are given.
   """
-  @spec verify(bearer_token, signer_arg, [module]) :: {:ok, claims} | {:error, error_reason}
+  @spec verify(bearer_token, signer_arg, [module]) :: verify_result()
   def verify(bearer_token, signer, hooks \\ [])
 
   def verify(bearer_token, nil, hooks) when is_binary(bearer_token) and is_list(hooks),
@@ -240,11 +245,12 @@ defmodule Joken do
     do: verify(bearer_token, parse_signer(signer), hooks)
 
   def verify(bearer_token, signer = %Signer{}, hooks) when is_binary(bearer_token) do
-    with {:ok, bearer_token, signer} <- before_verify(bearer_token, signer, hooks),
+    with {:ok, {bearer_token, signer}} <-
+           Hooks.run_before_hook(hooks, :before_verify, {bearer_token, signer}),
          :ok <- check_signer_not_empty(signer),
-         result = {:ok, claim_map} <- Signer.verify(bearer_token, signer),
-         status <- parse_status(result),
-         {:ok, claims_map} <- after_verify(status, bearer_token, claim_map, signer, hooks) do
+         result <- Signer.verify(bearer_token, signer),
+         {:ok, claims_map} <-
+           Hooks.run_after_hook(hooks, :after_verify, result, {bearer_token, signer}) do
       {:ok, claims_map}
     end
   end
@@ -256,20 +262,27 @@ defmodule Joken do
   Validates the claim map with the given token configuration and the context.
 
   Context can by any term. It is always passed as the second argument to the validate
-  function.
+  function. It can be, for example, a user struct or anything.
 
   It also executes hooks if any are given.
   """
-  @spec validate(token_config, claims, term, [module]) :: {:ok, claims} | {:error, error_reason}
+  @spec validate(token_config, claims, term, [module]) :: validate_result()
   def validate(token_config, claims_map, context \\ nil, hooks \\ []) do
-    with {:ok, claims_map, config} <- before_validate(claims_map, token_config, hooks),
-         status <- reduce_validations(token_config, claims_map, context),
-         {:ok, claims} <- after_validate(status, claims_map, config, hooks) do
+    with {:ok, {token_config, claims_map, context}} <-
+           Hooks.run_before_hook(hooks, :before_validate, {token_config, claims_map, context}),
+         result <- reduce_validations(token_config, claims_map, context),
+         {:ok, _config, claims, _context} <-
+           Hooks.run_after_hook(
+             hooks,
+             :after_validate,
+             result,
+             {token_config, claims_map, context}
+           ) do
       {:ok, claims}
     end
   end
 
-  @doc "Combines verify and validate operations"
+  @doc "Combines `verify/3` and `validate/4` operations"
   @spec verify_and_validate(token_config, bearer_token, signer_arg, term, [module]) ::
           {:ok, claims} | {:error, error_reason}
   def verify_and_validate(
@@ -285,8 +298,9 @@ defmodule Joken do
     end
   end
 
-  @doc "Same as verify_and_validate/4 but raises on error"
-  @spec verify_and_validate!(token_config, bearer_token, term, [module]) :: claims
+  @doc "Same as `verify_and_validate/5` but raises on error"
+  @spec verify_and_validate!(token_config, bearer_token, signer_arg, term, [module]) ::
+          claims | no_return()
   def verify_and_validate!(
         token_config,
         bearer_token,
@@ -294,9 +308,9 @@ defmodule Joken do
         context \\ nil,
         hooks \\ []
       ) do
-    result = verify_and_validate(token_config, bearer_token, signer, context, hooks)
-
-    case result do
+    token_config
+    |> verify_and_validate(bearer_token, signer, context, hooks)
+    |> case do
       {:ok, claims} ->
         claims
 
@@ -310,17 +324,22 @@ defmodule Joken do
 
   It also executes hooks if any are given.
   """
-  @spec generate_claims(token_config, claims | nil, [module]) ::
-          {:ok, claims} | {:error, error_reason}
-
+  @spec generate_claims(token_config, claims | nil, [module]) :: generate_result
   def generate_claims(token_config, extra \\ %{}, hooks \\ [])
 
   def generate_claims(token_config, nil, hooks), do: generate_claims(token_config, %{}, hooks)
 
   def generate_claims(token_config, extra_claims, hooks) do
-    with {:ok, extra_claims, token_config} <- before_generate(extra_claims, token_config, hooks),
+    with {:ok, {token_config, extra_claims}} <-
+           Hooks.run_before_hook(hooks, :before_generate, {token_config, extra_claims}),
          claims <- Enum.reduce(token_config, extra_claims, &Claim.__generate_claim__/2),
-         {:ok, claims} <- after_generate(claims, hooks) do
+         {:ok, claims} <-
+           Hooks.run_after_hook(
+             hooks,
+             :after_generate,
+             {:ok, claims},
+             {token_config, extra_claims}
+           ) do
       {:ok, claims}
     end
   end
@@ -330,7 +349,7 @@ defmodule Joken do
 
   It also executes hooks if any are given.
   """
-  @spec encode_and_sign(claims, signer_arg, [module]) :: {:ok, bearer_token, claims}
+  @spec encode_and_sign(claims, signer_arg, [module]) :: sign_result
   def encode_and_sign(claims, signer, hooks \\ [])
 
   def encode_and_sign(claims, nil, hooks),
@@ -340,33 +359,24 @@ defmodule Joken do
     do: encode_and_sign(claims, parse_signer(signer), hooks)
 
   def encode_and_sign(claims, %Signer{} = signer, hooks) do
-    with {:ok, claims, signer} <- before_sign(claims, signer, hooks),
+    with {:ok, {claims, signer}} <- Hooks.run_before_hook(hooks, :before_sign, {claims, signer}),
          :ok <- check_signer_not_empty(signer),
-         result = {_, token} <- Signer.sign(claims, signer),
-         status <- parse_status(result),
-         {:ok, token, claims} <- after_sign(status, token, claims, signer, hooks) do
+         result <- Signer.sign(claims, signer),
+         {:ok, token} <- Hooks.run_after_hook(hooks, :after_sign, result, {claims, signer}) do
       {:ok, token, claims}
     end
   end
 
-  defp parse_status(:ok), do: :ok
-  defp parse_status({:ok, _}), do: :ok
-  defp parse_status({:error, _} = res), do: res
-
   defp parse_signer(signer_key) do
-    signer = Signer.parse_config(signer_key)
-
-    if is_nil(signer),
-      do: raise(Joken.Error, :no_default_signer),
-      else: signer
+    Signer.parse_config(signer_key) || raise(Joken.Error, :no_default_signer)
   end
 
-  defp reduce_validations(_config, %{} = claims, _context) when map_size(claims) == 0 do
-    :ok
-  end
+  defp reduce_validations(_config, %{} = claims, _context) when map_size(claims) == 0,
+    do: {:ok, claims}
 
   defp reduce_validations(config, claim_map, context) do
-    Enum.reduce_while(claim_map, nil, fn {key, claim_val}, _acc ->
+    claim_map
+    |> Enum.reduce_while(nil, fn {key, claim_val}, _acc ->
       # When there is a function for validating the token
       with %Claim{validate: val_func} when not is_nil(val_func) <- config[key],
            true <- val_func.(claim_val, claim_map, context) do
@@ -393,143 +403,9 @@ defmodule Joken do
           {:halt, {:error, message: "Invalid token", claim: key, claim_val: claim_val}}
       end
     end)
-  end
-
-  defp before_verify(bearer_token, signer, hooks) do
-    run_hooks(
-      hooks,
-      {:ok, bearer_token, signer},
-      fn hook, options, {status, bearer_token, signer} ->
-        hook.before_verify(options, status, bearer_token, signer)
-      end
-    )
-  end
-
-  defp before_validate(claims_map, token_config, hooks) do
-    run_hooks(
-      hooks,
-      {:ok, claims_map, token_config},
-      fn hook, options, {status, claims_map, token_config} ->
-        hook.before_validate(options, status, claims_map, token_config)
-      end
-    )
-  end
-
-  defp before_generate(extra_claims, token_config, hooks) do
-    run_hooks(
-      hooks,
-      {:ok, extra_claims, token_config},
-      fn hook, options, {status, extra_claims, token_config} ->
-        hook.before_generate(options, status, extra_claims, token_config)
-      end
-    )
-  end
-
-  defp before_sign(claims, signer, hooks) do
-    run_hooks(
-      hooks,
-      {:ok, claims, signer},
-      fn hook, options, {status, claims, signer} ->
-        hook.before_sign(options, status, claims, signer)
-      end
-    )
-  end
-
-  defp after_verify(status, bearer_token, claims_map, signer, hooks) do
-    result =
-      run_hooks(
-        hooks,
-        {status, bearer_token, claims_map, signer},
-        fn hook, options, {status, bearer_token, claims_map, signer} ->
-          hook.after_verify(options, status, bearer_token, claims_map, signer)
-        end
-      )
-
-    with {:ok, _bearer_token, claims_map, _signer} <- result do
-      {:ok, claims_map}
+    |> case do
+      :ok -> {:ok, claim_map}
+      err -> err
     end
   end
-
-  defp after_validate(status, claims_map, config, hooks) do
-    result =
-      run_hooks(
-        hooks,
-        {status, claims_map, config},
-        fn hook, options, {status, claims_map, config} ->
-          hook.after_validate(options, status, claims_map, config)
-        end
-      )
-
-    with {:ok, claims, _config} <- result do
-      {:ok, claims}
-    end
-  end
-
-  defp after_generate(claims, hooks) do
-    run_hooks(
-      hooks,
-      {:ok, claims},
-      fn hook, options, {status, claims} ->
-        hook.after_generate(options, status, claims)
-      end
-    )
-  end
-
-  defp after_sign(status, bearer_token, claims, signer, hooks) do
-    result =
-      run_hooks(
-        hooks,
-        {status, bearer_token, claims, signer},
-        fn hook, options, {status, bearer_token, claims, signer} ->
-          hook.after_sign(options, status, bearer_token, claims, signer)
-        end
-      )
-
-    with {:ok, bearer_token, claims, _signer} <- result do
-      {:ok, bearer_token, claims}
-    end
-  end
-
-  defp run_hooks([], args, _fun), do: args |> check_status()
-
-  defp run_hooks(hooks, args, fun) do
-    hooks
-    |> Enum.reduce_while(args, fn hook, args ->
-      {hook, options} = unwrap_hook(hook)
-
-      result = fun.(hook, options, args)
-
-      case result do
-        {:cont, result} ->
-          {:cont, result}
-
-        {:halt, result} ->
-          {:halt, result}
-
-        _ ->
-          {:halt, {:error, :wrong_hook_callback}}
-      end
-    end)
-    |> check_status()
-  end
-
-  defp check_status(result) when is_tuple(result) do
-    case elem(result, 0) do
-      :ok ->
-        result
-
-      :error ->
-        {:error, elem(result, 1)}
-
-      # When, for example, validation fails and hooks don't change status
-      {:error, _reason} = err ->
-        err
-
-      _ ->
-        {:error, :wrong_hook_status}
-    end
-  end
-
-  defp unwrap_hook({_hook_module, _opts} = hook), do: hook
-  defp unwrap_hook(hook) when is_atom(hook), do: {hook, []}
 end

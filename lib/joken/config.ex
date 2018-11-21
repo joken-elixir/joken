@@ -16,8 +16,8 @@ defmodule Joken.Config do
       }}
 
   Since this is cumbersome and error prone, you can use this module with a more fluent API, see:
-    - default_claims/1
-    - add_claim/4
+    - `default_claims/1``
+    - `add_claim/4`
 
   ## Automatically load and generate functions (recommended)
 
@@ -95,7 +95,8 @@ defmodule Joken.Config do
 
   Extra claims must be a map with keys as binaries. Ex: %{"sub" => "some@one.com"}
   """
-  @callback generate_claims(extra :: Joken.claims()) :: Joken.claims()
+  @callback generate_claims(extra :: Joken.claims()) ::
+              {:ok, Joken.claims()} | {:error, Joken.error_reason()}
 
   @doc """
   Encodes the given map of claims to JSON and signs it.
@@ -109,7 +110,8 @@ defmodule Joken.Config do
     3. If no key was passed for the use macro then we will use the one configured as 
     `:default_signer` in the configuration.
   """
-  @callback encode_and_sign(Joken.claims(), key :: atom | nil) :: Joken.bearer_token()
+  @callback encode_and_sign(Joken.claims(), Joken.signer_arg() | nil) ::
+              {:ok, Joken.bearer_token(), Joken.claims()} | {:error, Joken.error_reason()}
 
   @doc """
   Verifies token's signature using a Joken.Signer.
@@ -127,12 +129,13 @@ defmodule Joken.Config do
   - `{:error, [message: message, claim: key, claim_val: claim_value]}` where message can be used
   on the frontend (it does not contain which claim nor which value failed).
   """
-  @callback verify(Joken.bearer_token(), key :: atom | nil) :: Joken.claims()
+  @callback verify(Joken.bearer_token(), Joken.signer_arg() | nil) ::
+              {:ok, Joken.claims()} | {:error, Joken.error_reason()}
 
   @doc """
   Runs validations on the already verified token. 
   """
-  @callback validate(Joken.claims()) :: Joken.claims()
+  @callback validate(Joken.claims()) :: {:ok, Joken.claims()} | {:error, Joken.error_reason()}
 
   defmacro __using__(options) do
     quote do
@@ -188,19 +191,27 @@ defmodule Joken.Config do
                      verify: 2,
                      validate: 1
 
-      @doc "Combines generate_claims/1 and encode_and_sign/2"
+      @doc "Combines `generate_claims/1` and `encode_and_sign/2`"
+      @spec generate_and_sign(Joken.claims(), Joken.signer_arg()) ::
+              {:ok, Joken.bearer_token(), Joken.claims()} | {:error, Joken.error_reason()}
       def generate_and_sign(extra_claims \\ %{}, key \\ __default_signer__()),
         do: Joken.generate_and_sign(token_config(), extra_claims, key, __hooks__())
 
-      @doc "Same as generate_and_sign/2 but raises if not :ok"
+      @doc "Same as `generate_and_sign/2` but raises if error"
+      @spec generate_and_sign!(Joken.claims(), Joken.signer_arg()) ::
+              Joken.bearer_token() | no_return()
       def generate_and_sign!(extra_claims \\ %{}, key \\ __default_signer__()),
         do: Joken.generate_and_sign!(token_config(), extra_claims, key, __hooks__())
 
-      @doc "Combines verify/2 and validate/1"
+      @doc "Combines `verify/2` and `validate/1`"
+      @spec verify_and_validate(Joken.bearer_token(), Joken.signer_arg(), term) ::
+              {:ok, Joken.claims()} | {:error, Joken.error_reason()}
       def verify_and_validate(bearer_token, key \\ __default_signer__(), context \\ %{}),
         do: Joken.verify_and_validate(token_config(), bearer_token, key, context, __hooks__())
 
-      @doc "Same as verify_and_validate/2 but raises if error"
+      @doc "Same as `verify_and_validate/2` but raises if error"
+      @spec verify_and_validate!(Joken.bearer_token(), Joken.signer_arg(), term) ::
+              Joken.claims() | no_return()
       def verify_and_validate!(bearer_token, key \\ __default_signer__(), context \\ %{}),
         do: Joken.verify_and_validate!(token_config(), bearer_token, key, context, __hooks__())
     end

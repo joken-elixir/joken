@@ -1,7 +1,7 @@
 defmodule Joken.Mixfile do
   use Mix.Project
 
-  @version "2.0.0-rc2"
+  @version "2.0.0-rc3"
 
   def project do
     [
@@ -16,8 +16,9 @@ defmodule Joken.Mixfile do
       package: package(),
       deps: deps(),
       source_ref: "v#{@version}",
-      source_url: "https://github.com/bryanjos/joken",
+      source_url: "https://github.com/joken-elixir/joken",
       docs: docs_config(),
+      dialyzer: [plt_add_deps: :apps_direct, plt_add_apps: [:jason]],
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         coveralls: :test,
@@ -42,21 +43,21 @@ defmodule Joken.Mixfile do
     [
       {:jose, "~> 1.8"},
       {:jason, "~> 1.1", optional: true},
-      {:benchee, "~> 0.13", only: :bench},
+      {:benchee, "~> 0.13", only: :dev},
 
       # Docs
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
 
       # Dialyzer
-      {:dialyxir, "~> 1.0.0-rc3", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.0.0-rc4", only: :dev, runtime: false},
 
       # Credo
-      {:credo, "~> 0.9", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
 
       # Test
-      {:junit_formatter, "~> 2.2", only: :test},
+      {:junit_formatter, "~> 3.0", only: :test},
       {:stream_data, "~> 0.4", only: :test},
-      {:excoveralls, "~> 0.8", only: :test}
+      {:excoveralls, "~> 0.10", only: :test}
     ]
   end
 
@@ -72,7 +73,7 @@ defmodule Joken.Mixfile do
       maintainers: ["Bryan Joseph", "Victor Nascimento"],
       licenses: ["Apache 2.0"],
       links: %{
-        "GitHub" => "https://github.com/bryanjos/joken",
+        "GitHub" => "https://github.com/joken-elixir/joken",
         "Docs" => "http://hexdocs.pm/joken"
       }
     ]

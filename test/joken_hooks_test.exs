@@ -1,7 +1,8 @@
 defmodule Joken.HooksTest do
   use ExUnit.Case, async: true
   import ExUnit.CaptureIO
-  alias Joken.CurrentTime.Mock
+
+  alias Joken.{CurrentTime.Mock, Signer}
 
   setup do
     {:ok, _pid} = start_supervised(Mock)
@@ -12,9 +13,9 @@ defmodule Joken.HooksTest do
     use Joken.Hooks
 
     @impl Joken.Hooks
-    def before_sign(_options, _status, claims, signer) do
+    def before_sign(_options, {claims, signer}) do
       IO.puts("TestHook.before_sign/4")
-      {:cont, {:ok, claims, signer}}
+      {:cont, {claims, signer}}
     end
   end
 
@@ -33,9 +34,9 @@ defmodule Joken.HooksTest do
       use Joken.Config
 
       @impl Joken.Hooks
-      def before_generate(_options, _status, extra_claims, claims_config) do
+      def before_generate(_options, {claims_config, extra_claims}) do
         IO.puts("before_generate")
-        {:cont, {:ok, extra_claims, claims_config}}
+        {:cont, {claims_config, extra_claims}}
       end
     end
 
@@ -49,9 +50,9 @@ defmodule Joken.HooksTest do
       add_hook(TestHook)
 
       @impl Joken.Hooks
-      def before_generate(_options, _status, extra_claims, claims_config) do
+      def before_generate(_options, {claims_config, extra_claims}) do
         IO.puts("before_generate")
-        {:cont, {:ok, extra_claims, claims_config}}
+        {:cont, {claims_config, extra_claims}}
       end
     end
 
@@ -64,7 +65,7 @@ defmodule Joken.HooksTest do
       use Joken.Config
 
       @impl Joken.Hooks
-      def before_sign(_options, _status, _claims, _signer) do
+      def before_sign(_options, _input) do
         {:halt, {:error, :abort}}
       end
     end
@@ -77,7 +78,7 @@ defmodule Joken.HooksTest do
       use Joken.Config
 
       @impl Joken.Hooks
-      def after_sign(_options, _status, _token, _claims, _signer) do
+      def after_sign(_options, _result, _input) do
         {:halt, {:error, :abort}}
       end
     end
@@ -90,10 +91,10 @@ defmodule Joken.HooksTest do
       use Joken.Config
 
       @impl Joken.Hooks
-      def after_sign(_options, _status, _token, _claims, _signer), do: :ok
+      def after_sign(_options, _result, _input), do: :ok
     end
 
-    assert WrongCallbackReturn.generate_and_sign() == {:error, :wrong_hook_callback}
+    assert WrongCallbackReturn.generate_and_sign() == {:error, :wrong_hook_return}
   end
 
   test "can add hook with options" do
@@ -101,9 +102,9 @@ defmodule Joken.HooksTest do
       use Joken.Hooks
 
       @impl true
-      def before_generate(options, status, extra_claims, token_config) do
+      def before_generate(options, {token_config, extra_claims}) do
         IO.puts("Run with options: #{inspect(options)}")
-        {:cont, {status, extra_claims, token_config}}
+        {:cont, {token_config, extra_claims}}
       end
     end
 
@@ -125,7 +126,7 @@ defmodule Joken.HooksTest do
       use Joken.Hooks
 
       @impl true
-      def after_validate(_options, {:error, reason}, _claims_map, _token_config) do
+      def after_validate(_options, {:error, reason}, _input) do
         IO.puts("Got error: #{inspect(reason)}")
         {:halt, {:error, :validate_error}}
       end
@@ -164,5 +165,36 @@ defmodule Joken.HooksTest do
     assert %{"iss" => "Joken", "aud" => "Joken"} =
              TokenWithEmptyHook.generate_and_sign!()
              |> TokenWithEmptyHook.verify_and_validate!()
+  end
+
+  test "after callbacks can set validation" do
+    defmodule TokenWithOverridenAfterHook do
+      use Joken.Config
+
+      def after_validate(_, {:ok, _}, input) do
+        {:cont, {:error, :invalid}, input}
+      end
+    end
+
+    assert {:error, :invalid} ==
+             TokenWithOverridenAfterHook.generate_and_sign!()
+             |> TokenWithOverridenAfterHook.verify_and_validate()
+  end
+
+  test "after verify receives signing error" do
+    defmodule AfterVerifyTokenError do
+      use Joken.Config
+
+      def after_verify(_, result, input) do
+        assert result == {:error, :signature_error}
+        {:cont, result, input}
+      end
+    end
+
+    signer = Signer.create("HS256", "another key whatever")
+
+    assert {:error, :signature_error} ==
+             AfterVerifyTokenError.generate_and_sign!()
+             |> AfterVerifyTokenError.verify_and_validate(signer)
   end
 end

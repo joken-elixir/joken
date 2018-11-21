@@ -1,6 +1,10 @@
 defmodule Joken.Signer do
   @moduledoc """
   Interface between Joken and JOSE for signing and verifying tokens.
+
+  In the future we plan to keep this interface but make it pluggable for other crypto 
+  implementations like using only standard `:crypto` and `:public_key` modules. So, 
+  **avoid** depending on the inner structure of this module.
   """
   alias JOSE.{JWK, JWS, JWT}
 
@@ -38,7 +42,8 @@ defmodule Joken.Signer do
 
   @doc """
   Creates a new Joken.Signer struct. Can accept either a binary for HS*** algorithms
-  or a map with arguments for the other kinds of keys.
+  or a map with arguments for the other kinds of keys. Also, accepts an optional map 
+  that will be passed as extra header arguments for generated JWT tokens.
 
   ## Example:
 
@@ -85,9 +90,7 @@ defmodule Joken.Signer do
     )
   end
 
-  def create(_, _, _) do
-    raise Joken.Error, :unrecognized_algorithm
-  end
+  def create(_, _, _), do: raise(Joken.Error, :unrecognized_algorithm)
 
   defp raw_create(alg, jws, jwk) do
     %__MODULE__{
@@ -142,9 +145,9 @@ defmodule Joken.Signer do
   end
 
   @doc """
-  Generates a Joken.Signer from Joken's application configuration.
+  Generates a `Joken.Signer` from Joken's application configuration.
 
-  A Joken.Signer has an algorithm (one of #{inspect(@algorithms)}) and a key.
+  A `Joken.Signer` has an algorithm (one of #{inspect(@algorithms)}) and a key.
 
   There are several types of keys used by JWTs algorithms:
     - RSA
