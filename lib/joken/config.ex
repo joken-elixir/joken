@@ -16,7 +16,7 @@ defmodule Joken.Config do
       }}
 
   Since this is cumbersome and error prone, you can use this module with a more fluent API, see:
-    - `default_claims/1``
+    - `default_claims/1`
     - `add_claim/4`
 
   ## Automatically load and generate functions (recommended)
