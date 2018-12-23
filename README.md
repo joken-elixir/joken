@@ -25,7 +25,7 @@ All set!
 
 ## LICENSE
 
-See the [LICENSE.txt](LICENCE.txt) file.
+See the [LICENSE.txt](LICENSE.txt) file.
 
 ## DISCLAIMER
 
