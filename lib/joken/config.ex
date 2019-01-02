@@ -241,7 +241,7 @@ defmodule Joken.Config do
 
   Default parameters can be customized with options:
 
-  - skip: do not include claims in this list. Ex: ["iss"]
+  - skip: do not include claims in this list. Ex: [:iss, :aud]
   - default_exp: changes the default expiration of the token. Default is 2 hours
   - iss: changes the issuer claim. Default is "Joken" 
   - aud: changes the audience claim. Default is "Joken"
