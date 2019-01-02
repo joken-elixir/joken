@@ -15,13 +15,13 @@ Add Joken to your deps:
 ``` elixir
 def deps do
   # .. other deps
-  {:joken, "~> 2.0-rc3"},
+  {:joken, "~> 2.0"},
   # Recommended JSON library
   {:jason, "~> 1.1"}
 end
 ```
 
-All set!
+All set! (don't forget to take a look at our guides and documentation!)
 
 ## LICENSE
 
