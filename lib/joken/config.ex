@@ -80,6 +80,7 @@ defmodule Joken.Config do
     - default_signer: a signer configuration key in config.exs (see `Joken.Signer`)
   """
   import Joken, only: [current_time: 0]
+  alias Joken.Signer
 
   @default_generated_claims [:exp, :iat, :nbf, :iss, :aud, :jti]
 
@@ -152,7 +153,7 @@ defmodule Joken.Config do
       @doc false
       def __default_signer__ do
         key = unquote(options)[:default_signer] || :default_signer
-        Joken.Signer.parse_config(key)
+        Signer.parse_config(key)
       end
 
       @impl Joken.Config
