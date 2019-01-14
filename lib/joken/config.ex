@@ -145,16 +145,15 @@ defmodule Joken.Config do
 
       @behaviour Joken.Config
 
-      key = unquote(options)[:default_signer] || :default_signer
-
-      @joken_default_signer Joken.Signer.parse_config(key)
-
       @hooks [__MODULE__]
 
       @before_compile Joken.Config
 
       @doc false
-      def __default_signer__, do: @joken_default_signer
+      def __default_signer__ do
+        key = unquote(options)[:default_signer] || :default_signer
+        Joken.Signer.parse_config(key)
+      end
 
       @impl Joken.Config
       def token_config, do: default_claims()
