@@ -9,10 +9,6 @@ defmodule Joken.Application do
 
     children = []
 
-    if Code.ensure_loaded?(Jason) do
-      JOSE.json_module(JOSE.Jason)
-    end
-
     opts = [strategy: :one_for_one]
     Supervisor.start_link(children, opts)
   end
