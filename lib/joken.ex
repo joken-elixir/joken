@@ -51,11 +51,11 @@ defmodule Joken do
   ```
   iex> token_config = %{} # empty config
   iex> token_config = Map.put(token_config, "scope", %Joken.Claim{
-  ...> generate_function: fn -> "user" end,
-  ...> validate_function: fn val, _claims, _context -> val in ["user", "admin"] end
+  ...>   generate: fn -> "user" end,
+  ...>   validate: fn val, _claims, _context -> val in ["user", "admin"] end
   ...> })
   iex> signer = Joken.Signer.create("HS256", "my secret")
-  iex> claims = Joken.generate_claims(token_config, %{"extra"=> "claim"})
+  iex> {:ok, claims} = Joken.generate_claims(token_config, %{"extra"=> "claim"})
   iex> {:ok, jwt, claims} = Joken.encode_and_sign(claims, signer)
   ```
 
