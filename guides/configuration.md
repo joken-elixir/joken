@@ -29,7 +29,7 @@ token_config = %{} |> Joken.Config.add_claim("iss", fn -> "My issuer" end, &(&1 
 
 You need at least one of the functions (validate or generate). One example of leaving one of them emty is when you are only validating tokens. In this case you might leave generate functions empty.
 
-With your `token_config` created, you can pass it to functions like: `Joken.generate/3` or `Joken.validate/4`.
+With your `token_config` created, you can pass it to functions like: `Joken.generate_claims/3` or `Joken.validate/4`.
 
 ## Signer configuration
 

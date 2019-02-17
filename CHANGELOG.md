@@ -1,4 +1,22 @@
-## v2.0.0
+## [Unreleased]
+
+### Added
+### Changed
+### Fixed
+
+## [2.0.1] - 2019-02-17
+
+### Changed
+
+- Get default signer at runtime (#212) @sgtpepper43
+- Update to JOSE 1.9 and remove Jason dependency (#216) @balena
+
+### Fixed
+
+- Plural time units are deprecated >= elixir1.8 (#213) @maartenvanvliet
+- Fixed documentation (#218) @oo6
+
+## [v2.0.0] - 2019-01-02
 
 This is a re-write with a focus on making a clearer API surface with less ambiguity and more future proof without breaking backwards compatibility once again.
 

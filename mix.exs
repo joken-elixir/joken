@@ -31,8 +31,7 @@ defmodule Joken.Mixfile do
 
   def application do
     [
-      extra_applications: [:logger, :crypto],
-      mod: {Joken.Application, []}
+      extra_applications: [:logger, :crypto]
     ]
   end
 
@@ -43,7 +42,7 @@ defmodule Joken.Mixfile do
     [
       {:jose, "~> 1.9"},
       {:jason, "~> 1.1", only: [:dev, :test]},
-      {:benchee, "~> 0.13", only: :dev},
+      {:benchee, "~> 0.14", only: :dev},
 
       # Docs
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
@@ -86,6 +85,7 @@ defmodule Joken.Mixfile do
         "guides/introduction.md",
         "guides/configuration.md",
         "guides/signer.md",
+        "guides/assymetric_cryptography_signers.md",
         "guides/testing.md",
         "guides/common_use_cases.md",
         "guides/migration_from_1.md",
