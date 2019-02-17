@@ -130,7 +130,7 @@ defmodule Joken do
   def peek_header(token) when is_binary(token) do
     with {:ok, %{"protected" => protected}} <- expand(token),
          {:ok, decoded_str} <- Base.url_decode64(protected, padding: false),
-         {:ok, header} <- Jason.decode(decoded_str) do
+         header <- JOSE.json_module().decode(decoded_str) do
       {:ok, header}
     else
       error -> error
@@ -149,7 +149,7 @@ defmodule Joken do
   def peek_claims(token) when is_binary(token) do
     with {:ok, %{"payload" => payload}} <- expand(token),
          {:ok, decoded_str} <- Base.url_decode64(payload, padding: false),
-         {:ok, claims} <- Jason.decode(decoded_str) do
+         claims <- JOSE.json_module().decode(decoded_str) do
       {:ok, claims}
     else
       error -> error

@@ -1,7 +1,7 @@
 defmodule Joken.Mixfile do
   use Mix.Project
 
-  @version "2.0.0"
+  @version "2.0.1"
 
   def project do
     [
@@ -41,8 +41,8 @@ defmodule Joken.Mixfile do
 
   defp deps do
     [
-      {:jose, "~> 1.8"},
-      {:jason, "~> 1.1", optional: true},
+      {:jose, "~> 1.9"},
+      {:jason, "~> 1.1", only: [:dev, :test]},
       {:benchee, "~> 0.13", only: :dev},
 
       # Docs
