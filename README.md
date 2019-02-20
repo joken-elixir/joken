@@ -23,6 +23,17 @@ end
 
 All set! (don't forget to take a look at our guides and documentation!)
 
+## Benchmarking
+
+To run benchmarks just:
+
+``` shell
+# mix run benchmarks/{some_benchmark_file}.exs
+
+# Example:
+mix run benchmarks/hs_benchmark.exs
+```
+
 ## LICENSE
 
 See the [LICENSE.txt](LICENSE.txt) file.
