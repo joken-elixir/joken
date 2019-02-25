@@ -6,7 +6,7 @@ One possible solution to this problem is to have a different token configuration
 
 ## Joken time
 
-We have ifntroduced an adapter for producing any time sensitive claim values. `Joken.current_time/0` looks for the implementation it will use in the configuration. This is the adapter pattern that helps you mock time if you need to.
+We have introduced an adapter for producing any time sensitive claim values. `Joken.current_time/0` looks for the implementation it will use in the configuration. This is the adapter pattern that helps you mock time if you need to.
 
 The default implementation we use is `Joken.CurrentTime.OS`. It uses `DateTime` to fetch current time in seconds.
 
