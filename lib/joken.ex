@@ -34,7 +34,7 @@ defmodule Joken do
     - Signer configuration
     - Hooks
 
-  The portable token claims configuration is a map of binary keys to `Joken.Claim` structs and is used 
+  The portable token claims configuration is a map of binary keys to `Joken.Claim` structs and is used
   to dynamically generate and validate tokens.
 
   A signer is an instance of `Joken.Signer` that encapsulates the algorithm and the key configuration
@@ -400,7 +400,10 @@ defmodule Joken do
             """
           end)
 
-          {:halt, {:error, message: "Invalid token", claim: key, claim_val: claim_val}}
+          case config[key].options[:message] do
+            nil -> {:halt, {:error, message: "Invalid token", claim: key, claim_val: claim_val}}
+            custom_message -> {:halt, {:error, message: custom_message, claim: key, claim_val: claim_val}}
+          end
       end
     end)
     |> case do
