@@ -400,13 +400,8 @@ defmodule Joken do
             """
           end)
 
-          case config[key].options do
-            [message: custom_message] ->
-              {:halt, {:error, message: custom_message, claim: key, claim_val: claim_val}}
-
-            _ ->
-              {:halt, {:error, message: "Invalid token", claim: key, claim_val: claim_val}}
-          end
+          message = Keyword.get(config[key].options, :message, "Invalid token")
+          {:halt, {:error, message: message, claim: key, claim_val: claim_val}}
       end
     end)
     |> case do
