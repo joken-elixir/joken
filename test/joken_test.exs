@@ -1,7 +1,7 @@
 defmodule JokenTest do
   use ExUnit.Case, async: true
   import ExUnit.CaptureLog
-  import Joken.Config, only: [add_claim: 4, default_claims: 1]
+  import Joken.Config, only: [add_claim: 4, add_claim: 5, default_claims: 1]
   alias Joken.CurrentTime.Mock
 
   setup do
@@ -76,6 +76,24 @@ defmodule JokenTest do
 
       assert capture_log(validate_fun) =~
                "Claim %{\"iss\" => \"someone\"} did not pass validation.\n\nCurrent time: "
+    end
+
+    test "claim attaches custom error message" do
+      custom_error_message = "Someone should not be there"
+
+      token_config =
+        %{}
+        |> add_claim(
+          "iss",
+          fn -> "not someone" end,
+          fn val ->
+            val == "not someone"
+          end,
+          message: custom_error_message
+        )
+
+      assert {:error, [message: custom_error_message, claim: "iss", claim_val: "someone"]} ==
+               Joken.validate(token_config, %{"iss" => "someone"}, %{})
     end
 
     test "can make multi claim validation" do
