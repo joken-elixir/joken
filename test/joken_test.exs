@@ -83,12 +83,17 @@ defmodule JokenTest do
 
       token_config =
         %{}
-        |> add_claim("iss", fn -> "not someone" end, fn val ->
-          val == "not someone"
-        end, %{message: custom_error_message})
+        |> add_claim(
+          "iss",
+          fn -> "not someone" end,
+          fn val ->
+            val == "not someone"
+          end,
+          message: custom_error_message
+        )
 
       assert {:error, [message: custom_error_message, claim: "iss", claim_val: "someone"]} ==
-                Joken.validate(token_config, %{"iss" => "someone"}, %{})
+               Joken.validate(token_config, %{"iss" => "someone"}, %{})
     end
 
     test "can make multi claim validation" do

@@ -400,9 +400,12 @@ defmodule Joken do
             """
           end)
 
-          case config[key].options[:message] do
-            nil -> {:halt, {:error, message: "Invalid token", claim: key, claim_val: claim_val}}
-            custom_message -> {:halt, {:error, message: custom_message, claim: key, claim_val: claim_val}}
+          case config[key].options do
+            [message: custom_message] ->
+              {:halt, {:error, message: custom_message, claim: key, claim_val: claim_val}}
+
+            _ ->
+              {:halt, {:error, message: "Invalid token", claim: key, claim_val: claim_val}}
           end
       end
     end)
