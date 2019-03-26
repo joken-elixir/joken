@@ -27,7 +27,7 @@ This configuration map is referred to as `token_config`. Since creating it is cu
 token_config = %{} |> Joken.Config.add_claim("iss", fn -> "My issuer" end, &(&1 == "My issuer"))
 ```
 
-You need at least one of the functions (validate or generate). One example of leaving one of them emty is when you are only validating tokens. In this case you might leave generate functions empty.
+You need at least one of the functions (validate or generate). One example of leaving one of them empty is when you are only validating tokens. In this case you might leave generate functions empty.
 
 With your `token_config` created, you can pass it to functions like: `Joken.generate_claims/3` or `Joken.validate/4`.
 
@@ -43,7 +43,7 @@ This is an explicit signer creation. You can configure a signer in mix `config.e
 
 ## Module approach
 
-In Joken 2.0 you can enpasulate all your token logic in a module with `Joken.Config`. You do that like this:
+In Joken 2.0 you can encapsulate all your token logic in a module with `Joken.Config`. You do that like this:
 
 ``` elixir
 defmodule MyAppToken do
