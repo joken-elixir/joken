@@ -4,6 +4,25 @@
 ### Changed
 ### Fixed
 
+## [2.1.0] - 2019-05-27
+
+### Added
+
+- (@tgturner) Allow custom error messages on claim validation (#221)
+
+### Changed
+
+- (@sgtpepper43) Get default signer at runtime (#212)
+- (@balena) Update to JOSE 1.9 and remove Jason dependency (#216)
+- (@victorolinasc) chore: deps update, docs update, removed unused application (#219)
+
+### Fixed
+
+- (@maartenvanvliet) Plural time units are deprecated >= elixir1.8 (#213)
+- (@oo6) Fixed documentation (#218)
+- (@popo63301) fix typo (#220)
+- (@HeroicEric) Fix some typos in configuration guide (#222)
+
 ## [2.0.1] - 2019-02-17
 
 ### Changed

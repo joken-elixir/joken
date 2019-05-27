@@ -78,6 +78,7 @@ defmodule JokenTest do
                "Claim %{\"iss\" => \"someone\"} did not pass validation.\n\nCurrent time: "
     end
 
+    @tag :capture_log
     test "claim attaches custom error message" do
       custom_error_message = "Someone should not be there"
 
