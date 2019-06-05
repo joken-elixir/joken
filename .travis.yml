@@ -20,3 +20,12 @@ script:
   - mix credo --strict
   - mix format --check-formatted
   - MIX_ENV=test mix coveralls.travis --trace --cover
+
+before_deploy:
+  - mix compile
+deploy:
+  skip_cleanup: true
+  provider: script
+  script: mix hex.publish --yes
+  on:
+    tags: true
