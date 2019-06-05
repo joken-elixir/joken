@@ -42,7 +42,7 @@ defmodule Joken.Mixfile do
     [
       {:jose, "~> 1.9"},
       {:jason, "~> 1.1", only: [:dev, :test]},
-      {:benchee, "~> 0.14", only: :dev},
+      {:benchee, "~> 1.0", only: :dev},
 
       # Docs
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
