@@ -93,7 +93,7 @@ use Mix.Config
 
 config :joken, 
   my_rsa_key: [
-    signer_alg: "RS256".
+    signer_alg: "RS256",
     key_pem: """
     -----BEGIN RSA PRIVATE KEY-----
     MIICWwIBAAKBg
