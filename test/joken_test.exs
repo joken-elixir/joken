@@ -162,38 +162,9 @@ defmodule JokenTest do
     assert Joken.peek_claims(token) == {:ok, %{"some" => custom_claim}}
   end
 
-  test "verify_and_validate, peek_header and peek_claims give proper error upon improper token, instead of raising" do
+  test "peek_header and peek_claims give proper error upon improper token, instead of returning out of spec :error" do
     # This test ensures that peek_header and peek_claims use Base.url_decode64 properly
-
-    defmodule HeaderHook do
-      use Joken.Hooks
-
-      @impl true
-      def before_verify(_options, {token, signer}) do
-        with {:ok, _} <- Joken.peek_header(token) do
-          {:cont, {token, signer}}
-        else
-          error -> {:halt, error}
-        end
-      end
-    end
-
-    defmodule ClaimsHook do
-      use Joken.Hooks
-
-      @impl true
-      def before_verify(_options, {token, signer}) do
-        with {:ok, _} <- Joken.peek_claims(token) do
-          {:cont, {token, signer}}
-        else
-          error -> {:halt, error}
-        end
-      end
-    end
-
-    signer = Joken.Signer.create("HS256", "secret")
-
-    assert {:error, :improper_token} = Joken.verify("a.a.a", signer, [{HeaderHook, []}])
-    assert {:error, :improper_token} = Joken.verify("a.a.a", signer, [{ClaimsHook, []}])
+    assert {:error, :improper_token} = Joken.peek_claims(".a.")
+    assert {:error, :improper_token} = Joken.peek_header("a..")
   end
 end
