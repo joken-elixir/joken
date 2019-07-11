@@ -4,7 +4,7 @@
 ### Changed
 ### Fixed
 
-- (@polvalente) Fix issue where Base.decode64 :error return could bleed trough as {:ok, :error} when using pre_verification hooks
+- (@polvalente) Fix issue where Base.decode64 :error return could bleed trough as {:ok, :error} (#237)
 
 ## [2.1.0] - 2019-05-27
 
