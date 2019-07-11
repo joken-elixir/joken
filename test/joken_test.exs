@@ -161,4 +161,10 @@ defmodule JokenTest do
     assert token = Joken.generate_and_sign!(%{}, %{"some" => custom_claim}, signer)
     assert Joken.peek_claims(token) == {:ok, %{"some" => custom_claim}}
   end
+
+  test "peek_header and peek_claims give proper error upon improper token, instead of returning out of spec :error" do
+    # This test ensures that peek_header and peek_claims use Base.url_decode64 properly
+    assert {:error, :token_malformed} = Joken.peek_claims(".a.")
+    assert {:error, :token_malformed} = Joken.peek_header("a..")
+  end
 end

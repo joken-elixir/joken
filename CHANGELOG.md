@@ -4,6 +4,8 @@
 ### Changed
 ### Fixed
 
+- (@polvalente) Fix issue where Base.decode64 made peek_claims and peek_header return out of spec (#237)
+
 ## [2.1.0] - 2019-05-27
 
 ### Added
