@@ -183,7 +183,7 @@ defmodule JokenTest do
 
       @impl true
       def before_verify(_options, {token, signer}) do
-        with {:ok, _} <- Joken.peek_header(token) do
+        with {:ok, _} <- Joken.peek_claims(token) do
           {:cont, {token, signer}}
         else
           error -> {:halt, error}
