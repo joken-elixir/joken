@@ -164,7 +164,7 @@ defmodule JokenTest do
 
   test "peek_header and peek_claims give proper error upon improper token, instead of returning out of spec :error" do
     # This test ensures that peek_header and peek_claims use Base.url_decode64 properly
-    assert {:error, :improper_token} = Joken.peek_claims(".a.")
-    assert {:error, :improper_token} = Joken.peek_header("a..")
+    assert {:error, :malformed_token} = Joken.peek_claims(".a.")
+    assert {:error, :malformed_token} = Joken.peek_header("a..")
   end
 end
