@@ -134,7 +134,7 @@ defmodule Joken do
          header <- JOSE.json_module().decode(decoded_str) do
       {:ok, header}
     else
-      {:decode64, _error} -> {:error, :malformed_token}
+      {:decode64, _error} -> {:error, :token_malformed}
       error -> error
     end
   end
@@ -155,7 +155,7 @@ defmodule Joken do
          claims <- JOSE.json_module().decode(decoded_str) do
       {:ok, claims}
     else
-      {:decode64, _error} -> {:error, :malformed_token}
+      {:decode64, _error} -> {:error, :token_malformed}
       error -> error
     end
   end
