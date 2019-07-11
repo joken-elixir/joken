@@ -129,10 +129,12 @@ defmodule Joken do
   @spec peek_header(bearer_token) :: {:ok, claims} | {:error, error_reason}
   def peek_header(token) when is_binary(token) do
     with {:ok, %{"protected" => protected}} <- expand(token),
-         {:ok, decoded_str} <- Base.url_decode64(protected, padding: false),
+         {:decode64, {:ok, decoded_str}} <-
+           {:decode64, Base.url_decode64(protected, padding: false)},
          header <- JOSE.json_module().decode(decoded_str) do
       {:ok, header}
     else
+      {:decode64, _error} -> {:error, :improper_token}
       error -> error
     end
   end
