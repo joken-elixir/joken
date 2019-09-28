@@ -2,8 +2,8 @@ defmodule Joken.Signer do
   @moduledoc """
   Interface between Joken and JOSE for signing and verifying tokens.
 
-  In the future we plan to keep this interface but make it pluggable for other crypto 
-  implementations like using only standard `:crypto` and `:public_key` modules. So, 
+  In the future we plan to keep this interface but make it pluggable for other crypto
+  implementations like using only standard `:crypto` and `:public_key` modules. So,
   **avoid** depending on the inner structure of this module.
   """
   alias JOSE.{JWK, JWS, JWT}
@@ -42,7 +42,7 @@ defmodule Joken.Signer do
 
   @doc """
   Creates a new Joken.Signer struct. Can accept either a binary for HS*** algorithms
-  or a map with arguments for the other kinds of keys. Also, accepts an optional map 
+  or a map with arguments for the other kinds of keys. Also, accepts an optional map
   that will be passed as extra header arguments for generated JWT tokens.
 
   ## Example:
@@ -137,9 +137,8 @@ defmodule Joken.Signer do
   @spec verify(Joken.bearer_token(), __MODULE__.t()) ::
           {:ok, Joken.claims()} | {:error, Joken.error_reason()}
   def verify(token, %__MODULE__{alg: alg, jwk: jwk}) when is_binary(token) do
-    with {true, %JWT{fields: claims}, _} <- JWT.verify_strict(jwk, [alg], token) do
-      {:ok, claims}
-    else
+    case JWT.verify_strict(jwk, [alg], token) do
+      {true, %JWT{fields: claims}, _} -> {:ok, claims}
       _ -> {:error, :signature_error}
     end
   end

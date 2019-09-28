@@ -14,7 +14,7 @@ defmodule Joken.Hooks do
   ## Before hooks
 
   A before hook receives as the first parameter its options and then a tuple with the input of
-  the function. For example, the `generate_claims` function receives the token configuration plus a 
+  the function. For example, the `generate_claims` function receives the token configuration plus a
   map of extra claims. Therefore, a `before_generate` hook receives:
     - the hook options or `[]` if none are given;
     - a tuple with two elements where the first is the token configuration and the second is the extra
@@ -32,7 +32,7 @@ defmodule Joken.Hooks do
         end
       end
 
-  You could also halt execution completely on a before hook. Just use the `:halt` return with an error 
+  You could also halt execution completely on a before hook. Just use the `:halt` return with an error
   tuple:
 
       defmodule StopTheWorldHook do
@@ -52,7 +52,7 @@ defmodule Joken.Hooks do
     - the result tuple which might be `{:error, reason}` or a tuple with `:ok` and its parameters;
     - the input to the function call.
 
-  Let's see an example with `after_verify`. The verify function takes as argument the token and a signer. So, 
+  Let's see an example with `after_verify`. The verify function takes as argument the token and a signer. So,
   an `after_verify` might look like this:
 
       defmodule CheckVerifyError do
@@ -72,7 +72,7 @@ defmodule Joken.Hooks do
         end
       end
 
-  On this example we have conditional logic for different results. 
+  On this example we have conditional logic for different results.
 
   ## `Joken.Config`
 
@@ -100,6 +100,8 @@ defmodule Joken.Hooks do
 
         add_hook(JokenJwks, jwks_url: "http://someserver.com/.well-known/certs")
       end
+
+  For an implementation reference, please see the source code of `Joken.Hooks.RequiredClaims`
   """
   alias Joken.Signer
 
