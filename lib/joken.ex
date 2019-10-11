@@ -101,9 +101,6 @@ defmodule Joken do
   @type verify_result :: {:ok, claims} | {:error, error_reason}
   @type validate_result :: {:ok, claims} | {:error, error_reason}
 
-  # This ensures we provide an easy to setup test environment
-  @current_time_adapter Application.get_env(:joken, :current_time_adapter, Joken.CurrentTime.OS)
-
   @doc """
   Retrieves current time in seconds.
 
@@ -116,7 +113,7 @@ defmodule Joken do
   See Joken's own tests for an example of how to override this with a customizable time mock.
   """
   @spec current_time() :: pos_integer
-  def current_time, do: @current_time_adapter.current_time()
+  def current_time, do: current_time_adapter().current_time()
 
   @doc """
   Decodes the header of a token without validation.
@@ -413,4 +410,8 @@ defmodule Joken do
       err -> err
     end
   end
+
+  # This ensures we provide an easy to setup test environment
+  defp current_time_adapter,
+    do: Application.get_env(:joken, :current_time_adapter, Joken.CurrentTime.OS)
 end
