@@ -1,7 +1,7 @@
 defmodule Joken.Mixfile do
   use Mix.Project
 
-  @version "2.1.0"
+  @version "2.2.0"
 
   def project do
     [
@@ -45,18 +45,18 @@ defmodule Joken.Mixfile do
       {:benchee, "~> 1.0", only: :dev},
 
       # Docs
-      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.21", only: :dev, runtime: false},
 
       # Dialyzer
-      {:dialyxir, "~> 1.0.0-rc4", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.0.0-rc7", only: :dev, runtime: false},
 
       # Credo
-      {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.1", only: [:dev, :test], runtime: false},
 
       # Test
       {:junit_formatter, "~> 3.0", only: :test},
       {:stream_data, "~> 0.4", only: :test},
-      {:excoveralls, "~> 0.10", only: :test}
+      {:excoveralls, "~> 0.11", only: :test}
     ]
   end
 
