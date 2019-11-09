@@ -1,10 +1,34 @@
 ## [Unreleased]
 
+## [2.2.0] - 2019-11-08
+
 ### Added
+
+- (@bryanjos) Update .travis.yml to deploy to hex on tag (#232)
+- (@thefuture2029) Access current_time_adapter in runtime instead of compile time (#252)
+- (@victorolinasc) feat: add required claims hook (#250)
+
 ### Changed
+
+- Bump benchee from 0.14.0 to 1.0.1
+- Bump stream_data from 0.4.2 to 0.4.3 (#227)
+- Bump ex_doc from 0.19.3 to 0.20.2 (#230)
+- Bump dialyxir from 1.0.0-rc.4 to 1.0.0-rc.6
+- Bump credo from 1.0.2 to 1.0.5
+- Bump excoveralls from 0.10.5 to 0.11.1 (#233)
+- Bump ex_doc from 0.20.2 to 0.21.1 (#240)
+- Bump ex_doc from 0.21.1 to 0.21.2 (#246)
+- Bump excoveralls from 0.11.1 to 0.11.2 (#243)
+- Bump junit_formatter from 3.0.0 to 3.0.1 (#238)
+- Bump dialyxir from 1.0.0-rc.6 to 1.0.0-rc.7 (#248)
+- Bump credo from 1.0.5 to 1.1.5 (#253)
+- Bump excoveralls from 0.11.2 to 0.12.0 (#254)
+
 ### Fixed
 
-- (@polvalente) Fix issue where Base.decode64 made peek_claims and peek_header return out of spec (#237)
+- (@llxff) Fix small typo in "Asymmetric cryptography signers" guide (#235)
+- (@polvalente) fix: treat improper token properly (#237)
+- (@chulkilee) Use short identifier from SPDX License List (#255)
 
 ## [2.1.0] - 2019-05-27
 
