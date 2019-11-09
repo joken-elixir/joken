@@ -70,7 +70,7 @@ defmodule Joken.Mixfile do
     [
       files: ["lib", "mix.exs", "README.md", "LICENSE.txt", "CHANGELOG.md"],
       maintainers: ["Bryan Joseph", "Victor Nascimento"],
-      licenses: ["Apache 2.0"],
+      licenses: ["Apache-2.0"],
       links: %{
         "GitHub" => "https://github.com/joken-elixir/joken",
         "Docs" => "http://hexdocs.pm/joken"
