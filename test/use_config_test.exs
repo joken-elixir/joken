@@ -3,6 +3,7 @@ defmodule Joken.UseConfig.Test do
   use ExUnitProperties
 
   alias Joken.CurrentTime.Mock
+  alias Joken.Signer
 
   setup do
     {:ok, _pid} = start_supervised(Mock)
@@ -93,6 +94,26 @@ defmodule Joken.UseConfig.Test do
                  ValidateWithContext.__default_signer__(),
                  %{custom: "custom"}
                )
+    end
+
+    test "can validate a token with a signer generated only with the public key" do
+      defmodule OnlyPublicKeyValidate do
+        use Joken.Config
+
+        def token_config, do: %{}
+      end
+
+      # Private signer generates
+      private_pem = Application.get_env(:joken, :pem_rs256)[:key_pem]
+      private_signer = Signer.create("RS256", %{"pem" => private_pem})
+
+      assert token = OnlyPublicKeyValidate.generate_and_sign!(%{}, private_signer)
+
+      # Public signer validates
+      public_pem = Application.get_env(:joken, :public_pem)[:key_pem]
+      public_signer = Signer.create("RS256", %{"pem" => public_pem})
+
+      assert OnlyPublicKeyValidate.verify_and_validate(token, public_signer) == {:ok, %{}}
     end
 
     test "can pass a `Joken.Signer` instance" do
