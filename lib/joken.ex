@@ -82,7 +82,7 @@ defmodule Joken do
   @typedoc """
   A signer argument that can be a key in the configuration or an instance of `Joken.Signer`.
   """
-  @type signer_arg :: atom | Joken.Signer.t()
+  @type signer_arg :: atom | Joken.Signer.t() | nil
 
   @typedoc "A binary representing a bearer token."
   @type bearer_token :: binary
