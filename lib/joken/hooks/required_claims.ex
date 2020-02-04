@@ -8,7 +8,7 @@ defmodule Joken.Hooks.RequiredClaims do
       defmodule MyToken do
         use Joken.Config
 
-        add_hook Joken.Hooks.RequiredClaims, ensure: [:claim1, :claim2]
+        add_hook Joken.Hooks.RequiredClaims, [:claim1, :claim2]
       end
 
   On missing claims it returns: `{:error, [message: "Invalid token", missing_claims: claims]}`.
