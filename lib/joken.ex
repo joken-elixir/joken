@@ -90,6 +90,9 @@ defmodule Joken do
   @typedoc "A map with binary keys that represents a claim set."
   @type claims :: %{binary => term}
 
+  @typedoc "A list of hooks. Can be either a list of modules or a list of tuples with modules options to pass."
+  @type hooks :: [module] | [{module, any}]
+
   @typedoc "A portable configuration of claims for generation and validation."
   @type token_config :: %{binary => Joken.Claim.t()}
 
@@ -267,7 +270,7 @@ defmodule Joken do
 
   It also executes hooks if any are given.
   """
-  @spec validate(token_config, claims, term, [module]) :: validate_result()
+  @spec validate(token_config, claims, term, hooks) :: validate_result()
   def validate(token_config, claims_map, context \\ nil, hooks \\ []) do
     with {:ok, {token_config, claims_map, context}} <-
            Hooks.run_before_hook(hooks, :before_validate, {token_config, claims_map, context}),
@@ -284,7 +287,7 @@ defmodule Joken do
   end
 
   @doc "Combines `verify/3` and `validate/4` operations"
-  @spec verify_and_validate(token_config, bearer_token, signer_arg, term, [module]) ::
+  @spec verify_and_validate(token_config, bearer_token, signer_arg, term, hooks) ::
           {:ok, claims} | {:error, error_reason}
   def verify_and_validate(
         token_config,
@@ -300,7 +303,7 @@ defmodule Joken do
   end
 
   @doc "Same as `verify_and_validate/5` but raises on error"
-  @spec verify_and_validate!(token_config, bearer_token, signer_arg, term, [module]) ::
+  @spec verify_and_validate!(token_config, bearer_token, signer_arg, term, hooks) ::
           claims | no_return()
   def verify_and_validate!(
         token_config,
@@ -325,7 +328,7 @@ defmodule Joken do
 
   It also executes hooks if any are given.
   """
-  @spec generate_claims(token_config, claims | nil, [module]) :: generate_result
+  @spec generate_claims(token_config, claims | nil, hooks) :: generate_result
   def generate_claims(token_config, extra \\ %{}, hooks \\ [])
 
   def generate_claims(token_config, nil, hooks), do: generate_claims(token_config, %{}, hooks)
@@ -350,7 +353,7 @@ defmodule Joken do
 
   It also executes hooks if any are given.
   """
-  @spec encode_and_sign(claims, signer_arg, [module]) :: sign_result
+  @spec encode_and_sign(claims, signer_arg, hooks) :: sign_result
   def encode_and_sign(claims, signer, hooks \\ [])
 
   def encode_and_sign(claims, nil, hooks),
