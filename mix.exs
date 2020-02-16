@@ -40,7 +40,7 @@ defmodule Joken.Mixfile do
 
   defp deps do
     [
-      {:jose, "~> 1.9"},
+      {:jose, "~> 1.10"},
       {:jason, "~> 1.1", only: [:dev, :test]},
       {:benchee, "~> 1.0", only: :dev},
 
@@ -51,7 +51,7 @@ defmodule Joken.Mixfile do
       {:dialyxir, "~> 1.0.0-rc7", only: :dev, runtime: false},
 
       # Credo
-      {:credo, "~> 1.1", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.2", only: :test, runtime: false},
 
       # Test
       {:junit_formatter, "~> 3.0", only: :test},
