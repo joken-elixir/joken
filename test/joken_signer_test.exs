@@ -54,6 +54,12 @@ defmodule Joken.Signer.Test do
            } = signer
   end
 
+  test "raise with invalid parameter" do
+    assert_raise Error, Error.message(%Error{reason: :algorithm_needs_key}), fn ->
+      Signer.create("RS256", "Not a map")
+    end
+  end
+
   test "raise with invalid algorithm" do
     assert_raise Error, Error.message(%Error{reason: :unrecognized_algorithm}), fn ->
       Signer.create("any algorithm", %{})
