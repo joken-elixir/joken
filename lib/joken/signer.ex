@@ -35,14 +35,14 @@ defmodule Joken.Signer do
   defstruct jwk: nil, jws: nil, alg: nil
 
   @doc """
-  all supported algorithms.
+  All supported algorithms.
   """
   @spec algorithms() :: [binary()]
   def algorithms, do: @algorithms
 
 
   @doc """
-  map key algorithms.
+  Map key algorithms.
   """
   @spec map_key_algorithms() :: [binary()]
   def map_key_algorithms, do: @map_key_algorithms
