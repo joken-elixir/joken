@@ -45,7 +45,8 @@ defmodule Joken.Error do
 
   def message(%__MODULE__{reason: :algorithm_needs_key}),
     do: """
-    Map key algorithms below need a map to be passed in the key parameter
+    A map was expected for the key parameter in the signer creation. 
+    This is mandatory for: #{inspect(Signer.map_key_algorithms())}
     #{inspect(Signer.map_key_algorithms())}
     """
 
