@@ -40,6 +40,13 @@ defmodule Joken.Signer do
   @spec algorithms() :: [binary()]
   def algorithms, do: @algorithms
 
+
+  @doc """
+  Map key algorithms.
+  """
+  @spec map_key_algorithms() :: [binary()]
+  def map_key_algorithms, do: @map_key_algorithms
+
   @doc """
   Creates a new Joken.Signer struct. Can accept either a binary for HS*** algorithms
   or a map with arguments for the other kinds of keys. Also, accepts an optional map
@@ -89,6 +96,8 @@ defmodule Joken.Signer do
       JWK.from_map(key)
     )
   end
+
+  def create(alg, _key, _headers) when alg in @map_key_algorithms, do: raise(Joken.Error, :algorithm_needs_key)
 
   def create(_, _, _), do: raise(Joken.Error, :unrecognized_algorithm)
 
