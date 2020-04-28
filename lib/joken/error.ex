@@ -42,6 +42,13 @@ defmodule Joken.Error do
     Joken.Config.default_claims/1.
     """
 
+
+  def message(%__MODULE__{reason: :algorithm_needs_key}),
+    do: """
+    Map key algorithms below need a map to be passed in the key parameter
+    #{inspect(Signer.map_key_algorithms())}
+    """
+
   def message(%__MODULE__{reason: :unrecognized_algorithm}),
     do: """
     Couldn't recognize the signer algorithm.
