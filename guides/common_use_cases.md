@@ -109,7 +109,7 @@ defmodule Token do
   @impl true
   def token_config do
     default_claims(skip: [:aud, :iss])
-    |> add_claim("roles", nil, &(&1 in ["admin", "user"])
+    |> add_claim("roles", nil, &(&1 in ["admin", "user"]))
     |> add_claim("iss", nil, &(&1 == "some server iss"))
     |> add_claim("aud", nil, &(&1 == "some server aud"))
   end
