@@ -2,22 +2,27 @@ sudo: false # to use faster container based build environment
 language: elixir
 
 elixir:
-  - 1.6.6
   - 1.7.4
   - 1.8.1
+  - 1.9.4
+  - 1.10.4
 
 otp_release:
-  - 19.3
-  - 20.3
   - 21.2
+  - 22.3
+  - 23.1
 
 matrix:
   exclude:
-    - otp_release: 19.3
+    - otp_release: 23.1
+      elixir: 1.7.4
+    - otp_release: s23.1
       elixir: 1.8.1
+    - otp_release: 23.1
+      elixir: 1.9.4      
 
 script:
-  - mix credo --strict
+  - MIX_ENV=test mix credo --strict
   - mix format --check-formatted
   - MIX_ENV=test mix coveralls.travis --trace --cover
 

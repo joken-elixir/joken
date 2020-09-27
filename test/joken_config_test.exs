@@ -10,14 +10,14 @@ defmodule Joken.Config.Test do
 
   describe "Joken.Config.default_claims/1" do
     property "any given issuer will be validated" do
-      check all issuer <- binary() do
+      check all(issuer <- binary()) do
         iss_claim = Config.default_claims(iss: issuer)["iss"]
         assert iss_claim.validate.(issuer, %{}, %{})
       end
     end
 
     property "any given audience will be validated" do
-      check all audience <- binary() do
+      check all(audience <- binary()) do
         aud_claim = Config.default_claims(aud: audience)["aud"]
         assert aud_claim.validate.(audience, %{}, %{})
       end
@@ -151,7 +151,7 @@ defmodule Joken.Config.Test do
         use Joken.Config
       end
 
-      check all input_map <- generator do
+      check all(input_map <- generator) do
         {:ok, token, gen_claims} = PropertyEncodeDecode.generate_and_sign(input_map)
         {:ok, claims} = PropertyEncodeDecode.verify_and_validate(token)
 
