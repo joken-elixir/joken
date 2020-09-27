@@ -42,7 +42,6 @@ defmodule Joken.Error do
     Joken.Config.default_claims/1.
     """
 
-
   def message(%__MODULE__{reason: :algorithm_needs_key}),
     do: """
     A map was expected for the key parameter in the signer creation. 

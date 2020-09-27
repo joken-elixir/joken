@@ -22,7 +22,7 @@ matrix:
       elixir: 1.9.4      
 
 script:
-  - mix credo --strict
+  - MIX_ENV=test mix credo --strict
   - mix format --check-formatted
   - MIX_ENV=test mix coveralls.travis --trace --cover
 
