@@ -1,5 +1,20 @@
 ## [Unreleased]
 
+## [2.3.0] - 2020-09-27
+
+### Changed
+
+- (@supersimple with @bryanjos) Update CHANGELOG.md (#257)
+- (@victorolinasc) chore: add public PEM only signer test
+- (@victorolinasc) chore: update deps
+- (@victorolinasc) Adding error handling (#277)
+- (@ideaMarcos) Update common_use_cases.md (#285)
+- (@victorolinasc) Clean up versions and compatibility with OTP 23 (#291)
+
+### Fixed
+
+- (@woylie) fix type specs and doc (#266)
+
 ## [2.2.0] - 2019-11-08
 
 ### Added
