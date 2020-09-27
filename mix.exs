@@ -90,7 +90,7 @@ defmodule Joken.Mixfile do
         "guides/common_use_cases.md",
         "guides/migration_from_1.md",
         "guides/custom_header_arguments.md",
-        {"CHANGELOG.md", [title: "Changelog"]}
+        {:"CHANGELOG.md", [title: "Changelog"]}
       ],
       main: "introduction"
     ]
