@@ -30,9 +30,9 @@ defmodule Joken do
 
   Joken has 3 basic concepts:
 
-    - Portable token claims configuration
-    - Signer configuration
-    - Hooks
+    - Portable token claims configuration.
+    - Signer configuration.
+    - Hooks.
 
   The portable token claims configuration is a map of binary keys to `Joken.Claim` structs and is used
   to dynamically generate and validate tokens.
@@ -45,36 +45,37 @@ defmodule Joken do
 
   There are 2 forms of using Joken:
 
-  1. Pure data structures. You can create your token configuration and signer and use them with this
+  1.  Pure data structures. You can create your token configuration and signer and use them with this
   module for all 4 operations: verify, validate, generate and sign.
 
-  ```
-  iex> token_config = %{} # empty config
-  iex> token_config = Map.put(token_config, "scope", %Joken.Claim{
-  ...>   generate: fn -> "user" end,
-  ...>   validate: fn val, _claims, _context -> val in ["user", "admin"] end
-  ...> })
-  iex> signer = Joken.Signer.create("HS256", "my secret")
-  iex> {:ok, claims} = Joken.generate_claims(token_config, %{"extra"=> "claim"})
-  iex> {:ok, jwt, claims} = Joken.encode_and_sign(claims, signer)
-  ```
+      ```
+      iex> token_config = %{} # empty config
+      iex> token_config = Map.put(token_config, "scope", %Joken.Claim{
+      ...>   generate: fn -> "user" end,
+      ...>   validate: fn val, _claims, _context -> val in ["user", "admin"] end
+      ...> })
+      iex> signer = Joken.Signer.create("HS256", "my secret")
+      iex> {:ok, claims} = Joken.generate_claims(token_config, %{"extra"=> "claim"})
+      iex> {:ok, jwt, claims} = Joken.encode_and_sign(claims, signer)
+      ```
 
-  2. With the encapsulated module approach using `Joken.Config`. See the docs for `Joken.Config` for
+  2.  With the encapsulated module approach using `Joken.Config`. See the docs for `Joken.Config` for
   more details.
 
-  ```
-  iex> defmodule MyAppToken do
-  ...>   use Joken.Config, default_signer: :pem_rs256
-  ...>
-  ...>   @impl Joken.Config
-  ...>   def token_config do
-  ...>     default_claims()
-  ...>     |> add_claim("role", fn -> "USER" end, &(&1 in ["ADMIN", "USER"]))
-  ...>   end
-  ...> end
-  iex> {:ok, token, _claims} = MyAppToken.generate_and_sign(%{"user_id" => "1234567890"})
-  iex> {:ok, _claim_map} = MyAppToken.verify_and_validate(token)
-  ```
+      ```
+      iex> defmodule MyAppToken do
+      ...>   use Joken.Config, default_signer: :pem_rs256
+      ...>
+      ...>   @impl Joken.Config
+      ...>   def token_config do
+      ...>     default_claims()
+      ...>     |> add_claim("role", fn -> "USER" end, &(&1 in ["ADMIN", "USER"]))
+      ...>   end
+      ...> end
+      iex> {:ok, token, _claims} = MyAppToken.generate_and_sign(%{"user_id" => "1234567890"})
+      iex> {:ok, _claim_map} = MyAppToken.verify_and_validate(token)
+      ```
+
   """
   alias Joken.{Claim, Hooks, Signer}
   require Logger
@@ -164,9 +165,10 @@ defmodule Joken do
   Expands a signed token into its 3 parts: protected, payload and signature.
 
   Protected is also called the JOSE header. It contains metadata only like:
-    - "typ": the token type
-    - "kid": an id for the key used in the signing
-    - "alg": the algorithm used to sign a token
+
+    - `typ`: the token type.
+    - `kid`: an id for the key used in the signing.
+    - `alg`: the algorithm used to sign a token.
 
   Payload is the set of claims and signature is, well, the signature.
   """

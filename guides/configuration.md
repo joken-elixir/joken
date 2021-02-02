@@ -53,11 +53,11 @@ defmodule MyAppToken do
 end
 ```
 
-This is the recommended approach. With this macro you get some generated functions that passes your `token_config` automatically to Joken's functions. It also implements the `Joken.Hooks` behaviour so you can overrid any of its callbacks. Also, by default, it will look for a signer from mix config with the `default_signer` key.
+This is the recommended approach. With this macro you get some generated functions that passes your `token_config` automatically to Joken's functions. It also implements the `Joken.Hooks` behaviour so you can override any of its callbacks. Also, by default, it will look for a signer from mix config with the `default_signer` key.
 
 Let's see this in more depth below.
 
-## 1. Claims generation and validation
+## Claims generation and validation
 
 Let's start with an example:
 
@@ -74,14 +74,14 @@ With this configuration, you get:
 
 So, if you call `MyApp.Token.generate_and_sign/2` **and** you have a key configured with the value `:default_signer` you'll get a token with:
 
-- "exp": defaults to 2 hours with validation
-- "iat": defaults to `Joken.current_time/0`
-- "nbf": defaults to `Joken.current_time/0` with validation
-- "iss": defaults to "Joken" with validation
-- "aud": defaults to "Joken" with validation
-- "jti": defaults to `Joken.generate_jti/0`
+- `exp`: defaults to 2 hours with validation
+- `iat`: defaults to `Joken.current_time/0`
+- `nbf`: defaults to `Joken.current_time/0` with validation
+- `iss`: defaults to "Joken" with validation
+- `aud`: defaults to "Joken" with validation
+- `jti`: defaults to `Joken.generate_jti/0`
 
-It is important to notice that this configuration is used for claims we want to either generate dynamically (like all time based claims) or validate (like "iss" claim that we want to ensure is the same we use to generate our tokens).
+It is important to notice that this configuration is used for claims we want to either generate dynamically (like all time based claims) or validate (like `iss` claim that we want to ensure is the same we use to generate our tokens).
 
 ### Overriding `token_config/0`
 

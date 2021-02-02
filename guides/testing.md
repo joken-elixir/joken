@@ -22,4 +22,4 @@ All it needs is to implement the function `current_time/0`.
 
 ### Behaviour
 
-It also worth mentioning that Joken.CurrentTime is a behaviour so you can use mocking libraries like `mox`.
+It also worth mentioning that `Joken.CurrentTime` is a behaviour so you can use mocking libraries like `mox`.

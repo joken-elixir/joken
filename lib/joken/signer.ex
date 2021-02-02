@@ -51,7 +51,7 @@ defmodule Joken.Signer do
   or a map with arguments for the other kinds of keys. Also, accepts an optional map
   that will be passed as extra header arguments for generated JWT tokens.
 
-  ## Example:
+  ## Example
 
       iex> Joken.Signer.create("HS256", "s3cret")
       %Joken.Signer{
@@ -158,12 +158,14 @@ defmodule Joken.Signer do
   A `Joken.Signer` has an algorithm (one of #{inspect(@algorithms)}) and a key.
 
   There are several types of keys used by JWTs algorithms:
+
     - RSA
     - Elliptic Curve
     - Octet (binary)
     - So on...
 
   Also, they can be encoded in several ways:
+
     - Raw (map of parameters)
     - PEM (Privacy Enhanced Mail format)
     - Open SSH encoding
@@ -171,11 +173,12 @@ defmodule Joken.Signer do
 
   To ease configuring these types of keys used by JWTs algorithms, Joken accepts a few
   parameters in its configuration:
-    - **signer_alg** : one of #{inspect(@algorithms)}
-    - **key_pem** : a binary containing a key in PEM encoding format
-    - **key_openssh** : a binary containing a key in Open SSH encoding format
-    - **key_map** : a map with the raw parameters
-    - **key_octet** : a binary used as the password for HS algorithms only
+
+    - `:signer_alg` : one of #{inspect(@algorithms)}.
+    - `:key_pem` : a binary containing a key in PEM encoding format.
+    - `:key_openssh` : a binary containing a key in Open SSH encoding format.
+    - `:key_map` : a map with the raw parameters.
+    - `:key_octet` : a binary used as the password for HS algorithms only.
 
   ## Examples
 

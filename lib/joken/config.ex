@@ -4,27 +4,28 @@ defmodule Joken.Config do
 
   ## Creating a map of `Joken.Claim` s
 
-  If you prefer to avoid using macros, you can create your configuration manually. Joken's 
+  If you prefer to avoid using macros, you can create your configuration manually. Joken's
   configuration is just a map with keys being binaries (the claim name) and the value an
-  instance of `Joken.Claim`. 
+  instance of `Joken.Claim`.
 
-  Example:
-    
+  ### Example
+
       %{"exp" => %Joken.Claim{
         generate: fn -> Joken.Config.current_time() + (2 * 60 * 60) end,
-        validate: fn val, _claims, _context -> val < Joken.Config.current_time() end  
+        validate: fn val, _claims, _context -> val < Joken.Config.current_time() end
       }}
 
   Since this is cumbersome and error prone, you can use this module with a more fluent API, see:
+
     - `default_claims/1`
     - `add_claim/4`
 
   ## Automatically load and generate functions (recommended)
 
-  Another approach is to just `use Joken.Config` in a module. This will load a signer configuration 
-  (from config.exs) and a map of `Joken.Claim` s. 
+  Another approach is to just `use Joken.Config` in a module. This will load a signer configuration
+  (from config.exs) and a map of `Joken.Claim` s.
 
-  Example:
+  ### Example
 
       defmodule MyAuth do
         use Joken.Config
@@ -44,9 +45,9 @@ defmodule Joken.Config do
 
   ## Overriding functions
 
-  All callbacks in `Joken.Config` and `Joken.Hooks` are overridable. This can be used for 
+  All callbacks in `Joken.Config` and `Joken.Hooks` are overridable. This can be used for
   customizing the token configuration. All that is needed is to override the `token_config/0`
-  function returning your map of binary keys to `Joken.Claim` structs. Example from the 
+  function returning your map of binary keys to `Joken.Claim` structs. Example from the
   benchmark suite:
 
       defmodule MyCustomClaimsAuth do
@@ -73,11 +74,11 @@ defmodule Joken.Config do
         def token_config, do: default_claims(default_exp: 60 * 60) # 1 hour
       end
 
-  ## Options
+  ### Options
 
   You can pass some options to `use Joken.Config` to ease on your configuration:
 
-    - default_signer: a signer configuration key in config.exs (see `Joken.Signer`)
+    - `:default_signer`: a signer configuration key in config.exs (see `Joken.Signer`)
   """
   import Joken, only: [current_time: 0]
   alias Joken.Signer
@@ -104,11 +105,11 @@ defmodule Joken.Config do
 
   The signer used will be (in order of preference):
 
-    1. The one represented by the key passed as second argument. The signer will be 
-    parsed from the configuration. 
-    2. If no argument was passed then we will use the one from the configuration 
+    1. The one represented by the key passed as second argument. The signer will be
+    parsed from the configuration.
+    2. If no argument was passed then we will use the one from the configuration
     `:default_signer` passed as argument for the `use Joken.Config` macro.
-    3. If no key was passed for the use macro then we will use the one configured as 
+    3. If no key was passed for the use macro then we will use the one configured as
     `:default_signer` in the configuration.
   """
   @callback encode_and_sign(Joken.claims(), Joken.signer_arg() | nil) ::
@@ -134,7 +135,7 @@ defmodule Joken.Config do
               {:ok, Joken.claims()} | {:error, Joken.error_reason()}
 
   @doc """
-  Runs validations on the already verified token. 
+  Runs validations on the already verified token.
   """
   @callback validate(Joken.claims()) :: {:ok, Joken.claims()} | {:error, Joken.error_reason()}
 
@@ -237,14 +238,14 @@ defmodule Joken.Config do
   end
 
   @doc """
-  Initializes a map of `Joken.Claim`s with "exp", "iat", "nbf", "iss", "aud" and "jti". 
+  Initializes a map of `Joken.Claim`s with "exp", "iat", "nbf", "iss", "aud" and "jti".
 
   Default parameters can be customized with options:
 
-  - skip: do not include claims in this list. Ex: [:iss, :aud]
-  - default_exp: changes the default expiration of the token. Default is 2 hours
-  - iss: changes the issuer claim. Default is "Joken" 
-  - aud: changes the audience claim. Default is "Joken"
+    - `:skip`: do not include claims in this list. Ex: [:iss, :aud]
+    - `:default_exp`: changes the default expiration of the token. Default is 2 hours
+    - `:iss`: changes the issuer claim. Default is "Joken"
+    - `:aud`: changes the audience claim. Default is "Joken"
   """
   @spec default_claims(Keyword.t()) :: Joken.token_config()
   # credo:disable-for-next-line
@@ -303,6 +304,7 @@ defmodule Joken.Config do
       iex> validate_fun = &(&1 =~ "Hi")
       iex> claim = %Joken.Claims{generate: generate_fun, validate: validate_fun}
       iex> config = Map.put(config, "claim key", claim)
+
   """
   @spec add_claim(Joken.token_config(), binary, fun | nil, fun | nil, Keyword.t()) ::
           Joken.token_config()

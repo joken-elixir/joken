@@ -44,7 +44,7 @@ defmodule Joken.Error do
 
   def message(%__MODULE__{reason: :algorithm_needs_key}),
     do: """
-    A map was expected for the key parameter in the signer creation. 
+    A map was expected for the key parameter in the signer creation.
     This is mandatory for: #{inspect(Signer.map_key_algorithms())}.
     """
 
