@@ -1,6 +1,7 @@
 defmodule Joken.Mixfile do
   use Mix.Project
 
+  @source_url "https://github.com/joken-elixir/joken"
   @version "2.3.0"
 
   def project do
@@ -15,9 +16,7 @@ defmodule Joken.Mixfile do
       description: description(),
       package: package(),
       deps: deps(),
-      source_ref: "v#{@version}",
-      source_url: "https://github.com/joken-elixir/joken",
-      docs: docs_config(),
+      docs: docs(),
       dialyzer: [plt_add_deps: :apps_direct, plt_add_apps: [:jason]],
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
@@ -45,7 +44,7 @@ defmodule Joken.Mixfile do
       {:benchee, "~> 1.0", only: :dev},
 
       # Docs
-      {:ex_doc, "~> 0.21", only: :dev, runtime: false},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
 
       # Dialyzer
       {:dialyxir, "~> 1.0.0-rc7", only: :dev, runtime: false},
@@ -62,7 +61,7 @@ defmodule Joken.Mixfile do
 
   defp description do
     """
-    JWT (JSON Web Token) library for Elixir
+    JWT (JSON Web Token) library for Elixir.
     """
   end
 
@@ -72,27 +71,30 @@ defmodule Joken.Mixfile do
       maintainers: ["Bryan Joseph", "Victor Nascimento"],
       licenses: ["Apache-2.0"],
       links: %{
-        "GitHub" => "https://github.com/joken-elixir/joken",
-        "Docs" => "http://hexdocs.pm/joken"
+        "Changelog" => "https://hexdocs.pm/joken/changelog.html",
+        "GitHub" => @source_url
       }
     ]
   end
 
-  defp docs_config do
+  defp docs do
     [
       extra_section: "GUIDES",
       extras: [
+        {:"CHANGELOG.md", [title: "Changelog"]},
+        {:"README.md", [title: "Readme"]},
         "guides/introduction.md",
         "guides/configuration.md",
-        "guides/signer.md",
+        "guides/signers.md",
         "guides/assymetric_cryptography_signers.md",
         "guides/testing.md",
         "guides/common_use_cases.md",
         "guides/migration_from_1.md",
-        "guides/custom_header_arguments.md",
-        {:"CHANGELOG.md", [title: "Changelog"]}
+        "guides/custom_header_arguments.md"
       ],
-      main: "introduction"
+      main: "readme",
+      source_url: @source_url,
+      source_ref: "v#{@version}"
     ]
   end
 end

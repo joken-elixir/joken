@@ -1,6 +1,6 @@
 defmodule Joken.Claim do
   @moduledoc """
-  Structure for a dynamic claim. It is used for holding functions that generate 
+  Structure for a dynamic claim. It is used for holding functions that generate
   and validate claims.
   """
 

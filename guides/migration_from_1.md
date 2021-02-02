@@ -2,32 +2,32 @@
 
 Joken 2.0 tries to fix several issues we had with the 1.x series. Some of those issues were:
 
-1. **Initialization of the `json` client in JOSE**
+1.  **Initialization of the `json` client in JOSE**
 
-  The JSON adapter was indicated as being needed to be set everytime. This is now an application configuration.
+    The JSON adapter was indicated as being needed to be set every time. This is now an application configuration.
 
-1. **Confusion between dynamic and static claim value generation**
+2.  **Confusion between dynamic and static claim value generation**
 
-  Using dynamic claims was confusing as it was hacked in after version 1.0. Now, it is very explicetely said that all claim generation must be a function that is called at *token generation time*. This avoids the confusion by being explicit. If you need dynamic values just implement your token generation function that way. Otherwise, return a fixed value.
+    Using dynamic claims was confusing as it was hacked in after version 1.0. Now, it is very explicitly said that all claim generation must be a function that is called at *token generation time*. This avoids the confusion by being explicit. If you need dynamic values just implement your token generation function that way. Otherwise, return a fixed value.
 
-1. **Static claims**
+3.  **Static claims**
 
-  There was another hacked feature about including static claim values. If you want to pass the user id to your token generation function, the API was clumsy. Now you can pass a map of claims to be added to the token. This leaves the burden of trying to cope with all use cases. You can still validate any claim.
+    There was another hacked feature about including static claim values. If you want to pass the user id to your token generation function, the API was clumsy. Now you can pass a map of claims to be added to the token. This leaves the burden of trying to cope with all use cases. You can still validate any claim.
 
-1. **Debugging**
+4.  **Debugging**
 
-  The error messages were not very instructive and a lot of times you would have to debug the inner core of `Joken`. We've improved a lot on this area.
+    The error messages were not very instructive and a lot of times you would have to debug the inner core of `Joken`. We've improved a lot on this area.
 
-In order to overcome most of these issues, we've came up with a major version that breaks backwards compatibility in several ways. We believe it was worth it. We brought in:
+    In order to overcome most of these issues, we've came up with a major version that breaks backwards compatibility in several ways. We believe it was worth it. We brought in:
 
-- Module configuration through `Joken.Config` which makes it really simple to configure your claims and have it encapsulated by default;
-- Hook system through `Joken.Hooks` to extend Joken's features with a simple plug-like semantic;
-- Performance analysis that brought a faster implementation and faster than other token libraries in the elixir community;
-- Better developer experience with improved error messages;
-- Ready for being extended without breaking the API again (options in claims);
-- Improved testability with mocking current time implementation;
-- A Jason adapter for JOSE;
-- More configuration options for signers;
+      - Module configuration through `Joken.Config` which makes it really simple to configure your claims and have it encapsulated by default;
+      - Hook system through `Joken.Hooks` to extend Joken's features with a simple plug-like semantic;
+      - Performance analysis that brought a faster implementation and faster than other token libraries in the elixir community;
+      - Better developer experience with improved error messages;
+      - Ready for being extended without breaking the API again (options in claims);
+      - Improved testability with mocking current time implementation;
+      - A Jason adapter for JOSE;
+      - More configuration options for signers;
 
 ## Migrating
 

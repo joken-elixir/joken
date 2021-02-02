@@ -3,7 +3,9 @@ defmodule Joken.Hooks.RequiredClaims do
   Hook to demand claims presence.
 
   Adding this hook to your token configuration will allow to ensure some claims are present. It
-  adds an `after_validate/3` implementation that checks claims presence. Example:
+  adds an `after_validate/3` implementation that checks claims presence.
+
+  ## Example
 
       defmodule MyToken do
         use Joken.Config

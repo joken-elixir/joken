@@ -8,12 +8,12 @@ For each algorithm, a specific key format is expected. HS algorithms expect an o
 
 A signer is configured using the following parameters:
 
-  - **signer_alg** : "HS256", "HS384" and so on
-  - **key_pem** : a binary containing a key in PEM encoding format
-  - **key_openssh** : a binary containing a private key in Open SSH encoding format
-  - **key_map** : a map with the raw parameters of the key
-  - **key_octet** : a binary used as the password for HS algorithms only
-  - **key_index** : the index of the key on a pem or openssh key set defaults to 0
+  - **signer_alg** : "HS256", "HS384" and so on.
+  - **key_pem** : a binary containing a key in PEM encoding format.
+  - **key_openssh** : a binary containing a private key in OpenSSH encoding format.
+  - **key_map** : a map with the raw parameters of the key.
+  - **key_octet** : a binary used as the password for HS algorithms only.
+  - **key_index** : the index of the key on a pem or OpenSSH key set defaults to `0`.
 
 Let's see some examples:
 
@@ -70,7 +70,7 @@ This map is in the format defined by JWK spec. Although you CAN use this format 
 
 ## PEM - Privacy Enhanced Mail
 
-Please, don't mind the name... This is just History being unfair. If you are curious, take a look at Wikipedia's article on pem [here](https://en.wikipedia.org/wiki/Privacy-enhanced_Electronic_Mail).
+Please, don't mind the name... This is just history being unfair. If you are curious, take a look at Wikipedia's article on PEM [here](https://en.wikipedia.org/wiki/Privacy-enhanced_Electronic_Mail).
 
 Joken brings a facility for setting a PEM key. Just use the config option `key_pem`. Paste your PEM contents there and that's it. Example:
 
@@ -84,7 +84,7 @@ MIICWwIBAAKBgQDdlatRjRjogo3WojgGHFHYLugdUWAY9iR3fy4arWNA1KoS8kVw33cJibXr8bvwUAUp
 """
 ```
 
-If you are creating a signer explicitly, you need to pass the pem in a map with the key pem. Example:
+If you are creating a signer explicitly, you need to pass the PEM in a map with the key PEM. Example:
 
 ``` elixir
 signer = Joken.Signer.create(%{"pem" => key_pem})
@@ -104,7 +104,7 @@ One thing that might seem confusing is that with some private keys you can **SIG
 
 ## Benchmarks
 
-Another misterious thing about the encoding of things is that it is preferable to use the PEM format instead of passing a map of keys with all the values. Performance wise it is just faster. You can run the benchmarks your self. They are in the benchmarks folder.
+Another mysterious thing about the encoding of things is that it is preferable to use the PEM format instead of passing a map of keys with all the values. Performance wise it is just faster. You can run the benchmarks your self. They are in the benchmarks folder.
 
 Why is that so? Well, to use the key we need to parse it into the erlang expected type that is not PEM nor JWKs maps. BUT, erlang can handle PEMs natively while it can't handle JWKs.
 
@@ -125,4 +125,3 @@ MyCustomAuth.generate_and_sign()
 # Explicit Signer instance
 MyCustomAuth.generate_and_sign(%{"some" => "extra claim"}, Joken.Signer.create("HS512", "secret"))
 ```
-

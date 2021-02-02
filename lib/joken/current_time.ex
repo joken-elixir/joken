@@ -1,8 +1,8 @@
 defmodule Joken.CurrentTime do
-  @moduledoc "Behaviour for fetching current time"
+  @moduledoc "Behaviour for fetching current time."
 
   @doc """
-  Returns the current time in seconds
+  Returns the current time in seconds.
 
   This is used for applications that want to control time for testing.
   """
@@ -17,7 +17,7 @@ defmodule Joken.CurrentTime.OS do
   @behaviour Joken.CurrentTime
 
   @doc """
-  Returns current time in seconds
+  Returns current time in seconds.
 
   Uses DateTime.utc_now/0.
   """
