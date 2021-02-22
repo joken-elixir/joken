@@ -47,7 +47,7 @@ defmodule Joken.Mixfile do
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
 
       # Dialyzer
-      {:dialyxir, "~> 1.0.0-rc7", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.1.0", only: :dev, runtime: false},
 
       # Credo
       {:credo, "~> 1.2", only: :test, runtime: false},
