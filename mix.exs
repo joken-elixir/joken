@@ -39,23 +39,23 @@ defmodule Joken.Mixfile do
 
   defp deps do
     [
-      {:jose, "~> 1.10"},
-      {:jason, "~> 1.1", only: [:dev, :test]},
+      {:jose, "~> 1.11.1"},
+      {:jason, "~> 1.2", only: [:dev, :test]},
       {:benchee, "~> 1.0", only: :dev},
 
       # Docs
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
 
       # Dialyzer
-      {:dialyxir, "~> 1.0.0-rc7", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.1.0", only: :dev, runtime: false},
 
       # Credo
-      {:credo, "~> 1.2", only: :test, runtime: false},
+      {:credo, "~> 1.5", only: :test, runtime: false},
 
       # Test
-      {:junit_formatter, "~> 3.0", only: :test},
-      {:stream_data, "~> 0.4", only: :test},
-      {:excoveralls, "~> 0.11", only: :test}
+      {:junit_formatter, "~> 3.1", only: :test},
+      {:stream_data, "~> 0.5", only: :test},
+      {:excoveralls, "~> 0.14", only: :test}
     ]
   end
 
