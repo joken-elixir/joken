@@ -11,15 +11,15 @@ A JSON Web Token (JWT) Library.
 
 Please, do read our comprehensive documentation and guides:
 
-- [Changelog](http://hexdocs.pm/joken/changelog.html)
-- [Joken Overview](http://hexdocs.pm/joken/introduction.html)
-- [Configuration](http://hexdocs.pm/joken/configuration.html)
-- [Signers](http://hexdocs.pm/joken/signers.html)
-- [Asymmetric cryptography signers](http://hexdocs.pm/joken/assymetric_cryptography_signers.html)
-- [Testing your app with Joken](http://hexdocs.pm/joken/testing.html)
-- [JWT Common use cases](http://hexdocs.pm/joken/common_use_cases.html)
-- [Migrating from Joken 1.0](http://hexdocs.pm/joken/migration_from_1.html)
-- [Custom header arguments](http://hexdocs.pm/joken/custom_header_arguments.html)
+- [Changelog](https://hexdocs.pm/joken/changelog.html)
+- [Joken Overview](https://hexdocs.pm/joken/introduction.html)
+- [Configuration](https://hexdocs.pm/joken/configuration.html)
+- [Signers](https://hexdocs.pm/joken/signer.html)
+- [Asymmetric cryptography signers](https://hexdocs.pm/joken/assymetric_cryptography_signers.html)
+- [Testing your app with Joken](https://hexdocs.pm/joken/testing.html)
+- [JWT Common use cases](https://hexdocs.pm/joken/common_use_cases.html)
+- [Migrating from Joken 1.0](https://hexdocs.pm/joken/migration_from_1.html)
+- [Custom header arguments](https://hexdocs.pm/joken/custom_header_arguments.html)
 
 ## Usage
 
