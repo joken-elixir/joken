@@ -147,7 +147,7 @@ defmodule JokenTest do
     {:ok, jwt, _} =
       Joken.encode_and_sign(%{}, Joken.Signer.create("HS256", "secret", %{"kid" => "my_id"}))
 
-    assert {:ok, %{"protected" => h, "payload" => p, "signature" => s}} = Joken.expand(jwt)
+    assert {:ok, %{"protected" => _, "payload" => _, "signature" => _}} = Joken.expand(jwt)
   end
 
   test "returns error while trying to expand malformed token" do
