@@ -1,0 +1,27 @@
+version: 2
+updates:
+- package-ecosystem: mix
+  directory: "/"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: ex_doc
+    versions:
+    - 0.23.0
+    - 0.24.0
+    - 0.24.1
+  - dependency-name: dialyxir
+    versions:
+    - 1.1.0
+  - dependency-name: excoveralls
+    versions:
+    - 0.13.4
+    - 0.14.0
+  - dependency-name: credo
+    versions:
+    - 1.5.4
+    - 1.5.5
+  - dependency-name: jose
+    versions:
+    - 1.11.1
