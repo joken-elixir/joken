@@ -89,7 +89,7 @@ defmodule Joken.Error do
     When it is 2, besides the claim value, it receives a context map. You can pass dynamic
     values on this context and pass it to the validate function.
 
-    See `Joken.Config.validate/3` for more information on Context
+    See `Joken.Config.validate/2` for more information on Context
     """
 
   def message(%__MODULE__{reason: :wrong_key_parameters}),
