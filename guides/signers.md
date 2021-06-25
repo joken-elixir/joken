@@ -37,7 +37,7 @@ Let's see some examples:
 
 ## Octet keys
 
-HS algorithms (HS256, HS384, HS512) use a simple binary for its key. You can only use `key_octet` with HS algorithms.
+HS algorithms (HS256, HS384, HS512) use a simple binary for their key. You can only use `key_octet` with HS algorithms.
 
 There is another octet key type (OKP -> octet key pair) for use with Edwards algorithms but normally we use OpenSSH private key encoding or a map with the octets so it is not mentioned here.
 
@@ -90,7 +90,7 @@ If you are creating a signer explicitly, you need to pass the PEM in a map with 
 signer = Joken.Signer.create("RS512", %{"pem" => key_pem})
 ```
 
-Inside a PEM you can put several things. It may hold more than just a private key. For Joken, though, it might get a bit funky if you pass a PEM with several things in it. After all, we are trying to read a key from it and we are not actually a library for being compliant with PEM standard.
+Inside a PEM you can put several things. It may hold more than just a private key. For Joken, though, it might get a bit funky if you pass a PEM with several things in it. After all, we only need to read a key from it.  Joken is not a library meant to be fully compliant with the PEM standard.
 
 ## Private vs Public keys
 
@@ -100,17 +100,17 @@ This is the main benefit. And sure is a great one :)
 
 So, if you only call verify functions, you don't need the private key. But, if you call sign functions, you will need the private key.
 
-One thing that might seem confusing is that with some private keys you can **SIGN** and **VERIFY**. WTH??? Yep, some private keys contain the public key too inside of them (for example with RSA keys). So, you can sign and verify all the same with the same key.
+One thing that might seem confusing is that with some private keys you can **SIGN** and **VERIFY**. WTH??? Yep, some private keys contain the public key too inside of them (for example with RSA keys). So, you can sign and verify, both with the same key.
 
 ## Benchmarks
 
-Another mysterious thing about the encoding of things is that it is preferable to use the PEM format instead of passing a map of keys with all the values. Performance wise it is just faster. You can run the benchmarks your self. They are in the benchmarks folder.
+It is preferable to use the PEM format instead of passing a map of keys with all the values. Performance-wise it is just faster. You can run the benchmarks in the benchmarks folder.
 
-Why is that so? Well, to use the key we need to parse it into the erlang expected type that is not PEM nor JWKs maps. BUT, erlang can handle PEMs natively while it can't handle JWKs.
+Why is this way faster? Well, to use the key we need to parse it into the erlang expected type that is not PEM nor JWKs maps. BUT, erlang can handle PEMs natively while it can't handle JWKs.
 
 ## Dynamic signers
 
-All functions that receive a key argument may be passed an instance of a `Joken.Signer` in its place. This is a convenience for when you need a dynamic configuration as when you are retrieving the key from an endpoint.
+All functions that receive a key argument may be passed an instance of a `Joken.Signer` in its place. This is a convenience for when you need dynamic configuration such as when you are retrieving the key from an endpoint.
 
 Example:
 
