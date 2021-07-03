@@ -87,7 +87,7 @@ MIICWwIBAAKBgQDdlatRjRjogo3WojgGHFHYLugdUWAY9iR3fy4arWNA1KoS8kVw33cJibXr8bvwUAUp
 If you are creating a signer explicitly, you need to pass the PEM in a map with the key PEM. Example:
 
 ``` elixir
-signer = Joken.Signer.create(%{"pem" => key_pem})
+signer = Joken.Signer.create("RS512", %{"pem" => key_pem})
 ```
 
 Inside a PEM you can put several things. It may hold more than just a private key. For Joken, though, it might get a bit funky if you pass a PEM with several things in it. After all, we are trying to read a key from it and we are not actually a library for being compliant with PEM standard.
