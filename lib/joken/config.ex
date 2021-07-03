@@ -137,7 +137,8 @@ defmodule Joken.Config do
   @doc """
   Runs validations on the already verified token.
   """
-  @callback validate(Joken.claims(), term) :: {:ok, Joken.claims()} | {:error, Joken.error_reason()}
+  @callback validate(Joken.claims(), term) ::
+              {:ok, Joken.claims()} | {:error, Joken.error_reason()}
 
   defmacro __using__(options) do
     quote do
