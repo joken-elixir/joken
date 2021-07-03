@@ -2,7 +2,7 @@
 
 ## Token configuration
 
-One of Joken's basic concept is a map of configuration. This map has binary keys that are the claims names and `Joken.Claim` instances with what to do during generation or validation.
+One of Joken's basic concepts is a map of configuration. This map has binary keys that are the claims names and `Joken.Claim` instances with what to do during generation or validation.
 
 Here is an example:
 
@@ -53,7 +53,7 @@ defmodule MyAppToken do
 end
 ```
 
-This is the recommended approach. With this macro you get some generated functions that passes your `token_config` automatically to Joken's functions. It also implements the `Joken.Hooks` behaviour so you can override any of its callbacks. Also, by default, it will look for a signer from mix config with the `default_signer` key.
+This is the recommended approach. With this macro you get some generated functions that pass your `token_config` automatically to Joken's functions. It also implements the `Joken.Hooks` behaviour so you can override any of its callbacks. Also, by default, it will look for a signer from mix config with the `default_signer` key.
 
 Let's see this in more depth below.
 

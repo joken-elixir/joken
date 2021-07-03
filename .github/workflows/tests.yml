@@ -1,0 +1,141 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  check_duplicate_runs:
+    name: Check for duplicate runs
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@master
+        with:
+          concurrent_skipping: always
+          cancel_others: true
+          skip_after_successful_duplicate: true
+          paths_ignore: '["**/README.md", "**/CHANGELOG.md", "**/LICENSE.txt"]'
+          do_not_skip: '["pull_request"]'
+
+  tests:
+    name: Run tests (Elixir ${{matrix.elixir}}, OTP ${{matrix.otp}})
+
+    needs: check_duplicate_runs
+    if: ${{ needs.check_duplicate_runs.outputs.should_skip != 'true' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        elixir:
+        - "1.7.4"
+        - "1.8.1"
+        - "1.9.4"
+        - "1.10.4"
+        otp:
+        - "21.2"
+        - "22.3"
+        - "23.0"
+        exclude:
+        - elixir: "1.7.4"
+          otp: "23.0"
+        - elixir: "1.8.1"
+          otp: "23.0"
+        - elixir: "1.9.4"
+          otp: "23.0"
+        include:
+          - elixir: "1.11.4"
+            otp: "23.3"
+            lint: lint
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Set up Elixir
+      uses: erlef/setup-elixir@v1
+      with:
+        elixir-version: ${{ matrix.elixir }}
+        otp-version: ${{ matrix.otp }}
+
+    - name: Restore deps and _build cache
+      uses: actions/cache@v2
+      with:
+        path: |
+          deps
+          _build
+        key: deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-git-${{ github.sha }}
+        restore-keys: |
+          deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+          deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-
+
+    - name: Create dializer plts path
+      run: mkdir -p priv/plts
+
+    - name: Restore plts cache
+      uses: actions/cache@v2
+      with:
+        path: priv/plts
+        key: plts-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
+        restore-keys: |
+          plts-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+          plts-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-
+
+    - name: Install dependencies
+      run: mix deps.get --only test
+
+    - name: Check source code format
+      run: mix format --check-formatted
+      if: ${{ matrix.lint }}
+
+    - name: Perform source code static analysis
+      run: mix credo --strict
+      if: ${{ matrix.lint }}
+      env:
+        MIX_ENV: test
+
+    - name: Check unused dependencies
+      run: mix deps.unlock --check-unused
+      if: ${{ matrix.lint }}
+
+    - name: Remove compiled application files
+      run: mix clean
+
+    - name: Compile dependencies
+      run: mix compile
+      if: ${{ !matrix.lint }}
+      env:
+        MIX_ENV: test
+
+    - name: Compile & lint dependencies
+      run: mix compile --warnings-as-errors
+      if: ${{ matrix.lint }}
+      env:
+        MIX_ENV: test
+
+    - name: Run tests
+      run: mix coveralls.github
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Run dialyzer
+      run: mix dialyzer
+      env:
+        MIX_ENV: test
+
+  all_done:
+    name: Tests done
+    needs: tests
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: All done
+      run: echo '+'

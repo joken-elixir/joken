@@ -1,0 +1,61 @@
+name: Releases
+
+on:
+  push:
+    tags:
+      - .*
+
+jobs:
+  release:
+    name: Release new version
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Wait for tests
+        uses: fountainhead/action-wait-for-check@v1.0.0
+        id: wait-for-tests
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: Tests done
+          ref: ${{ github.ref }}
+          timeoutSeconds: 3600
+
+      - name: Set up Elixir
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: "1.11.4"
+          otp-version: "23.3"
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Cache deps
+        id: cache-deps
+        uses: actions/cache@v2
+        with:
+          path: |
+            deps
+            _build
+          key: deps-${{ runner.os }}-${{ hashFiles('**/mix.lock') }}-git-${{ github.sha }}
+          restore-keys: |
+            deps-${{ runner.os }}-${{ hashFiles('**/mix.lock') }}
+            deps-${{ runner.os }}-$
+
+      - name: Install package dependencies
+        run: mix deps.get
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Publish hex package
+        run: mix hex.publish --yes
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
