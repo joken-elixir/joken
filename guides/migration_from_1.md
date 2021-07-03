@@ -4,30 +4,30 @@ Joken 2.0 tries to fix several issues we had with the 1.x series. Some of those 
 
 1.  **Initialization of the `json` client in JOSE**
 
-    The JSON adapter was indicated as being needed to be set every time. This is now an application configuration.
+    The JSON adapter needed to be set every time. This is now an application configuration.
 
 2.  **Confusion between dynamic and static claim value generation**
 
-    Using dynamic claims was confusing as it was hacked in after version 1.0. Now, it is very explicitly said that all claim generation must be a function that is called at *token generation time*. This avoids the confusion by being explicit. If you need dynamic values just implement your token generation function that way. Otherwise, return a fixed value.
+    Using dynamic over static claims was confusing as this feature was thrown on after version 1.0. Now it is explicit that all claim generation must be done by providing a function that is called at *token generation time*. You are free to implement this token generation function to return static or dynamic values.
 
 3.  **Static claims**
 
-    There was another hacked feature about including static claim values. If you want to pass the user id to your token generation function, the API was clumsy. Now you can pass a map of claims to be added to the token. This leaves the burden of trying to cope with all use cases. You can still validate any claim.
+    There was another confusing feature about including static claim values. For example, the API was awkward if you wanted to pass the user id to your token generation function. Now you can pass a map of claims to be added to the token. This avoids the burden of handling all possible use cases. You can still validate any claim.
 
 4.  **Debugging**
 
-    The error messages were not very instructive and a lot of times you would have to debug the inner core of `Joken`. We've improved a lot on this area.
+    The error messages were not very instructive, often requiring a deep understanding of `Joken` in order to debug. We've made great improvements in this area.
 
-    In order to overcome most of these issues, we've came up with a major version that breaks backwards compatibility in several ways. We believe it was worth it. We brought in:
+    In order to overcome most of these issues, Joken 2.0 breaks backward compatibility in several ways. We believe it was worth it. We brought in:
 
       - Module configuration through `Joken.Config` which makes it really simple to configure your claims and have it encapsulated by default;
-      - Hook system through `Joken.Hooks` to extend Joken's features with a simple plug-like semantic;
-      - Performance analysis that brought a faster implementation and faster than other token libraries in the elixir community;
-      - Better developer experience with improved error messages;
-      - Ready for being extended without breaking the API again (options in claims);
+      - Hook system through `Joken.Hooks` to extend Joken's features with simple plug-like semantics;
+      - Performance analysis with a faster implementation--faster than other token libraries in the elixir community;
+      - Improved error messages;
+      - Ready for future development without breaking the API again (options in claims);
       - Improved testability with mocking current time implementation;
       - A Jason adapter for JOSE;
-      - More configuration options for signers;
+      - More signer configuration options;
 
 ## Migrating
 
@@ -35,7 +35,7 @@ Joken 2 has two approaches: one similar to Joken 1.x and another one using `Joke
 
 ### Keeping close to Joken 1.x style
 
-Joken 1.x was based on configuring the `Joken.Token` struct and then calling `sign/2` or `verify/3`. In Joken 2.0 there is no `Joken.Token` struct for several reasons: the name of the module was confusing and it had some side-effects like setting the JSON module on JOSE.
+Joken 1.x was based on configuring the `Joken.Token` struct and then calling `sign/2` or `verify/3`. Joken 2.0 omits the `Joken.Token` struct for several reasons: the name of the module was confusing and it had some side-effects like setting the JSON module on JOSE.
 
 We still can build a token configuration and pass it to similar functions `sign` and `verify`. The token configuration is now a simple map of claim keys that must be binaries to an instance of `Joken.Claim`. This struct holds the functions to operate on claims.
 
@@ -88,6 +88,6 @@ end
 MyToken.generate_and_sign()
 ```
 
-On that module you can add your custom token logic too like persisting it, adding an `authenticate` function that receives a user and a token or things like that. You could even add a `call(conn, opts)` call there and call this your authentication plug.
+You can also add custom token logic in that module like persisting it, adding an `authenticate` function that receives a user and a token or something similar. You could even turn it into an authentication plug adding a `call(conn, opts)`.
 
 Another advantage of this approach is that you can add hooks to your processing. Check the hooks guide for more information.

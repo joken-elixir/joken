@@ -1,10 +1,10 @@
 # Custom header arguments
 
-By default, a header in a token is only meant for static information that helps in knowing what needs to be done to properly verify the signature.
+By default, a header in a token is only meant for static information. This information is used for signature verification.
 
 Common extra claims in the header might be the key id used to sign the contents, crypto algorithms and so on.
 
-If you need to generate extra header claims, you can do that with signers. There are two ways: creating your own signers or through the configuration.
+If you need to generate extra header claims, you can do that in one of two ways: 1. use a custom signer or 2. change the application configuration.
 
 An example of creating a custom signer with extra header claims:
 

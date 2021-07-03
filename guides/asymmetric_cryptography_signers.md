@@ -13,7 +13,7 @@ It is common to divide cryptography in three categories:
 3. Hash cryptography (also called [one-way functions](https://en.wikipedia.org/wiki/One-way_function)):
    - Clear text is passed to a function that may or may not receive a key to generate irreversible cipher text.
 
-In [JWA](https://tools.ietf.org/html/rfc7518#section-3) specification we have algorithms that use both symmetric and asymmetric cryptography functions. Let's see them (taken from the specification):
+In the [JWA](https://tools.ietf.org/html/rfc7518#section-3) specification we have algorithms that use both symmetric and asymmetric cryptography functions. Let's see them (taken from the specification):
 
 |-------|-------------------------------|--------------|
 | HS256 | HMAC using SHA-256            | Required     |
@@ -38,7 +38,7 @@ In [JWA](https://tools.ietf.org/html/rfc7518#section-3) specification we have al
 
 (removed the none algorithm we don't support**)
 
-Besides HSxxx family of algorithms, all others use asymmetric cryptography.
+Besides the HSxxx family of algorithms, all others use asymmetric cryptography.
 
 ## Using asymmetric algorithms
 
@@ -57,7 +57,7 @@ We have a Joken Hook that can fetch these keys, turn them into signers and verif
 
 Different algorithms use different key formats. For example, RSA is based on huge prime numbers arithmetic. Its keys contain data about these prime numbers and other variables in the RSA function specification.
 
-Elliptic curve cryptography is based on elliptic curve arithmetics. Its keys represent the function that generates infinite points on a curve specification.
+Elliptic curve cryptography is based on elliptic curve arithmetic. Its keys represent the function that generates infinite points on a curve specification.
 
 Because of those differences, we usually have a container for each key type. There is a specification for *how to represent these keys in JSON format*. That is the [JSON Web Key](https://tools.ietf.org/html/rfc7517) specification. It has a JSON format for each type of key.
 
@@ -109,8 +109,8 @@ To use it with Joken we can call one of the `Joken.Signer.create` variants:
 
     ``` elixir
     # example of key parameters from https://tools.ietf.org/html/rfc7517#appendix-A.1
-    # This is for demonstration purpouses. We don't all those parameters in the map like
-    # the "alg", "kid", "kty". Although they are part of the JWK Set specification.
+    # This is for demonstration purposes. We don't allow those parameters in the map like
+    # "alg", "kid", "kty". Although they are part of the JWK Set specification.
 
     key = %{
       "alg" => "RS256",
@@ -145,6 +145,6 @@ To use it with Joken we can call one of the `Joken.Signer.create` variants:
 
 ### Other algorithms
 
-Joken has a test suite that runs all supported algorithms. Please have a look on other algorithms from our test suite.
+Joken has a test suite that runs all supported algorithms. Please have a look at other algorithms from our test suite.
 
 Also, check `:erlang-jose` documentation about keys: https://github.com/potatosalad/erlang-jose/blob/master/examples/KEY-GENERATION.md
