@@ -36,7 +36,7 @@ defmodule Joken.Config do
     - `generate_claims/1`: generates dynamic claims and adds them to the passed map.
     - `encode_and_sign/2`: takes a map of claims, encodes it to JSON and signs it.
     - `verify/2`: check for token tampering using a signer.
-    - `validate/1`: takes a claim map and a configuration to run validations.
+    - `validate/2`: takes a claim map and a configuration to run validations.
     - `generate_and_sign/2`: combines generation and signing.
     - `verify_and_validate/2`: combines verification and validation.
     - `token_config/0`: where you customize token generation and validation.
@@ -137,7 +137,7 @@ defmodule Joken.Config do
   @doc """
   Runs validations on the already verified token.
   """
-  @callback validate(Joken.claims()) :: {:ok, Joken.claims()} | {:error, Joken.error_reason()}
+  @callback validate(Joken.claims(), term) :: {:ok, Joken.claims()} | {:error, Joken.error_reason()}
 
   defmacro __using__(options) do
     quote do
@@ -190,7 +190,7 @@ defmodule Joken.Config do
                      generate_claims: 1,
                      encode_and_sign: 2,
                      verify: 2,
-                     validate: 1
+                     validate: 2
 
       @doc "Combines `generate_claims/1` and `encode_and_sign/2`"
       @spec generate_and_sign(Joken.claims(), Joken.signer_arg()) ::
@@ -204,7 +204,7 @@ defmodule Joken.Config do
       def generate_and_sign!(extra_claims \\ %{}, key \\ __default_signer__()),
         do: Joken.generate_and_sign!(token_config(), extra_claims, key, __hooks__())
 
-      @doc "Combines `verify/2` and `validate/1`"
+      @doc "Combines `verify/2` and `validate/2`"
       @spec verify_and_validate(Joken.bearer_token(), Joken.signer_arg(), term) ::
               {:ok, Joken.claims()} | {:error, Joken.error_reason()}
       def verify_and_validate(bearer_token, key \\ __default_signer__(), context \\ %{}),
