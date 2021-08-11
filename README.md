@@ -1,7 +1,7 @@
 # Joken
 
 [![Build](https://travis-ci.org/joken-elixir/joken.svg?branch=master)](https://travis-ci.org/joken-elixir/joken)
-[![Module Version](https://img.shields.io/hexpm/v/joken.svg)](https://hex.pm/packages/token)
+[![Module Version](https://img.shields.io/hexpm/v/joken.svg)](https://hex.pm/packages/joken)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/joken/)
 [![Total Download](https://img.shields.io/hexpm/dt/joken.svg)](https://hex.pm/packages/joken)
 [![License](https://img.shields.io/hexpm/l/joken.svg)](https://github.com/joken-elixir/joken/blob/master/LICENSE)
