@@ -41,7 +41,6 @@ defmodule Joken.Mixfile do
   defp deps do
     [
       {:jose, "~> 1.11.2"},
-      {:x509, ">= 0.0.0"},
       {:jason, "~> 1.2", only: [:dev, :test]},
       {:benchee, "~> 1.0", only: :dev},
 
