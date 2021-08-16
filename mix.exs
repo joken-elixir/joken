@@ -87,7 +87,7 @@ defmodule Joken.Mixfile do
         "guides/introduction.md",
         "guides/configuration.md",
         "guides/signers.md",
-        "guides/assymetric_cryptography_signers.md",
+        "guides/asymmetric_cryptography_signers.md",
         "guides/testing.md",
         "guides/common_use_cases.md",
         "guides/migration_from_1.md",

@@ -3,9 +3,9 @@
 It is common to divide cryptography in three categories:
 
 1. Symmetric cryptography (also called [symmetric-key algorithms](https://en.wikipedia.org/wiki/Symmetric-key_algorithm)):
-  - Clear text is passed to an algorithm that uses a key for encrypting and decrypting to generate cipher text;
-  - Examples include: AES (Advanced Encryption Standard), Blowfish, DES (Data Encryption Standard), etc;
-  - In the BEAM ecosystem, it is represented by the `:crypto.supports()[:ciphers]`.
+   - Clear text is passed to an algorithm that uses a key for encrypting and decrypting to generate cipher text;
+   - Examples include: AES (Advanced Encryption Standard), Blowfish, DES (Data Encryption Standard), etc;
+   - In the BEAM ecosystem, it is represented by the `:crypto.supports()[:ciphers]`.
 2. Asymmetric cryptography (also called [public-key cryptography](https://en.wikipedia.org/wiki/Public-key_cryptography)):
    - It uses a pair of keys where one is private (only known to the owner) and the other is public;
    - Clear text is passed to an algorithm plus the private key and generates a cipher text;
