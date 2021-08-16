@@ -1,5 +1,18 @@
 ## [Unreleased]
 
+## [2.4.0] - 2021-08-15
+
+### Changed
+
+- Major docs reviews and corrections (thanks to @kianmeng, @andreasknoepfle, Jon Forsyth, @fuelen)
+- Change of CI pipeline (thanks to @dolfinus)
+- Now uses Elixir 1.8 as minimum (and actually test the mininum version on CI)
+
+### Fixed
+
+- Fixed arity of `Joken.Config.validate` (thanks to @blagh)
+- Compatibility with OTP 24.0 with JOSE update to 1.11.2
+
 ## [2.3.0] - 2020-09-27
 
 ### Changed
