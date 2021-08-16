@@ -9,7 +9,7 @@ defmodule Joken.Mixfile do
       app: :joken,
       version: @version,
       name: "Joken",
-      elixir: "~> 1.5",
+      elixir: "~> 1.8",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       consolidate_protocols: Mix.env() != :test,
@@ -40,7 +40,8 @@ defmodule Joken.Mixfile do
 
   defp deps do
     [
-      {:jose, "~> 1.11.1"},
+      {:jose, "~> 1.11.2"},
+      {:x509, ">= 0.0.0"},
       {:jason, "~> 1.2", only: [:dev, :test]},
       {:benchee, "~> 1.0", only: :dev},
 
