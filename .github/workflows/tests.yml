@@ -37,20 +37,8 @@ jobs:
         - "1.10.4"
         - "1.12.2"
         otp:
-        - "21.2"
         - "23.3"
         - "24.0"
-        exclude:
-        - elixir: "1.8.1"
-          otp: "23.3"
-        - elixir: "1.8.1"
-          otp: "24.0"
-        - elixir: "1.9.4"
-          otp: "23.3"
-        include:
-          - elixir: "1.11.4"
-            otp: "23.3"
-            lint: lint
 
     runs-on: ubuntu-latest
 
