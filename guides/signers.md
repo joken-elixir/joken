@@ -119,7 +119,7 @@ defmodule MyCustomAuth do
   use Joken.Config
 end
 
-# Usign default signer configuration
+# Using default signer configuration
 MyCustomAuth.generate_and_sign()
 
 # Explicit Signer instance

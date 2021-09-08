@@ -97,7 +97,7 @@ defmodule MyApp.Token do
   end
 end
 
-{:ok, token} = MyApp.Token.generate_and_sign()
+{:ok, token, claims} = MyApp.Token.generate_and_sign()
 
 {:ok, claims} = MyApp.Token.verify_and_validate(token)
 
