@@ -58,7 +58,7 @@ end
 Then, just use your module :)
 
 ``` elixir
-{:ok, token_with_default_claims} = MyApp.Token.generate_and_sign()
+{:ok, token, claims} = MyApp.Token.generate_and_sign()
 
 extra_claims = %{"user_id" => "some_id"}
 token_with_default_plus_custom_claims = MyApp.Token.generate_and_sign!(extra_claims)
@@ -74,7 +74,7 @@ Or with explicit signer:
 ``` elixir
 signer = Joken.Signer.create("HS256", "secret")
 
-{:ok, token_with_default_claims} = MyApp.Token.generate_and_sign(%{}, signer)
+{:ok, token, claims} = MyApp.Token.generate_and_sign(%{}, signer)
 
 extra_claims = %{"user_id" => "some_id"}
 token_with_default_plus_custom_claims = MyApp.Token.generate_and_sign!(extra_claims, signer)
