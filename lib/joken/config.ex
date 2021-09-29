@@ -201,7 +201,7 @@ defmodule Joken.Config do
 
       @doc "Same as `generate_and_sign/2` but raises if error"
       @spec generate_and_sign!(Joken.claims(), Joken.signer_arg()) ::
-              Joken.bearer_token() | no_return()
+              Joken.bearer_token()
       def generate_and_sign!(extra_claims \\ %{}, key \\ __default_signer__()),
         do: Joken.generate_and_sign!(token_config(), extra_claims, key, __hooks__())
 
@@ -213,7 +213,7 @@ defmodule Joken.Config do
 
       @doc "Same as `verify_and_validate/2` but raises if error"
       @spec verify_and_validate!(Joken.bearer_token(), Joken.signer_arg(), term) ::
-              Joken.claims() | no_return()
+              Joken.claims()
       def verify_and_validate!(bearer_token, key \\ __default_signer__(), context \\ %{}),
         do: Joken.verify_and_validate!(token_config(), bearer_token, key, context, __hooks__())
     end
