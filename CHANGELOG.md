@@ -6,7 +6,7 @@
 
 - Major docs reviews and corrections (thanks to @kianmeng, @andreasknoepfle, Jon Forsyth, @fuelen)
 - Change of CI pipeline (thanks to @dolfinus)
-- Now uses Elixir 1.8 as minimum (and actually test the mininum version on CI)
+- Now uses Elixir 1.8 as minimum (and actually test the minimum version on CI)
 
 ### Fixed
 

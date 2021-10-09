@@ -133,7 +133,7 @@ defmodule Token do
     |> add_claim("sub", nil, &is_valid_uuid/1)
   end
 
-  # ... implementaion of UUID validation
+  # ... implementation of UUID validation
 end
 
 # We can pass the subject as extra claims

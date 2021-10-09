@@ -11,7 +11,7 @@ end
 
 defmodule Joken.CurrentTime.OS do
   @moduledoc """
-  Time source for default time based claims. Can be overriden in tests.
+  Time source for default time based claims. Can be overridden in tests.
   """
 
   @behaviour Joken.CurrentTime

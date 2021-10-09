@@ -14,7 +14,7 @@ defmodule Joken.ClaimTest do
   end
 
   test "when generate function has arity different than 0 skips generation" do
-    claim = %Claim{generate: fn _wth -> "nope wont do" end}
+    claim = %Claim{generate: fn _wth -> "nope won't do" end}
     assert Claim.__generate_claim__({"val", claim}, %{}) == %{}
   end
 end
