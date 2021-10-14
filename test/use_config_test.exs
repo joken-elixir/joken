@@ -24,6 +24,20 @@ defmodule Joken.UseConfig.Test do
                 %{}}
     end
 
+    test "can override default signer callback" do
+      defmodule OverrideDefaultSignerConfig do
+        use Joken.Config
+
+        def token_config, do: %{}
+        def default_signer, do: Joken.Signer.create("HS256", "s3cret")
+      end
+
+      assert OverrideDefaultSignerConfig.generate_and_sign() ==
+               {:ok,
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.JXJ_RWHq_C9ZJbkrRGRg7NxSFm2hnVu5ToEa8Nx6OiU",
+                %{}}
+    end
+
     test "can pass specific signer" do
       defmodule SpecificSignerConfig do
         use Joken.Config, default_signer: :hs256
