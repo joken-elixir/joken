@@ -152,7 +152,7 @@ defmodule Joken.Config do
 
       @before_compile Joken.Config
 
-      @doc "Creates the signer using the :default_key from config if no other key is provided. Can be overrode to implement custom signer."
+      @doc "Creates the signer using the :default_key from config. Can be overrode to implement custom signer."
       def __default_signer__ do
         key = unquote(options)[:default_signer] || :default_signer
         Signer.parse_config(key)
