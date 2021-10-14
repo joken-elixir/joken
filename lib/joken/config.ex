@@ -108,9 +108,9 @@ defmodule Joken.Config do
     1. The one represented by the key passed as second argument. The signer will be
     parsed from the configuration.
     2. If no argument was passed then we will use the one from the configuration
-    `:default_signer` passed as argument for the `use Joken.Config` macro.
+    `:default_signer` passed as argument for the `use Joken.Config` macro unless the default_signer callback was overridden.
     3. If no key was passed for the use macro then we will use the one configured as
-    `:default_signer` in the configuration.
+    `:default_signer` in the configuration unless the default_signer method was overridden.
   """
   @callback encode_and_sign(Joken.claims(), Joken.signer_arg() | nil) ::
               {:ok, Joken.bearer_token(), Joken.claims()} | {:error, Joken.error_reason()}
@@ -122,8 +122,8 @@ defmodule Joken.Config do
 
   1. The signer in the configuration with the given `key`.
   2. The `Joken.Signer` instance passed to the method.
-  3. The signer passed in the `use Joken.Config` through the `default_signer` key.
-  4. The default signer in configuration (the one with the key `default_signer`).
+  3. The signer passed in the `use Joken.Config` through the `default_signer` key unless the default_signer callback was overridden.
+  4. The default signer in configuration (the one with the key `default_signer`) unless the default_signer method was overridden.
 
   It returns either:
 
@@ -133,6 +133,11 @@ defmodule Joken.Config do
   """
   @callback verify(Joken.bearer_token(), Joken.signer_arg() | nil) ::
               {:ok, Joken.claims()} | {:error, Joken.error_reason()}
+
+  @doc """
+    Creates the signer using the :default_key from config. Can be overridden to implement custom signer.
+  """
+  @callback default_signer() :: Joken.Signer.t() | nil
 
   @doc """
   Runs validations on the already verified token.
@@ -152,8 +157,8 @@ defmodule Joken.Config do
 
       @before_compile Joken.Config
 
-      @doc "Creates the signer using the :default_key from config. Can be overrode to implement custom signer."
-      def __default_signer__ do
+      @impl Joken.Config
+      def default_signer do
         key = unquote(options)[:default_signer] || :default_signer
         Signer.parse_config(key)
       end
@@ -169,7 +174,7 @@ defmodule Joken.Config do
       def encode_and_sign(claims, signer \\ nil)
 
       def encode_and_sign(claims, nil),
-        do: Joken.encode_and_sign(claims, __default_signer__(), __hooks__())
+        do: Joken.encode_and_sign(claims, default_signer(), __hooks__())
 
       def encode_and_sign(claims, signer),
         do: Joken.encode_and_sign(claims, signer, __hooks__())
@@ -178,7 +183,7 @@ defmodule Joken.Config do
       def verify(bearer_token, key \\ nil)
 
       def verify(bearer_token, nil),
-        do: Joken.verify(bearer_token, __default_signer__(), __hooks__())
+        do: Joken.verify(bearer_token, default_signer(), __hooks__())
 
       def verify(bearer_token, signer),
         do: Joken.verify(bearer_token, signer, __hooks__())
@@ -192,30 +197,30 @@ defmodule Joken.Config do
                      encode_and_sign: 2,
                      verify: 2,
                      validate: 2,
-                     __default_token__: 0
+                     default_signer: 0
 
       @doc "Combines `generate_claims/1` and `encode_and_sign/2`"
       @spec generate_and_sign(Joken.claims(), Joken.signer_arg()) ::
               {:ok, Joken.bearer_token(), Joken.claims()} | {:error, Joken.error_reason()}
-      def generate_and_sign(extra_claims \\ %{}, key \\ __default_signer__()),
+      def generate_and_sign(extra_claims \\ %{}, key \\ default_signer()),
         do: Joken.generate_and_sign(token_config(), extra_claims, key, __hooks__())
 
       @doc "Same as `generate_and_sign/2` but raises if error"
       @spec generate_and_sign!(Joken.claims(), Joken.signer_arg()) ::
               Joken.bearer_token() | no_return()
-      def generate_and_sign!(extra_claims \\ %{}, key \\ __default_signer__()),
+      def generate_and_sign!(extra_claims \\ %{}, key \\ default_signer()),
         do: Joken.generate_and_sign!(token_config(), extra_claims, key, __hooks__())
 
       @doc "Combines `verify/2` and `validate/2`"
       @spec verify_and_validate(Joken.bearer_token(), Joken.signer_arg(), term) ::
               {:ok, Joken.claims()} | {:error, Joken.error_reason()}
-      def verify_and_validate(bearer_token, key \\ __default_signer__(), context \\ %{}),
+      def verify_and_validate(bearer_token, key \\ default_signer(), context \\ %{}),
         do: Joken.verify_and_validate(token_config(), bearer_token, key, context, __hooks__())
 
       @doc "Same as `verify_and_validate/2` but raises if error"
       @spec verify_and_validate!(Joken.bearer_token(), Joken.signer_arg(), term) ::
               Joken.claims() | no_return()
-      def verify_and_validate!(bearer_token, key \\ __default_signer__(), context \\ %{}),
+      def verify_and_validate!(bearer_token, key \\ default_signer(), context \\ %{}),
         do: Joken.verify_and_validate!(token_config(), bearer_token, key, context, __hooks__())
     end
   end

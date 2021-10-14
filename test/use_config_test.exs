@@ -91,7 +91,7 @@ defmodule Joken.UseConfig.Test do
       assert {:ok, %{"custom" => "custom"}} =
                ValidateWithContext.verify_and_validate(
                  jwt,
-                 ValidateWithContext.__default_signer__(),
+                 ValidateWithContext.default_signer(),
                  %{custom: "custom"}
                )
     end
@@ -157,7 +157,7 @@ defmodule Joken.UseConfig.Test do
       assert %{"custom" => "custom"} =
                ValidateWithContextRaise.verify_and_validate!(
                  jwt,
-                 ValidateWithContextRaise.__default_signer__(),
+                 ValidateWithContextRaise.default_signer(),
                  %{custom: "custom"}
                )
     end
