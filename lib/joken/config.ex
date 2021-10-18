@@ -107,10 +107,11 @@ defmodule Joken.Config do
 
     1. The one represented by the key passed as second argument. The signer will be
     parsed from the configuration.
-    2. If no argument was passed then we will use the one from the configuration
-    `:default_signer` passed as argument for the `use Joken.Config` macro unless the default_signer callback was overridden.
-    3. If no key was passed for the use macro then we will use the one configured as
-    `:default_signer` in the configuration unless the default_signer method was overridden.
+    2. If the default_signer callback was overridden then we will use the Joken.Signer instance returned by it's implementation.
+    3. If no argument was passed then we will use the one from the configuration
+    `:default_signer` passed as argument for the `use Joken.Config` macro,
+    4. If no key was passed for the use macro then we will use the one configured as
+    `:default_signer` in the configuration.
   """
   @callback encode_and_sign(Joken.claims(), Joken.signer_arg() | nil) ::
               {:ok, Joken.bearer_token(), Joken.claims()} | {:error, Joken.error_reason()}
@@ -122,8 +123,9 @@ defmodule Joken.Config do
 
   1. The signer in the configuration with the given `key`.
   2. The `Joken.Signer` instance passed to the method.
-  3. The signer passed in the `use Joken.Config` through the `default_signer` key unless the default_signer callback was overridden.
-  4. The default signer in configuration (the one with the key `default_signer`) unless the default_signer method was overridden.
+  3. If the default_singer callback callback was override then we will use the Joken.Signer instance returned by it's implementation.
+  3. The signer passed in the `use Joken.Config` through the `default_signer` key.
+  4. The default signer in configuration (the one with the key `default_signer`).
 
   It returns either:
 
