@@ -123,9 +123,9 @@ defmodule Joken.Config do
 
   1. The signer in the configuration with the given `key`.
   2. The `Joken.Signer` instance passed to the method.
-  4. If the default_singer callback callback was override then we will use the Joken.Signer instance returned by it's implementation.
-  3. The signer passed in the `use Joken.Config` through the `default_signer` key.
-  4. The default signer in configuration (the one with the key `default_signer`).
+  3. If the default_singer callback callback was override then we will use the Joken.Signer instance returned by it's implementation.
+  4. The signer passed in the `use Joken.Config` through the `default_signer` key.
+  5. The default signer in configuration (the one with the key `default_signer`).
 
   It returns either:
 
