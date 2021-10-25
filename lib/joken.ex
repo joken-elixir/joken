@@ -220,7 +220,7 @@ defmodule Joken do
 
   @doc "Same as `generate_and_sign/4` but raises if result is an error"
   @spec generate_and_sign!(token_config, claims, signer_arg, [module]) ::
-          bearer_token | no_return()
+          bearer_token
   def generate_and_sign!(
         token_config,
         extra_claims \\ %{},
@@ -306,7 +306,7 @@ defmodule Joken do
 
   @doc "Same as `verify_and_validate/5` but raises on error"
   @spec verify_and_validate!(token_config, bearer_token, signer_arg, term, hooks) ::
-          claims | no_return()
+          claims
   def verify_and_validate!(
         token_config,
         bearer_token,
