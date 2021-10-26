@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+## [2.4.1] - 2021-10-26
+
+### Changed
+
+- fix: readme refs (thanks to @danferreira)
+- Fix generate_and_sign examples in guides' documentation (thanks to @f-francine)
+- Remove no_return from methods that can return (thanks to @jsmestad)
+- Fix typos (thanks to @kianmeng)
+
 ## [2.4.0] - 2021-08-15
 
 ### Changed

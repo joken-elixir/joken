@@ -28,9 +28,9 @@ Add `:joken` to your list of dependencies in `mix.exs`:
 ``` elixir
 def deps do
   # .. other deps
-  {:joken, "~> 2.0"},
+  {:joken, "~> 2.4"},
   # Recommended JSON library
-  {:jason, "~> 1.1"}
+  {:jason, "~> 1.2"}
 end
 ```
 
