@@ -204,7 +204,7 @@ defmodule Joken do
   end
 
   @doc "Combines `generate_claims/3` with `encode_and_sign/3`"
-  @spec generate_and_sign(token_config, claims, signer_arg, [module]) ::
+  @spec generate_and_sign(token_config, claims, signer_arg, hooks) ::
           {:ok, bearer_token, claims} | {:error, error_reason}
   def generate_and_sign(
         token_config,
@@ -219,7 +219,7 @@ defmodule Joken do
   end
 
   @doc "Same as `generate_and_sign/4` but raises if result is an error"
-  @spec generate_and_sign!(token_config, claims, signer_arg, [module]) ::
+  @spec generate_and_sign!(token_config, claims, signer_arg, hooks) ::
           bearer_token
   def generate_and_sign!(
         token_config,
@@ -241,7 +241,7 @@ defmodule Joken do
   @doc """
   Verifies a bearer_token using the given signer and executes hooks if any are given.
   """
-  @spec verify(bearer_token, signer_arg, [module]) :: verify_result()
+  @spec verify(bearer_token, signer_arg, hooks) :: verify_result()
   def verify(bearer_token, signer, hooks \\ [])
 
   def verify(bearer_token, nil, hooks) when is_binary(bearer_token) and is_list(hooks),
