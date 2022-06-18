@@ -2,14 +2,14 @@ defmodule Joken.Mixfile do
   use Mix.Project
 
   @source_url "https://github.com/joken-elixir/joken"
-  @version "2.4.1"
+  @version "2.5.0"
 
   def project do
     [
       app: :joken,
       version: @version,
       name: "Joken",
-      elixir: "~> 1.8",
+      elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       consolidate_protocols: Mix.env() != :test,

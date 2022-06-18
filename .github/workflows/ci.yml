@@ -1,10 +1,10 @@
-name: Tests
+name: CI
 
 on:
   push:
+    branches: [ master ]
   pull_request:
-    branches:
-      - master
+    branches: [ master ]
 
 jobs:
   check_duplicate_runs:
@@ -24,29 +24,24 @@ jobs:
           do_not_skip: '["pull_request"]'
 
   tests:
-    name: Run tests (Elixir ${{matrix.elixir}}, OTP ${{matrix.otp}})
+    name: Run tests
 
     needs: check_duplicate_runs
     if: ${{ needs.check_duplicate_runs.outputs.should_skip != 'true' }}
 
+    env:
+      FORCE_COLOR: 1
+
     strategy:
       fail-fast: false
       matrix:
-        elixir:
-          - "1.8.2"
-          - "1.10.4"
-          - "1.12.2"
-        otp:
-          - "22.3"
-          - "23.3"
-          - "24.0"
-        exclude:
-          - elixir: "1.8.2"
-            otp: "23.3"
-          - elixir: "1.8.2"
-            otp: "24.0"
-          - elixir: "1.12.2"
+        include:
+          - elixir: "1.10.4"
             otp: "22.3"
+          - elixir: "1.12.2"
+            otp: "23.3"
+          - elixir: "1.13.3"
+            otp: "24.3"
 
     runs-on: ubuntu-latest
 
@@ -88,30 +83,22 @@ jobs:
 
     - name: Check source code format
       run: mix format --check-formatted
-      if: ${{ matrix.lint }}
 
     - name: Perform source code static analysis
       run: mix credo --strict
-      if: ${{ matrix.lint }}
       env:
         MIX_ENV: test
-
-    - name: Check unused dependencies
-      run: mix deps.unlock --check-unused
-      if: ${{ matrix.lint }}
 
     - name: Remove compiled application files
       run: mix clean
 
     - name: Compile dependencies
       run: mix compile
-      if: ${{ !matrix.lint }}
       env:
         MIX_ENV: test
 
     - name: Compile & lint dependencies
       run: mix compile --warnings-as-errors
-      if: ${{ matrix.lint }}
       env:
         MIX_ENV: test
 

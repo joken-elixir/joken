@@ -212,9 +212,9 @@ defmodule Joken do
         signer_arg \\ :default_signer,
         hooks \\ []
       ) do
-    with {:ok, claims} <- generate_claims(token_config, extra_claims, hooks),
-         {:ok, token, claims} <- encode_and_sign(claims, signer_arg, hooks) do
-      {:ok, token, claims}
+    case generate_claims(token_config, extra_claims, hooks) do
+      {:ok, claims} -> encode_and_sign(claims, signer_arg, hooks)
+      err -> err
     end
   end
 
@@ -254,10 +254,8 @@ defmodule Joken do
     with {:ok, {bearer_token, signer}} <-
            Hooks.run_before_hook(hooks, :before_verify, {bearer_token, signer}),
          :ok <- check_signer_not_empty(signer),
-         result <- Signer.verify(bearer_token, signer),
-         {:ok, claims_map} <-
-           Hooks.run_after_hook(hooks, :after_verify, result, {bearer_token, signer}) do
-      {:ok, claims_map}
+         result <- Signer.verify(bearer_token, signer) do
+      Hooks.run_after_hook(hooks, :after_verify, result, {bearer_token, signer})
     end
   end
 
@@ -298,9 +296,9 @@ defmodule Joken do
         context \\ nil,
         hooks \\ []
       ) do
-    with {:ok, claims} <- verify(bearer_token, signer, hooks),
-         {:ok, claims} <- validate(token_config, claims, context, hooks) do
-      {:ok, claims}
+    case verify(bearer_token, signer, hooks) do
+      {:ok, claims} -> validate(token_config, claims, context, hooks)
+      err -> err
     end
   end
 
@@ -338,15 +336,8 @@ defmodule Joken do
   def generate_claims(token_config, extra_claims, hooks) do
     with {:ok, {token_config, extra_claims}} <-
            Hooks.run_before_hook(hooks, :before_generate, {token_config, extra_claims}),
-         claims <- Enum.reduce(token_config, extra_claims, &Claim.__generate_claim__/2),
-         {:ok, claims} <-
-           Hooks.run_after_hook(
-             hooks,
-             :after_generate,
-             {:ok, claims},
-             {token_config, extra_claims}
-           ) do
-      {:ok, claims}
+         claims <- Enum.reduce(token_config, extra_claims, &Claim.__generate_claim__/2) do
+      Hooks.run_after_hook(hooks, :after_generate, {:ok, claims}, {token_config, extra_claims})
     end
   end
 
