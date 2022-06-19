@@ -1,5 +1,15 @@
 ## [Unreleased]
 
+## [2.5.0] - 2022-06-18
+
+### Changed
+
+- Update release workflow (thanks @dolfinus)
+- Migrate GitHub Actions to erlef/setup-beam (thanks @kianmeng)
+- Fix typespecs (thanks @mustardnoise)
+- small refactor of CI
+- **raised Elixir version to 1.10**
+
 ## [2.4.1] - 2021-10-26
 
 ### Changed
