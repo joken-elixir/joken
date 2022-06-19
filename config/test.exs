@@ -1,6 +1,6 @@
 # This file is responsible for configuring your application
-# and its dependencies with the aid of the Mix.Config module.
-use Mix.Config
+# and its dependencies with the aid of the Config module.
+import Config
 
 rsa_map_key = %{
   "d" =>

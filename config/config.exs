@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 case Mix.env() do
   # Use the same key config as tests for benchmarking
