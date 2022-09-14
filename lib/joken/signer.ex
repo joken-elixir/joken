@@ -99,7 +99,8 @@ defmodule Joken.Signer do
   def create(alg, _key, _headers) when alg in @map_key_algorithms,
     do: raise(Joken.Error, :algorithm_needs_key)
 
-  def create(_, _, _), do: raise(Joken.Error, :unrecognized_algorithm)
+  def create(alg, _, _) when alg not in @algorithms,
+    do: raise(Joken.Error, :unrecognized_algorithm)
 
   defp raw_create(alg, jws, jwk) do
     %__MODULE__{
