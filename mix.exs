@@ -41,14 +41,14 @@ defmodule Joken.Mixfile do
   defp deps do
     [
       {:jose, "~> 1.11.2"},
-      {:jason, "~> 1.2", only: [:dev, :test]},
+      {:jason, "~> 1.4", only: [:dev, :test]},
       {:benchee, "~> 1.0", only: :dev},
 
       # Docs
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
 
       # Dialyzer
-      {:dialyxir, "~> 1.1.0", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.2.0", only: [:dev, :test], runtime: false},
 
       # Credo
       {:credo, "~> 1.5", only: :test, runtime: false},
