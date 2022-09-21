@@ -131,7 +131,7 @@ defmodule Joken.Hooks do
   @doc "Called after `Joken.encode_and_sign/3`"
   @callback after_sign(
               hook_options,
-              Joken.sign_result(),
+              {:ok, Joken.bearer_token()} | {:error, Joken.error_reason()},
               sign_input
             ) :: {:cont, Joken.sign_result(), sign_input} | halt_tuple
 
