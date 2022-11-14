@@ -3,6 +3,7 @@ defmodule Joken.Signer.Test do
   alias Joken.{Error, Signer}
 
   doctest Signer
+  import ExUnit.CaptureIO
 
   # Tests below "may" break in future OTP versions. This is related to the
   # supported algorithms in the crypto module. Current expected behaviour is
@@ -67,6 +68,13 @@ defmodule Joken.Signer.Test do
              },
              jwk: %JOSE.JWK{}
            } = signer
+  end
+
+  test "it does not display private data when printed" do
+    signer = Joken.Signer.create("HS256", "s3cret")
+    stdout = capture_io(fn -> IO.inspect(signer) end)
+    assert String.contains?(stdout, "#Joken.Signer<")
+    refute String.contains?(stdout, "jwk")
   end
 
   test "raise with invalid parameter" do

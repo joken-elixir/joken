@@ -32,6 +32,7 @@ defmodule Joken.Signer do
           alg: binary() | nil
         }
 
+  @derive {Inspect, except: [:jwk]}
   defstruct jwk: nil, jws: nil, alg: nil
 
   @doc """
