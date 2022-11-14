@@ -73,7 +73,7 @@ defmodule Joken.Signer.Test do
   test "it does not display private data when printed" do
     signer = Joken.Signer.create("HS256", "s3cret")
     stdout = capture_io(fn -> IO.inspect(signer) end)
-    assert String.contains?(stdout, "#Joken.Signer<")
+    assert match?("#Joken.Signer<" <> _, stdout)
     refute String.contains?(stdout, "jwk")
   end
 
