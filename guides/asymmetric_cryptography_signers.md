@@ -83,7 +83,7 @@ To use it with Joken we can call one of the `Joken.Signer.create` variants:
 1.  With the RAW PEM contents:
 
     ``` elixir
-    signer = Joken.Signer.create(%{"pem" => pem_contents})
+    signer = Joken.Signer.create("RS256", %{"pem" => pem_contents})
     ```
 
 2.  With the pem file in the configuration:
