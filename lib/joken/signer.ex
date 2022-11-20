@@ -80,6 +80,9 @@ defmodule Joken.Signer do
     )
   end
 
+  def create(alg, _key, _headers) when alg in @hs_algorithms,
+    do: raise(Joken.Error, :algorithm_needs_binary_key)
+
   def create(alg, %{"pem" => pem}, headers) when alg in @map_key_algorithms do
     raw_create(
       alg,

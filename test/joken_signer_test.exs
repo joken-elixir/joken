@@ -81,6 +81,12 @@ defmodule Joken.Signer.Test do
     end
   end
 
+  test "raise when key is invalid" do
+    assert_raise Error, Error.message(%Error{reason: :algorithm_needs_binary_key}), fn ->
+      Signer.create("HS256", %{})
+    end
+  end
+
   test "raise when parsing invalid algorithm from configuration" do
     assert_raise Error, Error.message(%Error{reason: :unrecognized_algorithm}), fn ->
       Signer.parse_config(:bad_algorithm)
