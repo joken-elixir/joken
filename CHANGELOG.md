@@ -1,5 +1,17 @@
 ## [Unreleased]
 
+## [2.6.0] - 2023-01-29
+
+### Changed
+
+- Allow EdDSA keys (thanks @Tarang)
+- Bump JOSE to 1.11.5
+- Fix `after_sign` spec
+- handle non binary hmac sha key error (thanks @alecostard)
+- Fixes `typ` header claim not being over writable
+- doc fixes all over
+- **raised Elixir version to 1.13** (JOSE raised it too so we follow)
+
 ## [2.5.0] - 2022-06-18
 
 ### Changed
