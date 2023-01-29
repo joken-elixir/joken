@@ -75,7 +75,7 @@ defmodule Joken.Signer do
   def create(alg, secret, headers) when is_binary(secret) and alg in @hs_algorithms do
     raw_create(
       alg,
-      headers |> Map.merge(%{"alg" => alg, "typ" => "JWT"}) |> JWS.from_map(),
+      headers |> transform_headers(alg) |> JWS.from_map(),
       JWK.from_oct(secret)
     )
   end
@@ -83,7 +83,7 @@ defmodule Joken.Signer do
   def create(alg, %{"pem" => pem}, headers) when alg in @map_key_algorithms do
     raw_create(
       alg,
-      headers |> Map.merge(%{"alg" => alg, "typ" => "JWT"}) |> JWS.from_map(),
+      headers |> transform_headers(alg) |> JWS.from_map(),
       JWK.from_pem(pem)
     )
   end
@@ -91,7 +91,7 @@ defmodule Joken.Signer do
   def create(alg, key, headers) when is_map(key) and alg in @map_key_algorithms do
     raw_create(
       alg,
-      headers |> Map.merge(%{"alg" => alg, "typ" => "JWT"}) |> JWS.from_map(),
+      headers |> transform_headers(alg) |> JWS.from_map(),
       JWK.from_map(key)
     )
   end
@@ -236,17 +236,19 @@ defmodule Joken.Signer do
     {jwk_function, value} = List.first(key_config)
 
     if signer_alg in @algorithms do
-      do_parse_signer(jwk_function.(value), signer_alg, headers)
+      raw_create(
+        signer_alg,
+        headers |> transform_headers(signer_alg) |> JWS.from_map(),
+        jwk_function.(value)
+      )
     else
       raise Joken.Error, :unrecognized_algorithm
     end
   end
 
-  defp do_parse_signer(jwk, signer_alg, headers) do
-    raw_create(
-      signer_alg,
-      headers |> Map.merge(%{"alg" => signer_alg, "typ" => "JWT"}) |> JWS.from_map(),
-      jwk
-    )
+  defp transform_headers(headers, signer_alg) when is_map(headers) and is_binary(signer_alg) do
+    headers
+    |> Map.put("alg", signer_alg)
+    |> Map.put_new("typ", "JWT")
   end
 end

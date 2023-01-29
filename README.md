@@ -1,11 +1,11 @@
 # Joken
 
-[![Build](https://travis-ci.org/joken-elixir/joken.svg?branch=master)](https://travis-ci.org/joken-elixir/joken)
+[![Build](https://travis-ci.org/joken-elixir/joken.svg?branch=main)](https://travis-ci.org/joken-elixir/joken)
 [![Module Version](https://img.shields.io/hexpm/v/joken.svg)](https://hex.pm/packages/joken)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/joken/)
 [![Total Download](https://img.shields.io/hexpm/dt/joken.svg)](https://hex.pm/packages/joken)
-[![License](https://img.shields.io/hexpm/l/joken.svg)](https://github.com/joken-elixir/joken/blob/master/LICENSE)
-[![Last Updated](https://img.shields.io/github/last-commit/joken-elixir/joken.svg)](https://github.com/joken-elixir/joken/commits/master)
+[![License](https://img.shields.io/hexpm/l/joken.svg)](https://github.com/joken-elixir/joken/blob/main/LICENSE)
+[![Last Updated](https://img.shields.io/github/last-commit/joken-elixir/joken.svg)](https://github.com/joken-elixir/joken/commits/main)
 
 A JSON Web Token (JWT) Library.
 

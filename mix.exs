@@ -9,7 +9,7 @@ defmodule Joken.Mixfile do
       app: :joken,
       version: @version,
       name: "Joken",
-      elixir: "~> 1.10",
+      elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       consolidate_protocols: Mix.env() != :test,
@@ -56,7 +56,7 @@ defmodule Joken.Mixfile do
       # Test
       {:junit_formatter, "~> 3.1", only: :test},
       {:stream_data, "~> 0.5", only: :test},
-      {:excoveralls, "~> 0.14", only: :test}
+      {:excoveralls, "~> 0.15", only: :test}
     ]
   end
 
