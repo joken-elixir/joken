@@ -12,7 +12,7 @@ defmodule Joken.Signer do
   @rs_algorithms ["RS256", "RS384", "RS512"]
   @es_algorithms ["ES256", "ES384", "ES512"]
   @ps_algorithms ["PS256", "PS384", "PS512"]
-  @eddsa_algorithms ["Ed25519", "Ed25519ph", "Ed448", "Ed448ph"]
+  @eddsa_algorithms ["Ed25519", "Ed25519ph", "Ed448", "Ed448ph", "EdDSA"]
 
   @map_key_algorithms @rs_algorithms ++ @es_algorithms ++ @ps_algorithms ++ @eddsa_algorithms
 
