@@ -92,6 +92,13 @@ defmodule Joken.Error do
     See `Joken.Config.validate/2` for more information on Context
     """
 
+  def message(%__MODULE__{reason: :algorithm_needs_binary_key}),
+    do: """
+    Couldn't create a signer because key is not binary.
+
+    HMAC SHA algorithms need a binary key.
+    """
+
   def message(%__MODULE__{reason: :wrong_key_parameters}),
     do: """
     Couldn't create a signer because there are missing parameters.
