@@ -1,7 +1,7 @@
 defmodule JokenTest do
   use ExUnit.Case, async: true
   import ExUnit.CaptureLog
-  import Joken.Config, only: [add_claim: 4, add_claim: 5, default_claims: 1]
+  import Joken.Config, only: [add_claim: 4, add_claim: 5]
   alias Joken.CurrentTime.Mock
 
   setup do

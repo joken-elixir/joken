@@ -70,7 +70,7 @@ Let's see some examples on parsing asymmetric RSA keys with Joken:
 This algorithm uses the RSASSA-PKCS1-v1_5 that uses SHA2 hash algorithms. The base for this algorithm is the RSA public key standard. So, to use this algorithm we need a pair of RSA keys. There are many ways to generate these keys in different environments and is outside the scope of this library. Here is one of these ways just for an example:
 
 ``` shell
-➜  joken git:(master) openssl genrsa -out mykey.pem 4096
+➜  joken git:(main) openssl genrsa -out mykey.pem 4096
 Generating RSA private key, 4096 bit long modulus (2 primes)
 .............++++
 ...........................................................................................................++++

@@ -121,6 +121,13 @@ defmodule Joken.Signer.Test do
 
   test "can parse with key_id" do
     {:ok, token, _claims} = Joken.encode_and_sign(%{}, Signer.parse_config(:with_key_id))
+
     assert {:ok, %{"kid" => "my_key_id", "alg" => "HS256"}} = Joken.peek_header(token)
+  end
+
+  test "can override typ header claim" do
+    signer = Signer.create("HS256", "secret", %{"typ" => "SOMETHING_ELSE"})
+    {:ok, token, _claims} = Joken.encode_and_sign(%{}, signer)
+    assert {:ok, %{"typ" => "SOMETHING_ELSE"}} = Joken.peek_header(token)
   end
 end

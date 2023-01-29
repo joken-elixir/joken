@@ -1,6 +1,6 @@
-use Mix.Config
+import Config
 
-case Mix.env() do
+case config_env() do
   # Use the same key config as tests for benchmarking
   :bench ->
     import_config("test.exs")
