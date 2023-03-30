@@ -92,6 +92,65 @@ CSAnW8Md2j56RkvCnSPGab8eh5BjoGEInmSZWpUXvLJt91pZqX1jSbs1ZNg=
 -----END RSA PRIVATE KEY-----
 """
 
+# generated with openssl genrsa -aes256 4096
+rsa_encrypted_passphrase = "passphrase"
+rsa_encrypted_pem_key = """
+-----BEGIN RSA PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: AES-256-CBC,B07A62A211BBA625EA114A6121DF1230
+
+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
+-----END RSA PRIVATE KEY-----
+"""
+
 config :joken,
   current_time_adapter: Joken.CurrentTime.Mock,
   default_signer: "s3cr3t",
@@ -122,6 +181,11 @@ config :joken,
   pem_rs256: [
     signer_alg: "RS256",
     key_pem: rsa_pem_key
+  ],
+  pem_encrypted_rs256: [
+    signer_alg: "RS256",
+    key_pem: rsa_encrypted_pem_key,
+    passphrase: rsa_encrypted_passphrase
   ],
   pem_rs384: [
     signer_alg: "RS384",
