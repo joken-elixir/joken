@@ -1,8 +1,10 @@
 defmodule Joken.HooksTest do
   use ExUnit.Case, async: true
+
   import ExUnit.CaptureIO
 
-  alias Joken.{CurrentTime.Mock, Signer}
+  alias Joken.CurrentTime.Mock
+  alias Joken.Signer
 
   setup do
     {:ok, _pid} = start_supervised(Mock)
@@ -10,6 +12,7 @@ defmodule Joken.HooksTest do
   end
 
   defmodule TestHook do
+    @moduledoc false
     use Joken.Hooks
 
     @impl Joken.Hooks
@@ -31,6 +34,7 @@ defmodule Joken.HooksTest do
 
   test "own hooks are executed" do
     defmodule OwnHookIsExecuted do
+      @moduledoc false
       use Joken.Config
 
       @impl Joken.Hooks
@@ -45,6 +49,7 @@ defmodule Joken.HooksTest do
 
   test "all hooks are executed" do
     defmodule AddedHooksAreExecuted do
+      @moduledoc false
       use Joken.Config
 
       add_hook(TestHook)
@@ -62,6 +67,7 @@ defmodule Joken.HooksTest do
 
   test "before_hook can abort execution" do
     defmodule BeforeHookCanAbort do
+      @moduledoc false
       use Joken.Config
 
       @impl Joken.Hooks
@@ -75,6 +81,7 @@ defmodule Joken.HooksTest do
 
   test "after_hook can abort execution" do
     defmodule AfterHookCanAbort do
+      @moduledoc false
       use Joken.Config
 
       @impl Joken.Hooks
@@ -88,6 +95,7 @@ defmodule Joken.HooksTest do
 
   test "wrong callback returns :unexpected" do
     defmodule WrongCallbackReturn do
+      @moduledoc false
       use Joken.Config
 
       @impl Joken.Hooks
@@ -99,6 +107,7 @@ defmodule Joken.HooksTest do
 
   test "can add hook with options" do
     defmodule HookWithOptions do
+      @moduledoc false
       use Joken.Hooks
 
       @impl true
@@ -109,6 +118,7 @@ defmodule Joken.HooksTest do
     end
 
     defmodule UseHookWithOptions do
+      @moduledoc false
       use Joken.Config
 
       add_hook(HookWithOptions, option1: 1)
@@ -123,6 +133,7 @@ defmodule Joken.HooksTest do
   @tag :capture_log
   test "error in validate propagates to after_validate" do
     defmodule ValidateErrorHook do
+      @moduledoc false
       use Joken.Hooks
 
       @impl true
@@ -133,13 +144,13 @@ defmodule Joken.HooksTest do
     end
 
     defmodule UseValidateErrorHook do
+      @moduledoc false
       use Joken.Config
 
       add_hook(ValidateErrorHook)
 
       def token_config do
-        %{}
-        |> add_claim("test", fn -> "TEST" end, &(&1 == "PRODUCTION"))
+        add_claim(%{}, "test", fn -> "TEST" end, &(&1 == "PRODUCTION"))
       end
     end
 
@@ -158,17 +169,19 @@ defmodule Joken.HooksTest do
     defmodule(EmptyHook, do: use(Joken.Hooks))
 
     defmodule TokenWithEmptyHook do
+      @moduledoc false
       use Joken.Config
+
       add_hook(EmptyHook)
     end
 
     assert %{"iss" => "Joken", "aud" => "Joken"} =
-             TokenWithEmptyHook.generate_and_sign!()
-             |> TokenWithEmptyHook.verify_and_validate!()
+             TokenWithEmptyHook.verify_and_validate!(TokenWithEmptyHook.generate_and_sign!())
   end
 
   test "after callbacks can set validation" do
     defmodule TokenWithOverridenAfterHook do
+      @moduledoc false
       use Joken.Config
 
       def after_validate(_, {:ok, _}, input) do
@@ -177,12 +190,14 @@ defmodule Joken.HooksTest do
     end
 
     assert {:error, :invalid} ==
-             TokenWithOverridenAfterHook.generate_and_sign!()
-             |> TokenWithOverridenAfterHook.verify_and_validate()
+             TokenWithOverridenAfterHook.verify_and_validate(
+               TokenWithOverridenAfterHook.generate_and_sign!()
+             )
   end
 
   test "after verify receives signing error" do
     defmodule AfterVerifyTokenError do
+      @moduledoc false
       use Joken.Config
 
       def after_verify(_, result, input) do
@@ -194,7 +209,9 @@ defmodule Joken.HooksTest do
     signer = Signer.create("HS256", "another key whatever")
 
     assert {:error, :signature_error} ==
-             AfterVerifyTokenError.generate_and_sign!()
-             |> AfterVerifyTokenError.verify_and_validate(signer)
+             AfterVerifyTokenError.verify_and_validate(
+               AfterVerifyTokenError.generate_and_sign!(),
+               signer
+             )
   end
 end

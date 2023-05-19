@@ -13,6 +13,7 @@ defmodule Joken.UseConfig.Test do
   describe "__MODULE__.generate_and_sign" do
     test "can use default signer configuration" do
       defmodule DefaultSignerConfig do
+        @moduledoc false
         use Joken.Config
 
         def token_config, do: %{}
@@ -26,6 +27,7 @@ defmodule Joken.UseConfig.Test do
 
     test "can pass specific signer" do
       defmodule SpecificSignerConfig do
+        @moduledoc false
         use Joken.Config, default_signer: :hs256
 
         def token_config, do: %{}
@@ -39,6 +41,7 @@ defmodule Joken.UseConfig.Test do
 
     test "can pass a `Joken.Signer` instance" do
       defmodule SignerInstanceConfig do
+        @moduledoc false
         use Joken.Config
 
         def token_config, do: %{}
@@ -54,6 +57,7 @@ defmodule Joken.UseConfig.Test do
 
     test "can receive extra claims" do
       defmodule ExtraClaimsConfig do
+        @moduledoc false
         use Joken.Config
 
         def token_config, do: %{}
@@ -77,12 +81,19 @@ defmodule Joken.UseConfig.Test do
 
     test "can validate a token with a context" do
       defmodule ValidateWithContext do
+        @moduledoc false
         use Joken.Config
 
         def token_config do
-          %{}
-          # Validate function with arity 2
-          |> add_claim("custom", fn -> "custom" end, fn val, _claims, ctx -> val == ctx.custom end)
+          add_claim(
+            %{},
+            "custom",
+            fn ->
+              "custom"
+              # Validate function with arity 2
+            end,
+            fn val, _claims, ctx -> val == ctx.custom end
+          )
         end
       end
 
@@ -98,6 +109,7 @@ defmodule Joken.UseConfig.Test do
 
     test "can validate a token with a signer generated only with the public key" do
       defmodule OnlyPublicKeyValidate do
+        @moduledoc false
         use Joken.Config
 
         def token_config, do: %{}
@@ -118,13 +130,13 @@ defmodule Joken.UseConfig.Test do
 
     test "can pass a `Joken.Signer` instance" do
       defmodule ValidateWithSigner do
+        @moduledoc false
         use Joken.Config
 
         def token_config, do: %{}
       end
 
-      token =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.JXJ_RWHq_C9ZJbkrRGRg7NxSFm2hnVu5ToEa8Nx6OiU"
+      token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.JXJ_RWHq_C9ZJbkrRGRg7NxSFm2hnVu5ToEa8Nx6OiU"
 
       signer = Joken.Signer.create("HS256", "s3cret")
 
@@ -143,12 +155,19 @@ defmodule Joken.UseConfig.Test do
 
     test "can validate a token with a context" do
       defmodule ValidateWithContextRaise do
+        @moduledoc false
         use Joken.Config
 
         def token_config do
-          %{}
-          # Validate function with arity 2
-          |> add_claim("custom", fn -> "custom" end, fn val, _claims, ctx -> val == ctx.custom end)
+          add_claim(
+            %{},
+            "custom",
+            fn ->
+              "custom"
+              # Validate function with arity 2
+            end,
+            fn val, _claims, ctx -> val == ctx.custom end
+          )
         end
       end
 
@@ -164,13 +183,13 @@ defmodule Joken.UseConfig.Test do
 
     test "can pass a `Joken.Signer` instance" do
       defmodule ValidateWithSignerRaise do
+        @moduledoc false
         use Joken.Config
 
         def token_config, do: %{}
       end
 
-      token =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.JXJ_RWHq_C9ZJbkrRGRg7NxSFm2hnVu5ToEa8Nx6OiU"
+      token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.JXJ_RWHq_C9ZJbkrRGRg7NxSFm2hnVu5ToEa8Nx6OiU"
 
       signer = Joken.Signer.create("HS256", "s3cret")
 

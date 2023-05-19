@@ -81,6 +81,7 @@ defmodule Joken.Config do
     - `:default_signer`: a signer configuration key in config.exs (see `Joken.Signer`)
   """
   import Joken, only: [current_time: 0]
+
   alias Joken.Signer
 
   @default_generated_claims [:exp, :iat, :nbf, :iss, :aud, :jti]
@@ -142,11 +143,12 @@ defmodule Joken.Config do
 
   defmacro __using__(options) do
     quote do
-      import Joken, only: [current_time: 0]
-      import Joken.Config
+      @behaviour Joken.Config
+
       use Joken.Hooks
 
-      @behaviour Joken.Config
+      import Joken, only: [current_time: 0]
+      import Joken.Config
 
       @hooks [__MODULE__]
 
@@ -171,8 +173,7 @@ defmodule Joken.Config do
       def encode_and_sign(claims, nil),
         do: Joken.encode_and_sign(claims, __default_signer__(), __hooks__())
 
-      def encode_and_sign(claims, signer),
-        do: Joken.encode_and_sign(claims, signer, __hooks__())
+      def encode_and_sign(claims, signer), do: Joken.encode_and_sign(claims, signer, __hooks__())
 
       @impl Joken.Config
       def verify(bearer_token, key \\ nil)
@@ -180,8 +181,7 @@ defmodule Joken.Config do
       def verify(bearer_token, nil),
         do: Joken.verify(bearer_token, __default_signer__(), __hooks__())
 
-      def verify(bearer_token, signer),
-        do: Joken.verify(bearer_token, signer, __hooks__())
+      def verify(bearer_token, signer), do: Joken.verify(bearer_token, signer, __hooks__())
 
       @impl Joken.Config
       def validate(claims, context \\ %{}),

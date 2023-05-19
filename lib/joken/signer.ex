@@ -6,7 +6,12 @@ defmodule Joken.Signer do
   implementations like using only standard `:crypto` and `:public_key` modules. So,
   **avoid** depending on the inner structure of this module.
   """
-  alias JOSE.{JWK, JWS, JWT}
+  alias JOSE.JWK
+  alias JOSE.JWS
+  alias JOSE.JWT
+
+  require Joken.ASN1
+  require Record
 
   @hs_algorithms ["HS256", "HS384", "HS512"]
   @rs_algorithms ["RS256", "RS384", "RS512"]
@@ -22,17 +27,30 @@ defmodule Joken.Signer do
   @type key :: binary() | map()
 
   @typedoc """
-  A `Joken.Signer` instance is a JWS (JSON Web Signature) and JWK (JSON Web Key) struct.
+  A `Joken.Signer` instance.
+
+  When using JOSE library, JWS (JSON Web Signature) and JWK (JSON Web Key) are filled.
+
+  When using pure Erlang's crypto, then key is filled.
 
   It also contains an `alg` field for performance reasons.
   """
   @type t :: %__MODULE__{
-          jwk: JWK.t() | nil,
-          jws: JWS.t() | nil,
-          alg: binary() | nil
+          jwk: map() | nil,
+          jws: map() | nil,
+          alg: binary(),
+          key:
+            nil
+            | binary()
+            | Joken.ASN1.rsa_private_key()
+            | Joken.ASN1.rsa_public_key()
+            | Joken.ASN1.ec_private_key()
+            | Joken.ASN1.ec_point(),
+          headers: map(),
+          opts: Keyword.t()
         }
 
-  defstruct jwk: nil, jws: nil, alg: nil
+  defstruct jwk: nil, jws: nil, key: nil, alg: nil, headers: nil, opts: [crypto_provider: :jose]
 
   @doc """
   All supported algorithms.
@@ -70,47 +88,72 @@ defmodule Joken.Signer do
 
   """
   @spec create(binary(), key(), %{binary() => term()}) :: __MODULE__.t()
-  def create(alg, key, jose_extra_headers \\ %{})
+  def create(alg, key, jose_extra_headers \\ %{}, opts \\ [])
 
-  def create(alg, secret, headers) when is_binary(secret) and alg in @hs_algorithms do
-    raw_create(
-      alg,
-      headers |> transform_headers(alg) |> JWS.from_map(),
-      JWK.from_oct(secret)
-    )
+  if Code.ensure_loaded?(JOSE.JWS) do
+    def create(alg, secret, headers, opts) when is_binary(secret) and alg in @hs_algorithms do
+      if opts[:crypto_provider] == :jose do
+        %__MODULE__{
+          alg: alg,
+          jws: headers |> transform_headers(alg) |> JOSE.JWS.from_map(),
+          jwk: JOSE.JWK.from_oct(secret),
+          opts: opts
+        }
+      else
+        %__MODULE__{alg: alg, key: secret, headers: headers, opts: opts}
+      end
+    end
+  else
+    def create(alg, secret, headers, opts) when is_binary(secret) and alg in @hs_algorithms do
+      %__MODULE__{alg: alg, key: secret, headers: headers, opts: opts}
+    end
   end
 
-  def create(alg, _key, _headers) when alg in @hs_algorithms,
+  def create(alg, _key, _headers, _opts) when alg in @hs_algorithms,
     do: raise(Joken.Error, :algorithm_needs_binary_key)
 
-  def create(alg, %{"pem" => pem}, headers) when alg in @map_key_algorithms do
-    raw_create(
-      alg,
-      headers |> transform_headers(alg) |> JWS.from_map(),
-      JWK.from_pem(pem)
-    )
+  if Code.ensure_loaded?(JOSE.JWS) do
+    def create(alg, %{"pem" => pem}, headers, opts) when alg in @map_key_algorithms do
+      if opts[:crypto_provider] == :jose do
+        %__MODULE__{
+          alg: alg,
+          jws: headers |> transform_headers(alg) |> JOSE.JWS.from_map(),
+          jwk: JOSE.JWK.from_pem(pem),
+          opts: opts
+        }
+      else
+        [key | _] = :public_key.pem_decode(pem)
+
+        key =
+          if Record.is_record(key, :SubjectPublicKeyInfo) do
+            :public_key.pem_entry_decode(key)
+          else
+            key
+          end
+
+        %__MODULE__{alg: alg, key: key, headers: headers, opts: opts}
+      end
+    end
+
+    def create(alg, key, headers, opts) when is_map(key) and alg in @map_key_algorithms do
+      %__MODULE__{
+        alg: alg,
+        jws: headers |> transform_headers(alg) |> JOSE.JWS.from_map(),
+        jwk: JOSE.JWK.from_map(key),
+        opts: opts
+      }
+    end
+  else
+    def create(alg, %{"pem" => pem}, headers, opts) when alg in @map_key_algorithms do
+      [key | _] = :public_key.pem_decode(pem)
+      %__MODULE__{alg: alg, key: key, headers: headers, opts: opts}
+    end
   end
 
-  def create(alg, key, headers) when is_map(key) and alg in @map_key_algorithms do
-    raw_create(
-      alg,
-      headers |> transform_headers(alg) |> JWS.from_map(),
-      JWK.from_map(key)
-    )
-  end
-
-  def create(alg, _key, _headers) when alg in @map_key_algorithms,
+  def create(alg, _key, _headers, _opts) when alg in @map_key_algorithms,
     do: raise(Joken.Error, :algorithm_needs_key)
 
-  def create(_, _, _), do: raise(Joken.Error, :unrecognized_algorithm)
-
-  defp raw_create(alg, jws, jwk) do
-    %__MODULE__{
-      jws: jws,
-      jwk: jwk,
-      alg: alg
-    }
-  end
+  def create(_, _, _, _), do: raise(Joken.Error, :unrecognized_algorithm)
 
   @doc """
   Signs a map of claims with the given Joken.Signer.
@@ -126,13 +169,67 @@ defmodule Joken.Signer do
   """
   @spec sign(Joken.claims(), __MODULE__.t()) ::
           {:ok, Joken.bearer_token()} | {:error, Joken.error_reason()}
-  def sign(claims, %__MODULE__{alg: _, jwk: jwk, jws: %JWS{alg: {alg, _}} = jws})
-      when is_map(claims) do
-    with result = {%{alg: ^alg}, _} <- JWT.sign(jwk, jws, claims),
-         {_, compacted_token} <- JWS.compact(result) do
-      {:ok, compacted_token}
+  if Code.ensure_loaded?(JOSE.JWS) do
+    def sign(claims, %__MODULE__{
+          alg: _,
+          jwk: %JOSE.JWK{kty: {_, key}} = jwk,
+          jws: %JOSE.JWS{alg: {alg, _}, fields: fields} = jws,
+          opts: opts
+        })
+        when is_map(claims) do
+      if Keyword.get(opts, :crypto_provider, :jose) == :jose do
+        with result = {%{alg: ^alg}, _} <- JWT.sign(jwk, jws, claims),
+             {_, compacted_token} <- JWS.compact(result) do
+          {:ok, compacted_token}
+        end
+      else
+        sign(claims, %__MODULE__{alg: alg, key: key, headers: fields || %{}, opts: opts})
+      end
     end
   end
+
+  def sign(claims, %__MODULE__{alg: alg, key: key, headers: headers}) do
+    protected = claims |> Jason.encode!() |> Base.url_encode64(padding: false)
+
+    header =
+      (headers || %{}) |> Map.put(:alg, alg) |> Jason.encode!() |> Base.url_encode64(padding: false)
+
+    to_sign = <<header::binary, ?., protected::binary>>
+
+    signature = alg |> do_sign(to_sign, key) |> Base.url_encode64(padding: false)
+
+    {:ok, <<to_sign::binary, ?., signature::binary>>}
+  end
+
+  defp do_sign("HS" <> length, to_sign, key), do: :crypto.mac(:hmac, :"sha#{length}", key, to_sign)
+
+  defp do_sign("RS" <> length, to_sign, key),
+    do: :public_key.sign(to_sign, :"sha#{length}", key, rsa_padding: :rsa_pkcs1_padding)
+
+  defp do_sign("PS" <> length, to_sign, key),
+    do:
+      :public_key.sign(to_sign, :"sha#{length}", key,
+        rsa_padding: :rsa_pkcs1_pss_padding,
+        rsa_pss_saltlen: pss_saltlen(length),
+        rsa_mgf1_md: :"sha#{length}"
+      )
+
+  defp do_sign("ES" <> length, to_sign, key) do
+    der_bits = :public_key.sign(to_sign, :"sha#{length}", key)
+    {_, r, s} = :public_key.der_decode(:"ECDSA-Sig-Value", der_bits)
+    bits = ec_length_for_each_part(length)
+    <<r::integer-size(bits), s::integer-size(bits)>>
+  end
+
+  # Length in bytes (octets) for each hash length
+  defp pss_saltlen("256"), do: 32
+  defp pss_saltlen("384"), do: 48
+  defp pss_saltlen("512"), do: 64
+
+  # Bits for each ES*** length algorithm
+  defp ec_length_for_each_part("256"), do: 256
+  defp ec_length_for_each_part("384"), do: 384
+  defp ec_length_for_each_part("512"), do: 528
 
   @doc """
   Verifies the given token's signature with the given `Joken.Signer`.
@@ -148,11 +245,57 @@ defmodule Joken.Signer do
   """
   @spec verify(Joken.bearer_token(), __MODULE__.t()) ::
           {:ok, Joken.claims()} | {:error, Joken.error_reason()}
-  def verify(token, %__MODULE__{alg: alg, jwk: jwk}) when is_binary(token) do
-    case JWT.verify_strict(jwk, [alg], token) do
-      {true, %JWT{fields: claims}, _} -> {:ok, claims}
-      _ -> {:error, :signature_error}
+
+  if Code.ensure_loaded?(JOSE.JWS) do
+    def verify(token, %__MODULE__{alg: alg, jwk: %JOSE.JWK{kty: {_, key}} = jwk, opts: opts})
+        when is_binary(token) do
+      if Keyword.get(opts, :crypto_provider, :jose) == :jose do
+        case JWT.verify_strict(jwk, [alg], token) do
+          {true, %JWT{fields: claims}, _} -> {:ok, claims}
+          _ -> {:error, :signature_error}
+        end
+      else
+        verify(token, %__MODULE__{alg: alg, key: key})
+      end
     end
+  end
+
+  def verify(token, %__MODULE__{alg: alg, key: key}) when is_binary(token) do
+    [header, payload, signature] = String.split(token, ".")
+    %{"alg" => ^alg} = header |> Base.url_decode64!(padding: false) |> Jason.decode!()
+    to_verify = <<header::binary, ?., payload::binary>>
+
+    if do_verify(alg, key, to_verify, signature) do
+      {:ok, payload |> Base.url_decode64!(padding: false) |> Jason.decode!()}
+    else
+      {:error, :signature_error}
+    end
+  end
+
+  defp do_verify("HS" <> length, key, to_verify, signature) when is_binary(key) do
+    digest = :"sha#{length}"
+    check = :hmac |> :crypto.mac(digest, key, to_verify) |> Base.url_encode64(padding: false)
+    :crypto.hash_equals(check, signature)
+  end
+
+  defp do_verify("RS" <> length, key, to_verify, signature)
+       when Record.is_record(key, :RSAPrivateKey) or Record.is_record(key, :RSAPublicKey) do
+    :public_key.verify(to_verify, :"sha#{length}", signature, key)
+  end
+
+  defp do_verify("PS" <> length, key, to_verify, signature)
+       when Record.is_record(key, :RSAPrivateKey) or Record.is_record(key, :RSAPublicKey) do
+    :public_key.verify(to_verify, :"sha#{length}", signature, key,
+      rsa_padding: :rsa_pkcs1_pss_padding,
+      # We do not assume any length when verifying
+      rsa_pss_saltlen: -1,
+      rsa_mgf1_md: :"sha#{length}"
+    )
+  end
+
+  defp do_verify("ES" <> length, key, to_verify, signature)
+       when Record.is_record(key, :ECPrivateKey) or Record.is_record(key, :ECPoint) do
+    :public_key.verify(to_verify, :"sha#{length}", signature, key)
   end
 
   @doc """
@@ -226,24 +369,27 @@ defmodule Joken.Signer do
     key_octet = config[:key_octet]
 
     key_config =
-      [
-        {&JWK.from_pem/1, key_pem},
-        {&JWK.from_map/1, key_map},
-        {&JWK.from_openssh_key/1, key_openssh},
-        {&JWK.from_oct/1, key_octet}
-      ]
-      |> Enum.filter(fn {_, val} -> not is_nil(val) end)
+      Enum.filter(
+        [
+          {&JWK.from_pem/1, key_pem},
+          {&JWK.from_map/1, key_map},
+          {&JWK.from_openssh_key/1, key_openssh},
+          {&JWK.from_oct/1, key_octet}
+        ],
+        fn {_, val} -> not is_nil(val) end
+      )
 
     unless Enum.count(key_config) == 1, do: raise(Joken.Error, :wrong_key_parameters)
 
     {jwk_function, value} = List.first(key_config)
 
     if signer_alg in @algorithms do
-      raw_create(
-        signer_alg,
-        headers |> transform_headers(signer_alg) |> JWS.from_map(),
-        jwk_function.(value)
-      )
+      %__MODULE__{
+        alg: signer_alg,
+        jws: headers |> transform_headers(signer_alg) |> JWS.from_map(),
+        jwk: jwk_function.(value),
+        opts: []
+      }
     else
       raise Joken.Error, :unrecognized_algorithm
     end

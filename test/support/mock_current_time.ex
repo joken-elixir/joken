@@ -51,6 +51,6 @@ defmodule Joken.CurrentTime.Mock do
       |> :erlang.pid_to_list()
       |> :erlang.iolist_to_binary()
 
-    "{__MODULE__}_#{binary_pid}" |> String.to_atom()
+    String.to_atom("{__MODULE__}_#{binary_pid}")
   end
 end

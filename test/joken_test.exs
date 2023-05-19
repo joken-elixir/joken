@@ -1,7 +1,9 @@
 defmodule JokenTest do
   use ExUnit.Case, async: true
+
   import ExUnit.CaptureLog
   import Joken.Config, only: [add_claim: 4, add_claim: 5]
+
   alias Joken.CurrentTime.Mock
 
   setup do
@@ -10,6 +12,7 @@ defmodule JokenTest do
   end
 
   defmodule EmptyToken do
+    @moduledoc false
     use Joken.Config
 
     def token_config, do: %{}
@@ -64,10 +67,7 @@ defmodule JokenTest do
   describe "claim validation" do
     test "debug message is shown when claim validation fails" do
       token_config =
-        %{}
-        |> add_claim("iss", fn -> "not someone" end, fn val ->
-          val == "not someone"
-        end)
+        add_claim(%{}, "iss", fn -> "not someone" end, fn val -> val == "not someone" end)
 
       validate_fun = fn ->
         assert {:error, [message: "Invalid token", claim: "iss", claim_val: "someone"]} ==
@@ -83,13 +83,7 @@ defmodule JokenTest do
       custom_error_message = "Someone should not be there"
 
       token_config =
-        %{}
-        |> add_claim(
-          "iss",
-          fn -> "not someone" end,
-          fn val ->
-            val == "not someone"
-          end,
+        add_claim(%{}, "iss", fn -> "not someone" end, fn val -> val == "not someone" end,
           message: custom_error_message
         )
 
@@ -98,7 +92,7 @@ defmodule JokenTest do
     end
 
     test "can make multi claim validation" do
-      token_config = %{} |> add_claim("claim1", nil, &(&1 == &2["claim2"]))
+      token_config = add_claim(%{}, "claim1", nil, &(&1 == &2["claim2"]))
 
       assert {:ok, %{"claim2" => "value", "claim1" => "value"}} ==
                Joken.validate(token_config, %{"claim2" => "value", "claim1" => "value"}, %{})
@@ -108,11 +102,11 @@ defmodule JokenTest do
   describe "error" do
     test "is raised when generate_and_sign! returns error" do
       defmodule BadBeforeGenerate do
+        @moduledoc false
         use Joken.Hooks
 
         @impl true
-        def before_generate(_opts, _input),
-          do: {:halt, {:error, :my_reason}}
+        def before_generate(_opts, _input), do: {:halt, {:error, :my_reason}}
       end
 
       assert_raise(
@@ -126,11 +120,11 @@ defmodule JokenTest do
 
     test "is raised when verify_and_validate! returns error" do
       defmodule BadBeforeVerify do
+        @moduledoc false
         use Joken.Hooks
 
         @impl true
-        def before_verify(_opts, _input),
-          do: {:halt, {:error, :my_reason}}
+        def before_verify(_opts, _input), do: {:halt, {:error, :my_reason}}
       end
 
       assert_raise(

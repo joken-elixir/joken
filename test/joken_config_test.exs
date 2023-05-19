@@ -1,7 +1,10 @@
 defmodule Joken.Config.Test do
   use ExUnit.Case, async: true
   use ExUnitProperties
-  alias Joken.{Config, CurrentTime.Mock, Error}
+
+  alias Joken.Config
+  alias Joken.CurrentTime.Mock
+  alias Joken.Error
 
   setup do
     {:ok, _pid} = start_supervised(Mock)
@@ -24,7 +27,7 @@ defmodule Joken.Config.Test do
     end
 
     test "generates exp, iss, iat, nbf claims" do
-      assert Config.default_claims() |> Map.keys() == ["aud", "exp", "iat", "iss", "jti", "nbf"]
+      assert Map.keys(Config.default_claims()) == ["aud", "exp", "iat", "iss", "jti", "nbf"]
     end
 
     test "can customize exp duration" do
@@ -40,10 +43,10 @@ defmodule Joken.Config.Test do
     end
 
     test "can skip claims" do
-      keys = Config.default_claims(skip: [:exp]) |> Map.keys()
+      keys = [skip: [:exp]] |> Config.default_claims() |> Map.keys()
       assert keys == ["aud", "iat", "iss", "jti", "nbf"]
 
-      keys = Config.default_claims(skip: [:exp, :iat]) |> Map.keys()
+      keys = [skip: [:exp, :iat]] |> Config.default_claims() |> Map.keys()
       assert keys == ["aud", "iss", "jti", "nbf"]
 
       assert Config.default_claims(skip: [:aud, :exp, :iat, :iss, :jti, :nbf]) == %{}
@@ -148,6 +151,7 @@ defmodule Joken.Config.Test do
         )
 
       defmodule PropertyEncodeDecode do
+        @moduledoc false
         use Joken.Config
       end
 
@@ -162,8 +166,7 @@ defmodule Joken.Config.Test do
   end
 
   defp assert_map_contains_other(target, contains_map) do
-    contains_map
-    |> Enum.each(fn
+    Enum.each(contains_map, fn
       {"", _val} ->
         :ok
 

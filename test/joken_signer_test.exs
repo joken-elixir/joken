@@ -1,6 +1,8 @@
 defmodule Joken.Signer.Test do
   use ExUnit.Case, async: true
-  alias Joken.{Error, Signer}
+
+  alias Joken.Error
+  alias Joken.Signer
 
   doctest Signer
 

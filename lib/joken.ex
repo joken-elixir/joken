@@ -77,7 +77,10 @@ defmodule Joken do
       ```
 
   """
-  alias Joken.{Claim, Hooks, Signer}
+  alias Joken.Claim
+  alias Joken.Hooks
+  alias Joken.Signer
+
   require Logger
 
   @typedoc """
@@ -349,8 +352,7 @@ defmodule Joken do
   @spec encode_and_sign(claims, signer_arg, hooks) :: sign_result
   def encode_and_sign(claims, signer, hooks \\ [])
 
-  def encode_and_sign(claims, nil, hooks),
-    do: encode_and_sign(claims, %Signer{}, hooks)
+  def encode_and_sign(claims, nil, hooks), do: encode_and_sign(claims, %Signer{}, hooks)
 
   def encode_and_sign(claims, signer, hooks) when is_atom(signer),
     do: encode_and_sign(claims, parse_signer(signer), hooks)

@@ -46,12 +46,10 @@ defmodule Joken.Mixfile do
 
       # Docs
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-
-      # Dialyzer
-      {:dialyxir, "~> 1.2.0", only: [:dev, :test], runtime: false},
-
-      # Credo
-      {:credo, "~> 1.5", only: :test, runtime: false},
+      {:styler, "~> 0.6", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.3", only: [:dev], runtime: false},
 
       # Test
       {:junit_formatter, "~> 3.1", only: :test},

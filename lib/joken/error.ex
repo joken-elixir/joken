@@ -2,9 +2,9 @@ defmodule Joken.Error do
   @moduledoc """
   Errors for the Joken API.
   """
-  defexception [:reason]
-
   alias Joken.Signer
+
+  defexception [:reason]
 
   @doc false
   def exception(reason), do: %__MODULE__{reason: reason}

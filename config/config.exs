@@ -1,5 +1,7 @@
 import Config
 
+config :joken, crypto_provider: :jose
+
 case config_env() do
   # Use the same key config as tests for benchmarking
   :bench ->
