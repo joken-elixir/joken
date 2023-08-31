@@ -1,17 +1,17 @@
 defmodule RS256Auth do
-  use Joken.Config, default_key: :pem_rs256
+  use Joken.Config, default_signer: :pem_rs256
 end
 
 defmodule RS384Auth do
-  use Joken.Config, default_key: :pem_rs384
+  use Joken.Config, default_signer: :pem_rs384
 end
 
 defmodule RS512Auth do
-  use Joken.Config, default_key: :pem_rs512
+  use Joken.Config, default_signer: :pem_rs512
 end
 
 defmodule RS256AuthVerify do
-  use Joken.Config, default_key: :rs256
+  use Joken.Config, default_signer: :rs256
 
   def token_config do
     %{}
@@ -23,7 +23,7 @@ defmodule RS256AuthVerify do
 end
 
 defmodule RS384AuthVerify do
-  use Joken.Config, default_key: :rs384
+  use Joken.Config, default_signer: :rs384
 
   def token_config do
     %{}
@@ -35,7 +35,7 @@ defmodule RS384AuthVerify do
 end
 
 defmodule RS512AuthVerify do
-  use Joken.Config, default_key: :rs512
+  use Joken.Config, default_signer: :rs512
 
   def token_config do
     %{}

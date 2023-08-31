@@ -1,17 +1,17 @@
 defmodule HS256Auth do
-  use Joken.Config, default_key: :hs256
+  use Joken.Config, default_signer: :hs256
 end
 
 defmodule HS384Auth do
-  use Joken.Config, default_key: :hs384
+  use Joken.Config, default_signer: :hs384
 end
 
 defmodule HS512Auth do
-  use Joken.Config, default_key: :hs512
+  use Joken.Config, default_signer: :hs512
 end
 
 defmodule HS256AuthVerify do
-  use Joken.Config, default_key: :hs256
+  use Joken.Config, default_signer: :hs256
 
   def token_config do
     %{}
@@ -23,7 +23,7 @@ defmodule HS256AuthVerify do
 end
 
 defmodule HS384AuthVerify do
-  use Joken.Config, default_key: :hs384
+  use Joken.Config, default_signer: :hs384
 
   def token_config do
     %{}
@@ -35,7 +35,7 @@ defmodule HS384AuthVerify do
 end
 
 defmodule HS512AuthVerify do
-  use Joken.Config, default_key: :hs512
+  use Joken.Config, default_signer: :hs512
 
   def token_config do
     %{}

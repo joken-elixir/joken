@@ -266,31 +266,29 @@ defmodule Joken.Config do
   end
 
   defp generate_config(skip, default_exp, default_iss, default_aud, generate_jti) do
-    gen_exp_func = fn -> current_time() + default_exp end
-
     Enum.reduce(@default_generated_claims, %{}, fn claim, acc ->
-      if claim in skip do
-        acc
-      else
-        case claim do
-          :exp ->
-            add_claim(acc, "exp", gen_exp_func, &(&1 > current_time()))
+      cond do
+        claim in skip ->
+          acc
 
-          :iat ->
-            add_claim(acc, "iat", fn -> current_time() end)
+        # credo:disable-for-lines:14 Credo.Check.Refactor.Nesting
+        claim == :exp ->
+          add_claim(acc, "exp", fn -> current_time() + default_exp end, &(&1 > current_time()))
 
-          :nbf ->
-            add_claim(acc, "nbf", fn -> current_time() end, &(current_time() >= &1))
+        claim == :iat ->
+          add_claim(acc, "iat", fn -> current_time() end)
 
-          :iss ->
-            add_claim(acc, "iss", fn -> default_iss end, &(&1 == default_iss))
+        claim == :nbf ->
+          add_claim(acc, "nbf", fn -> current_time() end, &(current_time() >= &1))
 
-          :aud ->
-            add_claim(acc, "aud", fn -> default_aud end, &(&1 == default_aud))
+        claim == :iss ->
+          add_claim(acc, "iss", fn -> default_iss end, &(&1 == default_iss))
 
-          :jti ->
-            add_claim(acc, "jti", generate_jti)
-        end
+        claim == :aud ->
+          add_claim(acc, "aud", fn -> default_aud end, &(&1 == default_aud))
+
+        claim == :jti ->
+          add_claim(acc, "jti", generate_jti)
       end
     end)
   end
