@@ -56,6 +56,30 @@ defmodule Joken.Signer.Test do
            } = signer
   end
 
+  test "can create a signer from an encrypted key" do
+    pem = Application.get_env(:joken, :pem_encrypted_rs256)[:key_pem]
+    passphrase = Application.get_env(:joken, :pem_encrypted_rs256)[:passphrase]
+    signer = Signer.create("RS256", %{"pem" => pem, "passphrase" => passphrase})
+
+    assert %Signer{
+             alg: "RS256",
+             jws: %JOSE.JWS{
+               alg: {:jose_jws_alg_rsa_pkcs1_v1_5, :RS256}
+             },
+             jwk: %JOSE.JWK{}
+           } = signer
+  end
+
+  test "can create a signer from config using an encrypted key" do
+    assert %Signer{
+             alg: "RS256",
+             jws: %JOSE.JWS{
+               alg: {:jose_jws_alg_rsa_pkcs1_v1_5, :RS256}
+             },
+             jwk: %JOSE.JWK{}
+           } = Signer.parse_config(:pem_encrypted_rs256)
+  end
+
   test "can create a signer from a map of a key" do
     map = Application.get_env(:joken, :rs256)[:key_map]
     signer = Signer.create("RS256", map)

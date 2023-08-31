@@ -83,6 +83,14 @@ defmodule Joken.Signer do
   def create(alg, _key, _headers) when alg in @hs_algorithms,
     do: raise(Joken.Error, :algorithm_needs_binary_key)
 
+  def create(alg, %{"pem" => pem, "passphrase" => passphrase}, headers) when alg in @map_key_algorithms do
+    raw_create(
+      alg,
+      headers |> transform_headers(alg) |> JWS.from_map(),
+      JWK.from_pem(passphrase, pem)
+    )
+  end
+
   def create(alg, %{"pem" => pem}, headers) when alg in @map_key_algorithms do
     raw_create(
       alg,
@@ -220,14 +228,19 @@ defmodule Joken.Signer do
     signer_alg = config[:signer_alg] || "HS256"
     headers = config[:jose_extra_headers] || %{}
 
-    key_pem = config[:key_pem]
+    key_pem = case {config[:key_pem], config[:passphrase]} do
+      {nil, _} -> nil
+      {key, nil} -> key
+      {key, password} -> {key, password}
+    end
+
     key_map = config[:key_map]
     key_openssh = config[:key_openssh]
     key_octet = config[:key_octet]
 
     key_config =
       [
-        {&JWK.from_pem/1, key_pem},
+        {&from_pem/1, key_pem},
         {&JWK.from_map/1, key_map},
         {&JWK.from_openssh_key/1, key_openssh},
         {&JWK.from_oct/1, key_octet}
@@ -248,6 +261,9 @@ defmodule Joken.Signer do
       raise Joken.Error, :unrecognized_algorithm
     end
   end
+
+  defp from_pem({key, passphrase}), do: JWK.from_pem(passphrase, key)
+  defp from_pem(key), do: JWK.from_pem(key)
 
   defp transform_headers(headers, signer_alg) when is_map(headers) and is_binary(signer_alg) do
     headers
