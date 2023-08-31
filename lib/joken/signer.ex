@@ -83,7 +83,8 @@ defmodule Joken.Signer do
   def create(alg, _key, _headers) when alg in @hs_algorithms,
     do: raise(Joken.Error, :algorithm_needs_binary_key)
 
-  def create(alg, %{"pem" => pem, "passphrase" => passphrase}, headers) when alg in @map_key_algorithms do
+  def create(alg, %{"pem" => pem, "passphrase" => passphrase}, headers)
+      when alg in @map_key_algorithms do
     raw_create(
       alg,
       headers |> transform_headers(alg) |> JWS.from_map(),
@@ -228,11 +229,12 @@ defmodule Joken.Signer do
     signer_alg = config[:signer_alg] || "HS256"
     headers = config[:jose_extra_headers] || %{}
 
-    key_pem = case {config[:key_pem], config[:passphrase]} do
-      {nil, _} -> nil
-      {key, nil} -> key
-      {key, password} -> {key, password}
-    end
+    key_pem =
+      case {config[:key_pem], config[:passphrase]} do
+        {nil, _} -> nil
+        {key, nil} -> key
+        {key, password} -> {key, password}
+      end
 
     key_map = config[:key_map]
     key_openssh = config[:key_openssh]
