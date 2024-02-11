@@ -15,28 +15,22 @@ It is common to divide cryptography in three categories:
 
 In the [JWA](https://tools.ietf.org/html/rfc7518#section-3) specification we have algorithms that use both symmetric and asymmetric cryptography functions. Let's see them (taken from the specification):
 
-|-------|-------------------------------|--------------|
-| HS256 | HMAC using SHA-256            | Required     |
-| HS384 | HMAC using SHA-384            | Optional     |
-| HS512 | HMAC using SHA-512            | Optional     |
-| RS256 | RSASSA-PKCS1-v1_5 using       | Recommended  |
-|       | SHA-256                       |              |
-| RS384 | RSASSA-PKCS1-v1_5 using       | Optional     |
-|       | SHA-384                       |              |
-| RS512 | RSASSA-PKCS1-v1_5 using       | Optional     |
-|       | SHA-512                       |              |
-| ES256 | ECDSA using P-256 and SHA-256 | Recommended+ |
-| ES384 | ECDSA using P-384 and SHA-384 | Optional     |
-| ES512 | ECDSA using P-521 and SHA-512 | Optional     |
-| PS256 | RSASSA-PSS using SHA-256 and  | Optional     |
-|       | MGF1 with SHA-256             |              |
-| PS384 | RSASSA-PSS using SHA-384 and  | Optional     |
-|       | MGF1 with SHA-384             |              |
-| PS512 | RSASSA-PSS using SHA-512 and  | Optional     |
-|       | MGF1 with SHA-512             |              |
-|-------|-------------------------------|--------------|
+| "alg" Param Value | Digital Signature or MAC Algorithm              | Implementation requirements |
+| ----------------- | ----------------------------------------------  | --------------------------- |
+| HS256             | HMAC using SHA-256                              | Required                    |
+| HS384             | HMAC using SHA-384                              | Optional                    |
+| HS512             | HMAC using SHA-512                              | Optional                    |
+| RS256             | RSASSA-PKCS1-v1_5 using SHA-256                 | Recommended                 |
+| RS384             | RSASSA-PKCS1-v1_5 using SHA-384                 | Optional                    |
+| RS512             | RSASSA-PKCS1-v1_5 using SHA-512                 | Optional                    |
+| ES256             | ECDSA using P-256 and SHA-256                   | Recommended+                |
+| ES384             | ECDSA using P-384 and SHA-384                   | Optional                    |
+| ES512             | ECDSA using P-521 and SHA-512                   | Optional                    |
+| PS256             | RSASSA-PSS using SHA-256 and  MGF1 with SHA-256 | Optional                    |
+| PS384             | RSASSA-PSS using SHA-384 and MGF1 with SHA-384  | Optional                    |
+| PS512             | RSASSA-PSS using SHA-512 and MGF1 with SHA-512  | Optional                    |
 
-(removed the none algorithm we don't support**)
+(removed the none algorithm we don't support\*\*)
 
 Besides the HSxxx family of algorithms, all others use asymmetric cryptography.
 
@@ -69,7 +63,7 @@ Let's see some examples on parsing asymmetric RSA keys with Joken:
 
 This algorithm uses the RSASSA-PKCS1-v1_5 that uses SHA2 hash algorithms. The base for this algorithm is the RSA public key standard. So, to use this algorithm we need a pair of RSA keys. There are many ways to generate these keys in different environments and is outside the scope of this library. Here is one of these ways just for an example:
 
-``` shell
+```shell
 ➜  joken git:(main) openssl genrsa -out mykey.pem 4096
 Generating RSA private key, 4096 bit long modulus (2 primes)
 .............++++
@@ -82,13 +76,13 @@ To use it with Joken we can call one of the `Joken.Signer.create` variants:
 
 1.  With the RAW PEM contents:
 
-    ``` elixir
+    ```elixir
     signer = Joken.Signer.create("RS256", %{"pem" => pem_contents})
     ```
 
 2.  With the pem file in the configuration:
 
-    ``` elixir
+    ```elixir
     use Mix.Config
 
     config :joken,
@@ -107,7 +101,7 @@ To use it with Joken we can call one of the `Joken.Signer.create` variants:
 
 3.  With the key in JWK format:
 
-    ``` elixir
+    ```elixir
     # example of key parameters from https://tools.ietf.org/html/rfc7517#appendix-A.1
     # This is for demonstration purposes. We don't allow those parameters in the map like
     # "alg", "kid", "kty". Although they are part of the JWK Set specification.
@@ -125,7 +119,7 @@ To use it with Joken we can call one of the `Joken.Signer.create` variants:
 
 4.  With the key in JWK format on the config:
 
-    ``` elixir
+    ```elixir
     use Mix.Config
 
     config :joken,
