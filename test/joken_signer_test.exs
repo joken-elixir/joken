@@ -56,6 +56,19 @@ defmodule Joken.Signer.Test do
            } = signer
   end
 
+  test "can create a signer from an EC private key" do
+    pem = Application.get_env(:joken, :pem_es256)[:key_pem]
+    signer = Signer.create("ES256", %{"pem" => pem})
+
+    assert %Signer{
+             alg: "ES256",
+             jws: %JOSE.JWS{
+               alg: {:jose_jws_alg_ecdsa, :ES256}
+             },
+             jwk: %JOSE.JWK{}
+           } = signer
+  end
+
   test "can create a signer from an encrypted key" do
     pem = Application.get_env(:joken, :pem_encrypted_rs256)[:key_pem]
     passphrase = Application.get_env(:joken, :pem_encrypted_rs256)[:passphrase]
