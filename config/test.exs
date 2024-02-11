@@ -92,6 +92,14 @@ CSAnW8Md2j56RkvCnSPGab8eh5BjoGEInmSZWpUXvLJt91pZqX1jSbs1ZNg=
 -----END RSA PRIVATE KEY-----
 """
 
+ec_pem_key = """
+-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIBEdk34npuxz13CvGk/BS39dZ+2XAR6k9S4uNhtEMd3AoAoGCCqGSM49
+AwEHoUQDQgAExCkF/6mwf3HoEv4m+1+Pi702herRxJeycLHXiRpA8Nkj8tVjU9C6
+5CRx1TdE4q4I8ympW4HrBm2qpPi3z6mEGw==
+-----END EC PRIVATE KEY-----
+"""
+
 # generated with openssl genrsa -aes256 4096
 rsa_encrypted_passphrase = "passphrase"
 
@@ -182,6 +190,10 @@ config :joken,
   pem_rs256: [
     signer_alg: "RS256",
     key_pem: rsa_pem_key
+  ],
+  pem_es256: [
+    signer_alg: "ES256",
+    key_pem: ec_pem_key
   ],
   pem_encrypted_rs256: [
     signer_alg: "RS256",
