@@ -1,5 +1,15 @@
 ## [Unreleased]
 
+## [2.6.1] - 2024-04-11
+
+### Added
+
+- Allow PEM keys to specify a password (#392 thanks to @jeremyowensboggs)
+
+### Fixed
+
+- Updated erlang JOSE to deal with CVE-2023-50966 (#418 thanks to @up2jj)
+
 ## [2.6.0] - 2023-01-29
 
 ### Changed
