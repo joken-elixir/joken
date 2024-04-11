@@ -155,7 +155,7 @@ defmodule Joken.Signer do
       {:ok, %{"name" => "John Doe"}}
 
   """
-  @spec verify(Joken.bearer_token(), __MODULE__.t()) ::
+  @spec verify(Joken.bearer_token(), %__MODULE__{}) ::
           {:ok, Joken.claims()} | {:error, Joken.error_reason()}
   def verify(token, %__MODULE__{alg: alg, jwk: jwk}) when is_binary(token) do
     case JWT.verify_strict(jwk, [alg], token) do
