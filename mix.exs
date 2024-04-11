@@ -40,7 +40,7 @@ defmodule Joken.Mixfile do
 
   defp deps do
     [
-      {:jose, "~> 1.11.5"},
+      {:jose, "~> 1.11.9"},
       {:jason, "~> 1.4", only: [:dev, :test]},
       {:benchee, "~> 1.0", only: :dev},
 
