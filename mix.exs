@@ -55,7 +55,7 @@ defmodule Joken.Mixfile do
 
       # Test
       {:junit_formatter, "~> 3.4", only: :test},
-      {:stream_data, "~> 0.5", only: :test},
+      {:stream_data, "~> 1.1", only: :test},
       {:excoveralls, "~> 0.17", only: :test},
       {:castore, "~> 1.0", only: :test}
     ]
