@@ -1,6 +1,6 @@
 # Joken
 
-[![Build](https://travis-ci.org/joken-elixir/joken.svg?branch=main)](https://travis-ci.org/joken-elixir/joken)
+[![CI](https://github.com/joken-elixir/joken/actions/workflows/ci.yml/badge.svg)](https://github.com/joken-elixir/joken/actions/workflows/ci.yml)
 [![Module Version](https://img.shields.io/hexpm/v/joken.svg)](https://hex.pm/packages/joken)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/joken/)
 [![Total Download](https://img.shields.io/hexpm/dt/joken.svg)](https://hex.pm/packages/joken)
