@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [2.6.2] - 2024-08-10
+
+### Changed
+
+- Updated deps and CI versions
+- Fix deprecated CI badge (#427 - thanks to @kianmeng once again!)
+
 ## [2.6.1] - 2024-04-11
 
 ### Added
