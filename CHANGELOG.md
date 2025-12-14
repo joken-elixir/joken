@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+### Changed
+
+- Updated deps
+- Raise minimum Elixir version to only supported versions
+
 ## [2.6.2] - 2024-08-10
 
 ### Changed
