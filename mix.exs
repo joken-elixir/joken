@@ -2,14 +2,14 @@ defmodule Joken.Mixfile do
   use Mix.Project
 
   @source_url "https://github.com/joken-elixir/joken"
-  @version "2.6.2"
+  @version "2.7.0"
 
   def project do
     [
       app: :joken,
       version: @version,
       name: "Joken",
-      elixir: "~> 1.13",
+      elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       consolidate_protocols: Mix.env() != :test,
@@ -40,22 +40,22 @@ defmodule Joken.Mixfile do
 
   defp deps do
     [
-      {:jose, "~> 1.11.10"},
+      {:jose, "~> 1.11.12"},
       {:jason, "~> 1.4", only: [:dev, :test]},
-      {:benchee, "~> 1.3", only: :dev},
+      {:benchee, "~> 1.5", only: :dev},
 
       # Docs
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
 
       # Dialyzer
-      {:dialyxir, "~> 1.4.0", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
 
       # Credo
       {:credo, "~> 1.7", only: :test, runtime: false},
 
       # Test
       {:junit_formatter, "~> 3.4", only: :test},
-      {:stream_data, "~> 1.1", only: :test},
+      {:stream_data, "~> 1.2", only: :test},
       {:excoveralls, "~> 0.18", only: :test},
       {:castore, "~> 1.0", only: :test}
     ]
