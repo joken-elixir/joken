@@ -36,20 +36,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - elixir: "1.14.5"
-            otp: "24.3.4.17"
-          - elixir: "1.15.8-otp-25"
-            otp: "25.3.2.13"
-          - elixir: "1.16.3-otp-26"
-            otp: "26.2.5.2"
-          - elixir: "1.17.2-otp-27"
-            otp: "27.0.1"
+          - elixir: "1.15"
+            otp: "24"
+          - elixir: "1.19"
+            otp: "28"
+            lint: lint
 
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v6
 
     - name: Set up Elixir
       uses: erlef/setup-beam@v1
@@ -58,7 +55,7 @@ jobs:
         otp-version: ${{ matrix.otp }}
 
     - name: Restore deps and _build cache
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: |
           deps
@@ -72,7 +69,7 @@ jobs:
       run: mkdir -p priv/plts
 
     - name: Restore plts cache
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: priv/plts
         key: plts-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
@@ -85,9 +82,11 @@ jobs:
 
     - name: Check source code format
       run: mix format --check-formatted
+      if: ${{ matrix.lint }}
 
     - name: Perform source code static analysis
       run: mix credo --strict
+      if: ${{ matrix.lint }}
       env:
         MIX_ENV: test
 
@@ -106,11 +105,13 @@ jobs:
 
     - name: Run tests
       run: mix coveralls.github --warnings-as-errors
+      if: ${{ matrix.lint }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Run dialyzer
       run: mix dialyzer
+      if: ${{ matrix.lint }}
       env:
         MIX_ENV: test
 

@@ -18,8 +18,13 @@ defmodule Joken.Mixfile do
       deps: deps(),
       docs: docs(),
       dialyzer: [plt_add_deps: :apps_direct, plt_add_apps: [:jason]],
-      test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [
+      test_coverage: [tool: ExCoveralls]
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: [
         coveralls: :test,
         "coveralls.github": :test,
         "coveralls.detail": :test,
