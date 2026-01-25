@@ -37,7 +37,7 @@ jobs:
       matrix:
         include:
           - elixir: "1.15"
-            otp: "24"
+            otp: "26"
           - elixir: "1.19"
             otp: "28"
             lint: lint
