@@ -100,6 +100,14 @@ defmodule Joken.Signer do
     )
   end
 
+  def create(alg, %JWK{} = key, headers) when alg in @map_key_algorithms do
+    raw_create(
+      alg,
+      headers |> transform_headers(alg) |> JWS.from_map(),
+      key
+    )
+  end
+
   def create(alg, key, headers) when is_map(key) and alg in @map_key_algorithms do
     raw_create(
       alg,
