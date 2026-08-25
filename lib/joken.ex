@@ -132,10 +132,11 @@ defmodule Joken do
     with {:ok, %{"protected" => protected}} <- expand(token),
          {:decode64, {:ok, decoded_str}} <-
            {:decode64, Base.url_decode64(protected, padding: false)},
-         header <- JOSE.json_module().decode(decoded_str) do
+         {:decode_json, {:ok, header}} <- {:decode_json, safe_json_decode(decoded_str)} do
       {:ok, header}
     else
       {:decode64, _error} -> {:error, :token_malformed}
+      {:decode_json, _error} -> {:error, :token_malformed}
       error -> error
     end
   end
@@ -153,12 +154,19 @@ defmodule Joken do
     with {:ok, %{"payload" => payload}} <- expand(token),
          {:decode64, {:ok, decoded_str}} <-
            {:decode64, Base.url_decode64(payload, padding: false)},
-         claims <- JOSE.json_module().decode(decoded_str) do
+         {:decode_json, {:ok, claims}} <- {:decode_json, safe_json_decode(decoded_str)} do
       {:ok, claims}
     else
       {:decode64, _error} -> {:error, :token_malformed}
+      {:decode_json, _error} -> {:error, :token_malformed}
       error -> error
     end
+  end
+
+  defp safe_json_decode(decoded_str) do
+    {:ok, JOSE.json_module().decode(decoded_str)}
+  rescue
+    _ -> :error
   end
 
   @doc """

@@ -172,4 +172,17 @@ defmodule JokenTest do
     assert {:error, :token_malformed} = Joken.peek_claims(".a.")
     assert {:error, :token_malformed} = Joken.peek_header("a..")
   end
+
+  test "peek_header and peek_claims return an error, not a raise, when a segment is not valid JSON" do
+    header =
+      %{"typ" => "JWT", "alg" => "HS256"}
+      |> JOSE.json_module().encode()
+      |> Base.url_encode64(padding: false)
+
+    payload = "not valid JSON" |> Base.url_encode64(padding: false)
+    token = "#{header}.#{payload}.sig"
+
+    assert {:error, :token_malformed} = Joken.peek_claims(token)
+    assert {:error, :token_malformed} = Joken.peek_header("#{payload}.#{payload}.sig")
+  end
 end
