@@ -138,6 +138,9 @@ defmodule Joken do
       {:decode64, _error} -> {:error, :token_malformed}
       error -> error
     end
+  rescue
+    _e ->
+      {:error, :token_malformed}
   end
 
   @doc """
@@ -159,6 +162,9 @@ defmodule Joken do
       {:decode64, _error} -> {:error, :token_malformed}
       error -> error
     end
+  rescue
+    _e ->
+      {:error, :token_malformed}
   end
 
   @doc """
@@ -389,13 +395,11 @@ defmodule Joken do
 
         # When it fails validation
         false ->
-          Logger.debug(fn ->
-            """
-            Claim %{"#{key}" => #{inspect(claim_val)}} did not pass validation.
+          Logger.debug("""
+          Claim %{"#{key}" => #{inspect(claim_val)}} did not pass validation.
 
-            Current time: #{inspect(Joken.current_time())}
-            """
-          end)
+          Current time: #{inspect(Joken.current_time())}
+          """)
 
           message = Keyword.get(config[key].options, :message, "Invalid token")
           {:halt, {:error, message: message, claim: key, claim_val: claim_val}}

@@ -155,6 +155,11 @@ defmodule JokenTest do
             }} = Joken.expand(jwt)
   end
 
+  test "can flag token malformed" do
+    assert {:error, :token_malformed} = Joken.peek_header("some.invalid.token")
+    assert {:error, :token_malformed} = Joken.peek_claims("some.invalid.token")
+  end
+
   test "returns error while trying to expand malformed token" do
     assert {:error, :token_malformed} == Joken.expand("asd")
   end
