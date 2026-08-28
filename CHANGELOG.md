@@ -1,9 +1,21 @@
 ## [Unreleased]
 
+## [2.7.0] - 2026-08-27
+
+### Breaking
+
+- **Supported Elixir & Erlang versions are raised to 1.16 & OTP26**
+
+### Added
+
+- feature: Signer.create taking a JOSE.JWK - #448 (thanks @bobergj)
+- Fix examples in custom header arguments guide - #450 (thanks @mattmikolay)
+- fix(peek): flag invalid tokens
+
 ### Changed
 
 - Updated deps
-- Raise minimum Elixir version to only supported versions
+- Raise minimum Elixir/Erlang versions to only supported versions
 
 ## [2.6.2] - 2024-08-10
 

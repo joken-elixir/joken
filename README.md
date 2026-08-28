@@ -28,7 +28,7 @@ Add `:joken` to your list of dependencies in `mix.exs`:
 ``` elixir
 def deps do
   # .. other deps
-  {:joken, "~> 2.6"},
+  {:joken, "~> 2.7"},
   # Recommended JSON library
   {:jason, "~> 1.4"}
 end
@@ -49,7 +49,7 @@ mix run benchmarks/rs_benchmark.exs
 
 ## License
 
-Copyright (c) 2014 Bryan Joseph
+Copyright (c) 2014 Bryan Joseph & Victor Nascimento
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
