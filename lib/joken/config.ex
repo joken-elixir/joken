@@ -273,13 +273,13 @@ defmodule Joken.Config do
 
         # credo:disable-for-lines:14 Credo.Check.Refactor.Nesting
         claim == :exp ->
-          add_claim(acc, "exp", fn -> current_time() + default_exp end, &(&1 > current_time()))
+          add_claim(acc, "exp", fn -> current_time() + default_exp end, &valid_exp?/1)
 
         claim == :iat ->
           add_claim(acc, "iat", fn -> current_time() end)
 
         claim == :nbf ->
-          add_claim(acc, "nbf", fn -> current_time() end, &(current_time() >= &1))
+          add_claim(acc, "nbf", fn -> current_time() end, &valid_nbf?/1)
 
         claim == :iss ->
           add_claim(acc, "iss", fn -> default_iss end, &(&1 == default_iss))
@@ -292,6 +292,15 @@ defmodule Joken.Config do
       end
     end)
   end
+
+  # RFC 7519 requires exp and nbf to be a NumericDate. Without the guard, Erlang
+  # term ordering would compare any non-number (a string, null, a map) as greater
+  # than the current time, so a malformed exp would never expire.
+  defp valid_exp?(exp) when is_number(exp), do: exp > current_time()
+  defp valid_exp?(_exp), do: false
+
+  defp valid_nbf?(nbf) when is_number(nbf), do: current_time() >= nbf
+  defp valid_nbf?(_nbf), do: false
 
   @doc """
   Adds a `Joken.Claim` with the given claim key to a map.

@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Fixed
+
+- fix(config): default `exp` and `nbf` claims reject a non-numeric value - #452
+
 ## [2.7.0] - 2026-08-27
 
 ### Breaking
