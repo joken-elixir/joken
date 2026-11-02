@@ -75,6 +75,22 @@ defmodule Joken.Config.Test do
       refute exp_claim.validate.(Joken.current_time(), %{}, %{})
     end
 
+    test "default exp accepts a non-integer NumericDate" do
+      Mock.freeze()
+
+      exp_claim = Config.default_claims()["exp"]
+      assert exp_claim.validate.(Joken.current_time() + 1.5, %{}, %{})
+      refute exp_claim.validate.(Joken.current_time() - 0.5, %{}, %{})
+    end
+
+    property "default exp rejects any non-numeric value" do
+      exp_claim = Config.default_claims()["exp"]
+
+      check all(value <- non_numeric_claim_value()) do
+        refute exp_claim.validate.(value, %{}, %{})
+      end
+    end
+
     test "default iss validates properly" do
       exp_claim = Config.default_claims()["iss"]
       assert exp_claim.validate.("Joken", %{}, %{})
@@ -93,6 +109,14 @@ defmodule Joken.Config.Test do
 
       # not before a second in the future
       refute exp_claim.validate.(Joken.current_time() + 1, %{}, %{})
+    end
+
+    property "default nbf rejects any non-numeric value" do
+      nbf_claim = Config.default_claims()["nbf"]
+
+      check all(value <- non_numeric_claim_value()) do
+        refute nbf_claim.validate.(value, %{}, %{})
+      end
     end
 
     test "can switch default jti generation function" do
@@ -159,6 +183,19 @@ defmodule Joken.Config.Test do
         assert_map_contains_other(claims, input_map)
       end
     end
+  end
+
+  # Every non-numeric shape a decoded JSON claim can take
+  defp non_numeric_claim_value do
+    one_of([
+      string(:printable),
+      boolean(),
+      constant(nil),
+      # JOSE decodes a JSON null as :null
+      constant(:null),
+      list_of(integer()),
+      map_of(string(:alphanumeric), integer())
+    ])
   end
 
   defp assert_map_contains_other(target, contains_map) do
