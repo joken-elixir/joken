@@ -2,12 +2,16 @@
 
 ### Fixed
 
-- fix(config): default `exp` and `nbf` claims reject a non-numeric value - #452
-- Before hooks halting with a term that is not an `{:error, reason}` tuple no longer make
-  `Joken.verify/3`, `Joken.validate/4`, `Joken.generate_claims/3` and `Joken.encode_and_sign/3`
-  return `{:ok, term}` without doing any work; they now return `{:error, :wrong_hook_return}`.
-  After hooks halting with `{:error, tuple}` now return that tuple verbatim instead of the bare
-  atom `:error`.
+- fix(config): default `exp` and `nbf` claims reject a non-numeric value - #452 (thanks @agustin2606)
+- Before hooks halting with non-`{:error, reason}` tuples now return `{:error, :wrong_hook_return}` - #455 (thanks @bmalum)
+- fix(peek): flag invalid tokens - #451
+
+### Changed
+
+- Updated dependencies
+- Raise minimum Elixir/Erlang versions to only supported versions
+
+## [2.8.0] - 2026-11-13
 
 ## [2.7.0] - 2026-08-27
 
