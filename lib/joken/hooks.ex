@@ -44,6 +44,10 @@ defmodule Joken.Hooks do
         end
       end
 
+  A before hook must always halt with an `{:error, reason}` tuple. Halting with anything else
+  (for example `{:halt, :stop_the_world}`) is treated as a wrong return and the operation fails
+  with `{:error, :wrong_hook_return}`. It never results in a successful operation.
+
   ## After hooks
 
   After hooks work similar then before hooks. The difference is that it takes and returns the result of the
@@ -106,6 +110,7 @@ defmodule Joken.Hooks do
   alias Joken.Signer
 
   @type halt_tuple :: {:halt, tuple}
+  @type halt_error :: {:halt, {:error, term}}
   @type hook_options :: Keyword.t()
   @type generate_input :: {Joken.token_config(), extra :: Joken.claims()}
   @type sign_input :: {Joken.claims(), Signer.t()}
@@ -113,16 +118,17 @@ defmodule Joken.Hooks do
   @type validate_input :: {Joken.token_config(), Joken.claims(), context :: map()}
 
   @doc "Called before `Joken.generate_claims/3`"
-  @callback before_generate(hook_options, generate_input) :: {:cont, generate_input} | halt_tuple
+  @callback before_generate(hook_options, generate_input) :: {:cont, generate_input} | halt_error
 
   @doc "Called before `Joken.encode_and_sign/3`"
-  @callback before_sign(hook_options, sign_input) :: {:cont, sign_input} | halt_tuple
+  @callback before_sign(hook_options, sign_input) :: {:cont, sign_input} | halt_error
 
   @doc "Called before `Joken.verify/3`"
-  @callback before_verify(hook_options, verify_input) :: {:cont, verify_input} | halt_tuple
+  @callback before_verify(hook_options, verify_input) :: {:cont, verify_input} | halt_error
 
   @doc "Called before `Joken.validate/4`"
-  @callback before_validate(hook_options, validate_input) :: {:cont, validate_input} | halt_tuple
+  @callback before_validate(hook_options, validate_input) ::
+              {:cont, validate_input} | halt_error
 
   @doc "Called after `Joken.generate_claims/3`"
   @callback after_generate(hook_options, Joken.generate_result(), generate_input) ::
@@ -191,37 +197,37 @@ defmodule Joken.Hooks do
   @before_hooks [:before_generate, :before_sign, :before_verify, :before_validate]
   @after_hooks [:after_generate, :after_sign, :after_verify, :after_validate]
 
+  # Always returns either `{:ok, input}` or `{:error, reason}`. A before hook may only
+  # halt with an error tuple; any other halt payload is treated as a wrong return so
+  # that a halted operation can never be reported as a success to the caller.
   def run_before_hook(hooks, hook_function, input) when hook_function in @before_hooks do
-    hooks
-    |> Enum.reduce_while(input, fn hook, input ->
+    Enum.reduce_while(hooks, {:ok, input}, fn hook, {:ok, input} ->
       {hook, opts} = unwrap_hook(hook)
 
       case apply(hook, hook_function, [opts, input]) do
-        {:cont, _next_input} = res -> res
-        {:halt, _reason} = res -> res
+        {:cont, next_input} -> {:cont, {:ok, next_input}}
+        {:halt, {:error, _reason} = err} -> {:halt, err}
         _ -> {:halt, {:error, :wrong_hook_return}}
       end
     end)
-    |> case do
-      {:error, _reason} = err -> err
-      res -> {:ok, res}
-    end
   end
 
+  # Returns the (possibly replaced) result. The accumulator is explicitly tagged so a
+  # halt payload is returned verbatim instead of being inferred from its shape.
   def run_after_hook(hooks, hook_function, result, input) when hook_function in @after_hooks do
     hooks
-    |> Enum.reduce_while({result, input}, fn hook, {result, input} ->
+    |> Enum.reduce_while({:cont, result, input}, fn hook, {:cont, result, input} ->
       {hook, opts} = unwrap_hook(hook)
 
       case apply(hook, hook_function, [opts, result, input]) do
-        {:cont, result, next_input} -> {:cont, {result, next_input}}
-        {:halt, _reason} = res -> res
-        _ -> {:halt, {:error, :wrong_hook_return}}
+        {:cont, _result, _next_input} = res -> {:cont, res}
+        {:halt, reason} -> {:halt, {:halt, reason}}
+        _ -> {:halt, {:halt, {:error, :wrong_hook_return}}}
       end
     end)
     |> case do
-      {result, input} when is_tuple(input) -> result
-      res -> res
+      {:cont, result, _input} -> result
+      {:halt, result} -> result
     end
   end
 

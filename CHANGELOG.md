@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+### Fixed
+
+- Before hooks halting with a term that is not an `{:error, reason}` tuple no longer make
+  `Joken.verify/3`, `Joken.validate/4`, `Joken.generate_claims/3` and `Joken.encode_and_sign/3`
+  return `{:ok, term}` without doing any work; they now return `{:error, :wrong_hook_return}`.
+  After hooks halting with `{:error, tuple}` now return that tuple verbatim instead of the bare
+  atom `:error`.
+
 ## [2.7.0] - 2026-08-27
 
 ### Breaking
