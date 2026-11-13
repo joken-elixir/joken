@@ -97,6 +97,70 @@ defmodule Joken.HooksTest do
     assert WrongCallbackReturn.generate_and_sign() == {:error, :wrong_hook_return}
   end
 
+  test "before_hook halting with a non error term never results in success" do
+    defmodule BeforeVerifyHaltAtom do
+      use Joken.Config
+
+      @impl Joken.Hooks
+      def before_verify(_options, _input), do: {:halt, :kid_not_found}
+    end
+
+    defmodule BeforeVerifyHaltTuple do
+      use Joken.Config
+
+      @impl Joken.Hooks
+      def before_verify(_options, _input), do: {:halt, {:denied, :kid, "abc"}}
+    end
+
+    defmodule BeforeValidateHaltTuple do
+      use Joken.Config
+
+      @impl Joken.Hooks
+      def before_validate(_options, _input), do: {:halt, {:policy, :denied}}
+    end
+
+    assert BeforeVerifyHaltAtom.verify("not.a.token") == {:error, :wrong_hook_return}
+    assert BeforeVerifyHaltTuple.verify("not.a.token") == {:error, :wrong_hook_return}
+
+    assert BeforeVerifyHaltAtom.verify_and_validate("not.a.token") ==
+             {:error, :wrong_hook_return}
+
+    assert BeforeValidateHaltTuple.validate(%{"a" => 1}) == {:error, :wrong_hook_return}
+  end
+
+  test "before_hook halt reason is preserved for error tuples" do
+    defmodule BeforeVerifyHaltErrorTuple do
+      use Joken.Config
+
+      @impl Joken.Hooks
+      def before_verify(_options, _input), do: {:halt, {:error, {:kid_not_found, "abc"}}}
+    end
+
+    assert BeforeVerifyHaltErrorTuple.verify("not.a.token") ==
+             {:error, {:kid_not_found, "abc"}}
+  end
+
+  test "after_hook halt payload is returned verbatim" do
+    defmodule AfterVerifyHaltErrorTuple do
+      use Joken.Config
+
+      @impl Joken.Hooks
+      def after_verify(_options, _result, _input), do: {:halt, {:error, {:missing, "aud"}}}
+    end
+
+    defmodule AfterVerifyHaltOk do
+      use Joken.Config
+
+      @impl Joken.Hooks
+      def after_verify(_options, _result, _input), do: {:halt, {:ok, %{"from" => "hook"}}}
+    end
+
+    token = AfterVerifyHaltErrorTuple.generate_and_sign!()
+
+    assert AfterVerifyHaltErrorTuple.verify(token) == {:error, {:missing, "aud"}}
+    assert AfterVerifyHaltOk.verify(token) == {:ok, %{"from" => "hook"}}
+  end
+
   test "can add hook with options" do
     defmodule HookWithOptions do
       use Joken.Hooks
